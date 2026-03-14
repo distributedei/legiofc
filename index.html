@@ -10,14 +10,51 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--blue:#1c5575;--blue-dark:#163d54;--crimson:#9c1829;--gold:#dab751;--gold-bright:#e3ba24;--cream:#f8f6f1}
-        body{font-family:'Inter',sans-serif;background:var(--blue);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;position:relative;overflow-x:hidden}
-        .ribbon-bg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden}
+        body{font-family:'Inter',sans-serif;background:var(--blue);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 20px 60px;position:relative;overflow-x:hidden}
+
+        /* Staff nav bar */
+        .staff-nav{position:fixed;top:0;right:0;z-index:100;padding:12px 20px}
+        .staff-nav-link{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2.5px;color:rgba(218,183,81,0.35);text-decoration:none;text-transform:uppercase;transition:color 0.3s ease;border:1px solid rgba(218,183,81,0.15);padding:6px 14px}
+        .staff-nav-link:hover{color:var(--gold);border-color:rgba(218,183,81,0.5)}
+
+        .ribbon-bg{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:0}
         .ribbon-bg svg{position:absolute;width:150%;height:150%;top:-25%;left:-25%;opacity:0.15}
-        .container{max-width:900px;width:100%;text-align:center;position:relative;z-index:1}
+        .container{max-width:900px;width:100%;text-align:center;position:relative;z-index:1;padding-top:60px}
         .logo{width:500px;height:500px;margin:0 auto 20px;animation:fadeIn 1s ease-out}
         .logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 15px 40px rgba(0,0,0,0.4))}
         .motto-english{font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:3px;color:rgba(248,246,241,0.7);text-transform:uppercase;margin-bottom:8px;animation:fadeIn 1s ease-out 0.2s backwards}
         .founded{font-family:'Cinzel',serif;font-size:16px;font-weight:600;letter-spacing:8px;color:var(--gold);opacity:0.8;margin-bottom:50px;animation:fadeIn 1s ease-out 0.3s backwards}
+
+        /* TST Announcement */
+        .tst-announcement{margin-bottom:50px;animation:fadeIn 1s ease-out 0.35s backwards}
+        .tst-card{background:rgba(22,61,84,0.6);border:1px solid rgba(218,183,81,0.35);padding:0;overflow:hidden;position:relative}
+        .tst-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+        .tst-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+        .tst-inner{padding:40px 36px}
+        .tst-eyebrow{font-family:'Cinzel',serif;font-size:9px;letter-spacing:5px;color:rgba(218,183,81,0.6);text-transform:uppercase;margin-bottom:12px}
+        .tst-headline{font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:var(--cream);letter-spacing:2px;line-height:1.2;margin-bottom:8px}
+        .tst-headline span{color:var(--gold)}
+        .tst-sub{font-size:13px;font-weight:300;color:rgba(248,246,241,0.6);letter-spacing:1px;margin-bottom:32px;line-height:1.6}
+
+        /* Acceptance badge graphic */
+        .tst-graphic{display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;margin-bottom:32px}
+        .tst-badge{display:flex;flex-direction:column;align-items:center;gap:10px}
+        .tst-badge-icon{width:80px;height:80px;border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(218,183,81,0.08);position:relative}
+        .tst-badge-icon svg{width:44px;height:44px;fill:var(--gold)}
+        .tst-badge-label{font-family:'Cinzel',serif;font-size:8px;letter-spacing:3px;color:rgba(218,183,81,0.7);text-transform:uppercase}
+        .tst-vs{font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:rgba(218,183,81,0.3);text-transform:uppercase}
+        .tst-divider{width:1px;height:80px;background:linear-gradient(to bottom,transparent,rgba(218,183,81,0.3),transparent)}
+
+        /* Accepted stamp */
+        .tst-accepted{display:inline-flex;align-items:center;gap:12px;border:2px solid var(--gold);padding:12px 28px;margin-bottom:24px}
+        .tst-accepted-icon{width:28px;height:28px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--blue-dark);font-weight:900}
+        .tst-accepted-text{font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+        .tst-year{font-family:'Cinzel',serif;font-size:11px;letter-spacing:4px;color:rgba(218,183,81,0.5);text-transform:uppercase}
+
+        /* Roster row */
+        .tst-roster-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+        .tst-player-tag{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1.5px;color:rgba(248,246,241,0.5);text-transform:uppercase;padding:3px 10px;border:1px solid rgba(218,183,81,0.15)}
+
         .section-label{font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:4px;color:var(--gold);text-transform:uppercase;margin-bottom:30px;animation:fadeIn 1s ease-out 0.4s backwards}
         .camps-grid{display:flex;gap:50px;justify-content:center;align-items:flex-end;margin-bottom:35px;animation:fadeIn 1s ease-out 0.5s backwards}
         .camp-column{display:flex;flex-direction:column;align-items:center}
@@ -49,15 +86,47 @@
         .instagram-icon{width:18px;height:18px}
         .contact-link{font-family:'Inter',sans-serif;font-size:12px;font-weight:400;letter-spacing:2px;color:rgba(248,246,241,0.5);text-decoration:none;text-transform:uppercase;transition:color 0.3s ease;animation:fadeIn 1s ease-out 0.7s backwards}
         .contact-link:hover{color:var(--cream)}
-        .staff-link{display:inline-block;margin-top:20px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:rgba(218,183,81,0.4);text-decoration:none;text-transform:uppercase;transition:color 0.3s ease}
-        .staff-link:hover{color:var(--gold)}
         footer{margin-top:60px;animation:fadeIn 1s ease-out 0.8s backwards}
         footer p{font-family:'Inter',sans-serif;color:rgba(248,246,241,0.25);font-size:11px;letter-spacing:1px}
         @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        @media(max-width:480px){body{padding:40px 10px;justify-content:flex-start;padding-top:20px}.container{max-width:320px;width:100%}.logo{width:280px;height:280px;margin:0 auto 15px}.motto-english{font-size:9px;letter-spacing:3px}.founded{font-size:12px;letter-spacing:6px;margin-bottom:35px}.section-label{font-size:9px;letter-spacing:3px;margin-bottom:20px}.camps-grid{gap:20px;flex-wrap:wrap}.camp-column{min-width:95px}.camp-logo-link{height:50px;margin-bottom:10px}.tst-logo{height:40px}.cary-logo{height:50px}.camp-title{height:50px;font-size:9px;margin-bottom:10px}.btn-camp{padding:10px 20px;font-size:10px;letter-spacing:1.5px}.supporters-text{font-size:12px}.btn-supporters{padding:10px 25px;font-size:10px}.instagram-icon{width:16px;height:16px}.contact-link{font-size:10px}footer p{font-size:10px}.videos-grid{flex-direction:column;align-items:center}.video-container{width:100%;max-width:300px}.channel-links{flex-direction:column;align-items:center;gap:10px}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+        .pulse{animation:pulse 2s ease-in-out infinite}
+
+        @media(max-width:480px){
+            body{padding:0 10px 40px}
+            .container{padding-top:50px}
+            .logo{width:280px;height:280px;margin:0 auto 15px}
+            .motto-english{font-size:9px;letter-spacing:3px}
+            .founded{font-size:12px;letter-spacing:6px;margin-bottom:35px}
+            .tst-inner{padding:28px 20px}
+            .tst-headline{font-size:20px}
+            .tst-graphic{gap:16px}
+            .tst-badge-icon{width:60px;height:60px}
+            .section-label{font-size:9px;letter-spacing:3px;margin-bottom:20px}
+            .camps-grid{gap:20px;flex-wrap:wrap}
+            .camp-column{min-width:95px}
+            .camp-logo-link{height:50px;margin-bottom:10px}
+            .tst-logo{height:40px}
+            .cary-logo{height:50px}
+            .camp-title{height:50px;font-size:9px;margin-bottom:10px}
+            .btn-camp{padding:10px 20px;font-size:10px;letter-spacing:1.5px}
+            .supporters-text{font-size:12px}
+            .btn-supporters{padding:10px 25px;font-size:10px}
+            .contact-link{font-size:10px}
+            footer p{font-size:10px}
+            .videos-grid{flex-direction:column;align-items:center}
+            .video-container{width:100%;max-width:300px}
+            .channel-links{flex-direction:column;align-items:center;gap:10px}
+        }
     </style>
 </head>
 <body>
+
+    <!-- Staff login — top right -->
+    <div class="staff-nav">
+        <a href="roster.html" class="staff-nav-link">Staff Login</a>
+    </div>
+
     <div class="ribbon-bg">
         <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
             <defs>
@@ -65,15 +134,86 @@
                 <linearGradient id="gold2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#e3ba24;stop-opacity:0.15"/><stop offset="50%" style="stop-color:#dab751;stop-opacity:0.5"/><stop offset="100%" style="stop-color:#e3ba24;stop-opacity:0.15"/></linearGradient>
             </defs>
             <g opacity="0.5"><path stroke="url(#gold1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700;M-30,80 Q120,180 270,250 T520,400 T720,520 T870,680;M-70,30 Q80,120 230,180 T480,320 T680,480 T830,720;M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700" dur="20s" repeatCount="indefinite"/></path><path stroke="url(#gold2)" stroke-width="2" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-40,60 Q110,160 260,210 T510,360 T710,510 T860,710;M-20,90 Q130,190 280,260 T530,410 T730,530 T880,690;M-60,40 Q90,130 240,190 T490,330 T690,490 T840,730;M-40,60 Q110,160 260,210 T510,360 T710,510 T860,710" dur="20s" repeatCount="indefinite"/></path></g>
-            <g opacity="0.4"><path stroke="url(#gold1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500;M1050,180 Q880,300 730,380 T480,420 T280,450 T80,520;M1050,220 Q920,230 770,320 T520,480 T320,380 T120,480;M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500" dur="18s" repeatCount="indefinite"/></path><path stroke="url(#gold1)" stroke-width="0.75" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,210 Q910,260 760,360 T510,460 T310,410 T110,510;M1050,190 Q890,310 740,390 T490,430 T290,460 T90,530;M1050,230 Q930,240 780,330 T530,490 T330,390 T130,490;M1050,210 Q910,260 760,360 T510,460 T310,410 T110,510" dur="18s" repeatCount="indefinite"/></path></g>
+            <g opacity="0.4"><path stroke="url(#gold1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500;M1050,180 Q880,300 730,380 T480,420 T280,450 T80,520;M1050,220 Q920,230 770,320 T520,480 T320,380 T120,480;M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500" dur="18s" repeatCount="indefinite"/></path></g>
             <g opacity="0.45"><path stroke="url(#gold1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M200,1050 Q250,900 400,750 T550,550 T450,350 T600,150;M180,1050 Q300,880 420,730 T530,520 T470,380 T580,180;M220,1050 Q230,920 380,770 T570,580 T430,320 T620,120;M200,1050 Q250,900 400,750 T550,550 T450,350 T600,150" dur="22s" repeatCount="indefinite"/></path></g>
             <g opacity="0.35"><path stroke="url(#gold1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,600 Q150,550 350,650 T600,580 T850,660 T1050,600;M-50,580 Q150,630 350,560 T600,640 T850,570 T1050,620;M-50,620 Q150,570 350,640 T600,560 T850,650 T1050,580;M-50,600 Q150,550 350,650 T600,580 T850,660 T1050,600" dur="16s" repeatCount="indefinite"/></path></g>
         </svg>
     </div>
+
     <div class="container">
         <div class="logo"><img src="logo.png" alt="Legio Football Club Crest"></div>
         <p class="motto-english">We Gather The Best Against The World</p>
         <p class="founded">MMXXV</p>
+
+        <!-- TST ANNOUNCEMENT -->
+        <div class="tst-announcement">
+            <div class="tst-card">
+                <div class="tst-inner">
+                    <p class="tst-eyebrow">Official Announcement</p>
+                    <h2 class="tst-headline">Legio FC Men's Team<br><span>Accepted to TST 2026</span></h2>
+                    <p class="tst-sub">The Soccer Tournament · Men's Division · Summer 2026</p>
+
+                    <!-- Graphic -->
+                    <div class="tst-graphic">
+                        <!-- Legio crest -->
+                        <div class="tst-badge">
+                            <div class="tst-badge-icon">
+                                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Eagle silhouette -->
+                                    <path d="M50 15 C35 15 20 25 15 40 C10 55 15 70 25 78 C32 84 42 88 50 88 C58 88 68 84 75 78 C85 70 90 55 85 40 C80 25 65 15 50 15Z" fill="rgba(218,183,81,0.15)" stroke="var(--gold)" stroke-width="1.5"/>
+                                    <path d="M50 25 L38 45 L20 42 L32 56 L28 74 L50 64 L72 74 L68 56 L80 42 L62 45 Z" fill="var(--gold)" opacity="0.8"/>
+                                    <circle cx="50" cy="50" r="8" fill="var(--blue-dark)" stroke="var(--gold)" stroke-width="1"/>
+                                    <text x="50" y="54" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="var(--gold)" font-weight="bold">LFC</text>
+                                </svg>
+                            </div>
+                            <span class="tst-badge-label">Legio FC</span>
+                        </div>
+
+                        <div class="tst-divider"></div>
+
+                        <!-- TST Trophy -->
+                        <div class="tst-badge">
+                            <div class="tst-badge-icon">
+                                <svg viewBox="0 0 24 24" fill="var(--gold)">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+                                </svg>
+                            </div>
+                            <span class="tst-badge-label">TST 2026</span>
+                        </div>
+
+                        <div class="tst-divider"></div>
+
+                        <!-- Accepted stamp -->
+                        <div class="tst-badge">
+                            <div class="tst-badge-icon pulse" style="border-color:var(--gold);background:rgba(218,183,81,0.15)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                            <span class="tst-badge-label">Accepted</span>
+                        </div>
+                    </div>
+
+                    <!-- Accepted banner -->
+                    <div style="display:flex;justify-content:center;margin-bottom:20px;">
+                        <div class="tst-accepted">
+                            <div class="tst-accepted-icon">✓</div>
+                            <div>
+                                <div class="tst-accepted-text">Men's Team — Official Entry Confirmed</div>
+                                <div class="tst-year">The Soccer Tournament · MMXXVI</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="font-size:12px;font-weight:300;color:rgba(248,246,241,0.45);letter-spacing:1px;line-height:1.7;">
+                        Legio FC has been accepted to compete in The Soccer Tournament 2026.<br>
+                        Register below for an ID Camp to be considered for the roster.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <p class="section-label">Player ID Camps</p>
         <div class="camps-grid">
             <div class="camp-column">
@@ -119,8 +259,6 @@
         </div>
         <div class="divider-line"></div>
         <a href="mailto:operations@legiofc.com" class="contact-link">Contact Us</a>
-        <br>
-        <a href="roster.html" class="staff-link">Staff · Roster</a>
         <footer><p>&copy; 2025 Legio Football Club</p></footer>
     </div>
 </body>
