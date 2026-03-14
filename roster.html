@@ -295,8 +295,8 @@ const CLIENT_ID   = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
 const TENANT_ID   = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
 
 // Excel file location — from the SharePoint URL you provided
-const DRIVE_HOST  = 'legiofc-my.sharepoint.com';
-const OWNER_UPN   = 'sharrington_legiofc_com';   // the personal site owner
+
+
 const FILE_ID     = '38891796-BF1D-45EE-8035-19ED32A2FC8E';
 const TABLE_NAME  = 'Table1';  // ← update if your table has a different name
 
@@ -385,7 +385,7 @@ async function loadRoster() {
     const upn = OWNER_UPN.replace(/_/g, '.'); // sharrington_legiofc_com → sharrington.legiofc.com
     
     // First try to get table list to find correct table name
-    const tablesUrl = `https://graph.microsoft.com/v1.0/users/${upn}/drive/items/${FILE_ID}/workbook/tables`;
+    const tablesUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${FILE_ID}/workbook/tables`;
     const tablesRes = await fetch(tablesUrl, { headers: h });
     
     let tableName = TABLE_NAME;
@@ -397,13 +397,13 @@ async function loadRoster() {
     }
 
     // Fetch all rows from the table
-    let url = `https://graph.microsoft.com/v1.0/users/${upn}/drive/items/${FILE_ID}/workbook/tables/${encodeURIComponent(tableName)}/rows?$top=500`;
+    let url = `https://graph.microsoft.com/v1.0/me/drive/items/${FILE_ID}/workbook/tables/${encodeURIComponent(tableName)}/rows?$top=500`;
     let rows = [];
     let headers = [];
 
     // Get headers from columns endpoint
     const colsRes = await fetch(
-      `https://graph.microsoft.com/v1.0/users/${upn}/drive/items/${FILE_ID}/workbook/tables/${encodeURIComponent(tableName)}/columns`,
+      `https://graph.microsoft.com/v1.0/me/drive/items/${FILE_ID}/workbook/tables/${encodeURIComponent(tableName)}/columns`,
       { headers: h }
     );
     if (colsRes.ok) {
