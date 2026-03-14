@@ -365,7 +365,7 @@ function render(){
       <td><span class="tag ${p.CanTravel==='No'?'tag-no':''}">${esc(p.CanTravel||'—')}</span></td>
       <td>${p.Phone?`<a class="email-link" href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()">📱 ${esc(p.Phone)}</a>`:'—'}</td>
       <td>${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
-      <td>${p.Email?`<a class="email-link" href="#" onclick="event.stopPropagation();window.open('mailto:'+p.Email,'_self')">✉ ${esc(p.Email)}</a>`:'—'}</td>
+      <td>${p.Email?`<a class="email-link" href="#" onclick="event.preventDefault();event.stopPropagation();setTimeout(function(){window.open('mailto:'+p.Email,'_self');},50)">✉ ${esc(p.Email)}</a>`:'—'}</td>
     </tr>`).join('');
   document.getElementById('foot-label').textContent=`${filtered.length} of ${all.length} registrants · click name to view profile`;
 }
