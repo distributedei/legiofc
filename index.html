@@ -145,9 +145,6 @@
         <p class="motto-english">We Gather The Best Against The World</p>
         <p class="founded">MMXXV</p>
 
-        <!-- LIVE GAMES SECTION -->
-        <div id="live-section" style="margin-bottom:40px;display:none;"></div>
-
         <!-- TST ANNOUNCEMENT -->
         <div class="tst-announcement">
             <div class="tst-card">
@@ -295,9 +292,16 @@ async function checkLiveGames() {
 }
 
 function showLiveSection(opponent, legioScore, oppScore, ytUrl, tournament) {
-  const section = document.getElementById('live-section');
+  // Create sticky bottom popup
+  let section = document.getElementById('live-section');
+  if (!section) {
+    section = document.createElement('div');
+    section.id = 'live-section';
+    section.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999;transform:translateY(100%);transition:transform 0.4s ease;';
+    document.body.appendChild(section);
+    setTimeout(() => section.style.transform = 'translateY(0)', 100);
+  }
   const ytEmbed = ytUrl ? ytUrl.replace('watch?v=', 'embed/').split('&')[0] : '';
-  section.style.display = 'block';
   section.innerHTML =
     '<div style="background:rgba(22,61,84,0.7);border:1px solid rgba(76,175,80,0.5);position:relative;overflow:hidden;">' +
     '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
