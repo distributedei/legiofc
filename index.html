@@ -311,7 +311,7 @@ async function pollForLiveMatch() {
       const f = live;
       if (currentLiveId !== live.id) {
         currentLiveId = live.id;
-        showLiveBanner(f.Opponent||'Opponent', f.LegioScore!=null?f.LegioScore:0, f.OpponentScore!=null?f.OpponentScore:0, f.YouTubeURL||'', f.Tournament||'', f.Notes||'');
+        showLiveBanner(f.HomeTeam||'Legio FC', f.Opponent||'Opponent', f.LegioScore!=null?f.LegioScore:0, f.OpponentScore!=null?f.OpponentScore:0, f.YouTubeURL||'', f.Tournament||'', f.Notes||'');
       } else {
         // Update scores only
         const ls = document.getElementById('live-legio-score');
@@ -325,7 +325,7 @@ async function pollForLiveMatch() {
   } catch(e) {}
 }
 
-function showLiveBanner(opponent, legioScore, oppScore, ytUrl, tournament, notes) {
+function showLiveBanner(homeTeam, opponent, legioScore, oppScore, ytUrl, tournament, notes) {
   let banner = document.getElementById('live-banner');
   if (!banner) {
     banner = document.createElement('div');
@@ -349,7 +349,7 @@ function showLiveBanner(opponent, legioScore, oppScore, ytUrl, tournament, notes
     // Score
     '<div style="display:flex;align-items:center;justify-content:center;gap:' + (ytEmbed?'40px':'60px') + ';padding:' + (ytEmbed?'16px 20px':'20px') + ';">' +
     '<div style="text-align:center;">' +
-    '<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.6);text-transform:uppercase;margin-bottom:4px;">Legio FC</div>' +
+    '<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.6);text-transform:uppercase;margin-bottom:4px;">' + homeTeam + '</div>' +
     '<div id="live-legio-score" style="font-family:Cinzel,serif;font-size:' + (ytEmbed?'36px':'48px') + ';font-weight:700;color:#f8f6f1;line-height:1;">'+legioScore+'</div>' +
     '</div>' +
     '<div style="font-family:Cinzel,serif;font-size:14px;letter-spacing:4px;color:rgba(218,183,81,0.3);">–</div>' +

@@ -362,11 +362,15 @@
       <div class="match-form" id="match-form">
         <div class="mf-field full">
           <label>Match Title (e.g. Legio FC vs Chivas Alabama)</label>
-          <input type="text" id="mf-title" placeholder="Legio FC vs Opponent">
+          <input type="text" id="mf-title" placeholder="e.g. Legio FC vs Chivas Alabama">
         </div>
         <div class="mf-field">
-          <label>Opponent</label>
-          <input type="text" id="mf-opponent" placeholder="Opponent name">
+          <label>Home Team</label>
+          <input type="text" id="mf-home" placeholder="e.g. Legio FC">
+        </div>
+        <div class="mf-field">
+          <label>Away Team (Opponent)</label>
+          <input type="text" id="mf-opponent" placeholder="e.g. Chivas Alabama">
         </div>
         <div class="mf-field">
           <label>Tournament</label>
@@ -601,7 +605,7 @@ async function loadMatches(){
     await getSiteAndLists();
     if(!matchListId)throw new Error('LegioMatches list not found');
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,Opponent,Tournament,MatchDate,Venue,LegioScore,OpponentScore,Status,YouTubeURL,Notes';
+    const fields='Title,Opponent,HomeTeam,Tournament,MatchDate,Venue,LegioScore,OpponentScore,Status,YouTubeURL,Notes';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -614,7 +618,7 @@ async function loadMatches(){
         Tournament:item.fields.Tournament||'',MatchDate:item.fields.MatchDate||'',
         Venue:item.fields.Venue||'',LegioScore:item.fields.LegioScore,
         OpponentScore:item.fields.OpponentScore,Status:item.fields.Status||'Upcoming',
-        YouTubeURL:item.fields.YouTubeURL||'',Notes:item.fields.Notes||'',
+        YouTubeURL:item.fields.YouTubeURL||'',Notes:item.fields.Notes||'',HomeTeam:item.fields.HomeTeam||'',
       })));
       url=data['@odata.nextLink']||null;
     }
@@ -674,7 +678,7 @@ function openMatchModal(id){
   editingMatchId=null;
   document.getElementById('mm-title').textContent='Add Match';
   document.getElementById('mf-title').value='';
-  document.getElementById('mf-opponent').value='';
+  document.getElementById('mf-opponent').value='';document.getElementById('mf-home').value='';
   document.getElementById('mf-tournament').value='';
   document.getElementById('mf-date').value='';
   document.getElementById('mf-venue').value='';
@@ -691,7 +695,7 @@ function editMatch(id){
   editingMatchId=id;
   document.getElementById('mm-title').textContent='Edit Match';
   document.getElementById('mf-title').value=m.Title||'';
-  document.getElementById('mf-opponent').value=m.Opponent||'';
+  document.getElementById('mf-opponent').value=m.Opponent||'';document.getElementById('mf-home').value=m.HomeTeam||'';
   document.getElementById('mf-tournament').value=m.Tournament||'';
   if(m.MatchDate){const d=new Date(m.MatchDate);d.setHours(d.getHours()-4);document.getElementById('mf-date').value=d.toISOString().slice(0,16);}else{document.getElementById('mf-date').value='';}
   document.getElementById('mf-venue').value=m.Venue||'';
@@ -713,7 +717,7 @@ async function saveMatch(){
     const os=document.getElementById('mf-opp').value;
     const fields={
       Title:document.getElementById('mf-title').value,
-      Opponent:document.getElementById('mf-opponent').value,
+      Opponent:document.getElementById('mf-opponent').value,HomeTeam:document.getElementById('mf-home').value,
       Tournament:document.getElementById('mf-tournament').value,
       Venue:document.getElementById('mf-venue').value,
       Status:document.getElementById('mf-status').value,

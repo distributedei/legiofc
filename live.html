@@ -94,7 +94,11 @@
     </div>
 
     <div class="field">
-      <label>Opponent Name</label>
+      <label>Home Team</label>
+      <input type="text" id="home" placeholder="e.g. Legio FC">
+    </div>
+    <div class="field">
+      <label>Away Team (Opponent)</label>
       <input type="text" id="opponent" placeholder="e.g. Chivas Alabama">
     </div>
 
@@ -104,7 +108,7 @@
     </div>
 
     <div class="score-label" style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;margin-bottom:4px;">
-      <div style="text-align:center;">Legio FC</div>
+      <div style="text-align:center;" id="home-label">Legio FC</div>
       <div></div>
       <div id="opp-label" style="text-align:center;">Opponent</div>
     </div>
@@ -211,7 +215,7 @@ async function loadMatchesForSelect() {
   try {
     await getSiteAndList();
     const h = {Authorization:`Bearer ${token}`};
-    const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items?$expand=fields($select=Title,Opponent,Tournament,LegioScore,OpponentScore,YouTubeURL,Notes,Status,IsLive)&$top=50&$orderby=fields/MatchDate desc`, {headers:h});
+    const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items?$expand=fields($select=Title,Opponent,HomeTeam,Tournament,LegioScore,OpponentScore,YouTubeURL,Notes,Status,IsLive)&$top=50`, {headers:h});
     const data = await res.json();
     const sel = document.getElementById('match-select');
     sel.innerHTML = '<option value="">— Select existing match —</option>';
@@ -220,7 +224,7 @@ async function loadMatchesForSelect() {
       const opt = document.createElement('option');
       opt.value = item.id;
       opt.textContent = `${f.Title||'Untitled'} (${f.Status||'Upcoming'})`;
-      opt.dataset.opponent = f.Opponent||'';
+      opt.dataset.opponent = f.Opponent||'';opt.dataset.home = f.HomeTeam||'';
       opt.dataset.tournament = f.Tournament||'';
       opt.dataset.legio = f.LegioScore!=null?f.LegioScore:0;
       opt.dataset.opp = f.OpponentScore!=null?f.OpponentScore:0;
@@ -237,7 +241,7 @@ function populateFromMatch() {
   const sel = document.getElementById('match-select');
   const opt = sel.options[sel.selectedIndex];
   if (!opt.value) return;
-  document.getElementById('opponent').value = opt.dataset.opponent;
+  document.getElementById('home').value = opt.dataset.home;document.getElementById('opponent').value = opt.dataset.opponent;
   document.getElementById('tournament').value = opt.dataset.tournament;
   document.getElementById('legio-score').value = opt.dataset.legio;
   document.getElementById('opp-score').value = opt.dataset.opp;
@@ -322,7 +326,7 @@ async function endMatch() {
 
 function buildFields(isLive) {
   return {
-    Opponent: document.getElementById('opponent').value,
+    HomeTeam: document.getElementById('home').value,Opponent: document.getElementById('opponent').value,
     Tournament: document.getElementById('tournament').value,
     LegioScore: parseInt(document.getElementById('legio-score').value)||0,
     OpponentScore: parseInt(document.getElementById('opp-score').value)||0,
@@ -333,6 +337,9 @@ function buildFields(isLive) {
   };
 }
 
+document.getElementById('home').addEventListener('input', function() {
+  document.getElementById('home-label').textContent = this.value || 'Home Team';
+});
 document.getElementById('opponent').addEventListener('input', function() {
   document.getElementById('opp-label').textContent = this.value || 'Opponent';
 });
