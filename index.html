@@ -296,19 +296,19 @@ async function pollForLiveMatch() {
     const data = await res.json();
     const items = Array.isArray(data) ? data : (data.value || []);
     const now = new Date();
-    // Auto-trigger: IsLive=true OR has YouTubeURL + MatchDate within window
+    // Flow returns flat objects - fields are at top level
     const autoLive = items.find(i => {
-      const f = i.fields || i;
-      if (!f.YouTubeURL || !f.MatchDate) return false;
-      if (f.Status === 'Final') return false;
-      const matchTime = new Date(f.MatchDate);
+      if (!i.YouTubeURL || !i.MatchDate) return false;
+      if (i.Status === 'Final') return false;
+      const matchTime = new Date(i.MatchDate);
       const diffHours = (now - matchTime) / (1000 * 60 * 60);
+      console.log('Match:', i.Title, 'diff hours:', diffHours.toFixed(2));
       return diffHours >= -0.5 && diffHours <= 3;
     });
-    const manualLive = items.find(i => (i.fields || i).IsLive === true);
+    const manualLive = items.find(i => i.IsLive === true);
     const live = manualLive || autoLive;
     if (live) {
-      const f = live.fields;
+      const f = live;
       if (currentLiveId !== live.id) {
         currentLiveId = live.id;
         showLiveBanner(f.Opponent||'Opponent', f.LegioScore!=null?f.LegioScore:0, f.OpponentScore!=null?f.OpponentScore:0, f.YouTubeURL||'', f.Tournament||'', f.Notes||'');
@@ -316,8 +316,8 @@ async function pollForLiveMatch() {
         // Update scores only
         const ls = document.getElementById('live-legio-score');
         const os = document.getElementById('live-opp-score');
-        if (ls) ls.textContent = f.LegioScore!=null?f.LegioScore:0;
-        if (os) os.textContent = f.OpponentScore!=null?f.OpponentScore:0;
+        if (ls) ls.textContent = live.LegioScore!=null?live.LegioScore:0;
+        if (os) os.textContent = live.OpponentScore!=null?live.OpponentScore:0;
       }
     } else {
       hideLiveBanner();
