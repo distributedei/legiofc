@@ -344,7 +344,7 @@ function showLiveBanner(opponent, legioScore, oppScore, ytUrl, tournament, notes
     '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live Now</span>' +
     (tournament ? '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.35);text-transform:uppercase;">&nbsp;·&nbsp;'+tournament+'</span>' : '') +
     '</div>' +
-    '<button onclick="document.getElementById('live-banner').style.transform='translateY(100%)'" style="background:transparent;border:1px solid rgba(248,246,241,0.2);color:rgba(248,246,241,0.4);width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">✕</button>' +
+    '<button onclick="var b=document.getElementById(\'live-banner\');if(b)b.style.transform=\'translateY(100%)\'" style="background:transparent;border:1px solid rgba(248,246,241,0.2);color:rgba(248,246,241,0.4);width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">✕</button>' +
     '</div>' +
     // Score
     '<div style="display:flex;align-items:center;justify-content:center;gap:' + (ytEmbed?'40px':'60px') + ';padding:' + (ytEmbed?'16px 20px':'20px') + ';">' +
