@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legio FC | ID Camp Registration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --blue:#1c5575;--blue-dark:#163d54;--blue-mid:#1e6085;
+      --gold:#dab751;--gold-bright:#e3ba24;--gold-dim:rgba(218,183,81,0.12);--gold-border:rgba(218,183,81,0.30);
+      --cream:#f8f6f1;--text:rgba(248,246,241,0.85);--text-dim:rgba(248,246,241,0.5);--text-faint:rgba(248,246,241,0.22);
+      --cream-dim:rgba(248,246,241,0.05);--red:#9c1829;
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:var(--blue);min-height:100vh;color:var(--cream);position:relative;overflow-x:hidden}
+
+    /* Ribbon */
+    .ribbon-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+    .ribbon-bg svg{position:absolute;width:150%;height:150%;top:-25%;left:-25%;opacity:0.12}
+
+    /* Nav */
+    nav{position:sticky;top:0;z-index:100;background:rgba(22,61,84,0.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--gold-border);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+    .nav-logo{display:flex;align-items:center;gap:9px;text-decoration:none}
+    .nav-emblem{width:32px;height:32px;border:1px solid var(--gold-border);border-radius:50%;display:flex;align-items:center;justify-content:center}
+    .nav-emblem svg{width:14px;height:14px;fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .nav-main{font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:3px;color:var(--cream)}
+    .nav-sub{font-size:9px;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase}
+    .nav-right{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+
+    /* Page */
+    .page{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:48px 24px 80px}
+
+    /* Header */
+    .form-header{text-align:center;margin-bottom:48px}
+    .form-logo{width:90px;height:90px;margin:0 auto 20px}
+    .form-logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 20px rgba(0,0,0,.4))}
+    .form-eyebrow{font-family:'Cinzel',serif;font-size:10px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;margin-bottom:8px}
+    .form-title{font-family:'Cinzel',serif;font-size:28px;font-weight:600;color:var(--cream);margin-bottom:10px}
+    .gold-rule{width:50px;height:1px;background:var(--gold);opacity:.4;margin:0 auto 16px}
+    .form-sub{font-size:13px;font-weight:300;color:var(--text-dim);line-height:1.7;max-width:480px;margin:0 auto}
+
+    /* Tournament tabs */
+    .tournament-tabs{display:flex;gap:0;margin-bottom:36px;border:1px solid var(--gold-border)}
+    .tab{flex:1;padding:12px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;text-align:center;cursor:pointer;color:var(--text-dim);background:transparent;border:none;transition:all .2s;border-right:1px solid var(--gold-border)}
+    .tab:last-child{border-right:none}
+    .tab.active{background:var(--gold);color:var(--blue-dark);font-weight:700}
+    .tab:not(.active):hover{background:var(--gold-dim);color:var(--gold)}
+
+    /* Form card */
+    .form-card{background:rgba(22,61,84,.5);border:1px solid var(--gold-border);padding:36px;backdrop-filter:blur(8px)}
+
+    /* Section */
+    .form-section{margin-bottom:32px}
+    .section-title{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:20px}
+
+    /* Field grid */
+    .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .field-grid .full{grid-column:1/-1}
+
+    /* Field */
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:9px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint)}
+    .field label span{color:var(--red)}
+    .field input,.field select,.field textarea{
+      padding:11px 14px;
+      background:rgba(248,246,241,.05);
+      border:1px solid var(--gold-border);
+      color:var(--cream);
+      font-family:'Inter',sans-serif;
+      font-size:14px;
+      outline:none;
+      transition:border-color .2s;
+      width:100%;
+    }
+    .field input::placeholder,.field textarea::placeholder{color:var(--text-faint)}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)}
+    .field select option{background:var(--blue-dark);color:var(--cream)}
+    .field textarea{resize:vertical;min-height:100px;line-height:1.6}
+    .field .hint{font-size:11px;color:var(--text-faint);margin-top:2px}
+
+    /* Radio group */
+    .radio-group{display:flex;gap:12px;flex-wrap:wrap}
+    .radio-option{display:flex;align-items:center;gap:8px;cursor:pointer}
+    .radio-option input[type="radio"]{accent-color:var(--gold);width:16px;height:16px;cursor:pointer}
+    .radio-option span{font-size:13px;color:var(--text)}
+
+    /* Submit */
+    .submit-wrap{margin-top:36px;text-align:center}
+    .submit-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;
+      padding:16px 52px;
+      background:transparent;
+      border:1px solid var(--gold);
+      color:var(--gold);
+      font-family:'Cinzel',serif;font-size:11px;font-weight:500;letter-spacing:3px;text-transform:uppercase;
+      cursor:pointer;transition:all .25s;
+      width:100%;
+    }
+    .submit-btn:hover{background:var(--gold);color:var(--blue-dark)}
+    .submit-btn:disabled{opacity:.5;cursor:not-allowed}
+
+    /* States */
+    #success-screen{display:none;text-align:center;padding:60px 20px}
+    .success-icon{font-size:48px;margin-bottom:20px}
+    .success-title{font-family:'Cinzel',serif;font-size:22px;font-weight:600;color:var(--gold);letter-spacing:2px;margin-bottom:12px}
+    .success-sub{font-size:14px;font-weight:300;color:var(--text-dim);line-height:1.7;max-width:400px;margin:0 auto 32px}
+    .back-link{font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-decoration:none;text-transform:uppercase;border:1px solid var(--gold-border);padding:10px 28px;transition:all .2s;display:inline-block}
+    .back-link:hover{background:var(--gold);color:var(--blue-dark)}
+
+    .error-msg{display:none;background:rgba(156,24,41,.15);border:1px solid rgba(156,24,41,.4);color:#e07080;padding:12px 16px;font-size:13px;margin-top:16px;text-align:center}
+
+    /* Progress */
+    .submit-progress{display:none;width:100%;height:2px;background:var(--gold-border);margin-top:12px;overflow:hidden}
+    .submit-progress-bar{height:100%;background:var(--gold);width:0%;animation:progress 1.5s ease-in-out infinite}
+    @keyframes progress{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+
+    @media(max-width:600px){
+      .field-grid{grid-template-columns:1fr}
+      .field-grid .full{grid-column:1}
+      .form-card{padding:24px 18px}
+      .page{padding:32px 16px 60px}
+      .form-title{font-size:22px}
+      .tournament-tabs{flex-direction:column}
+      .tab{border-right:none;border-bottom:1px solid var(--gold-border)}
+      .tab:last-child{border-bottom:none}
+    }
+  </style>
+</head>
+<body>
+
+<div class="ribbon-bg" aria-hidden="true">
+  <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#dab751;stop-opacity:.1"/><stop offset="50%" style="stop-color:#e3ba24;stop-opacity:.7"/><stop offset="100%" style="stop-color:#dab751;stop-opacity:.1"/></linearGradient>
+    </defs>
+    <g opacity=".6"><path stroke="url(#g1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700;M-30,80 Q120,180 270,250 T520,400 T720,520 T870,680;M-70,30 Q80,120 230,180 T480,320 T680,480 T830,720;M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700" dur="20s" repeatCount="indefinite"/></path></g>
+    <g opacity=".35"><path stroke="url(#g1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500;M1050,180 Q880,300 730,380 T480,420 T280,450 T80,520;M1050,220 Q920,230 770,320 T520,480 T320,380 T120,480;M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500" dur="18s" repeatCount="indefinite"/></path></g>
+  </svg>
+</div>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <div class="nav-emblem"><svg viewBox="0 0 24 24"><polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9"/></svg></div>
+    <div>
+      <div class="nav-main">LEGIO FC</div>
+      <div class="nav-sub">Est. MMXXV</div>
+    </div>
+  </a>
+  <div class="nav-right">ID Camp Registration</div>
+</nav>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="form-header">
+    <div class="form-logo"><img src="logo.png" alt="Legio FC" onerror="this.style.display='none'"></div>
+    <p class="form-eyebrow">Player Registration</p>
+    <h1 class="form-title">ID Camp 2025</h1>
+    <div class="gold-rule"></div>
+    <p class="form-sub">Register for a Legio FC ID Camp. Select your tournament below and complete all required fields. We will contact you with camp details.</p>
+  </div>
+
+  <!-- Success screen -->
+  <div id="success-screen">
+    <div class="success-icon">⚔</div>
+    <div class="success-title">Registration Complete</div>
+    <p class="success-sub">You have been added to the Legio FC ID Camp roster. Our staff will be in touch with camp details and next steps.</p>
+    <a href="index.html" class="back-link">Return to Legio FC</a>
+  </div>
+
+  <!-- Form -->
+  <div id="form-wrap">
+    <!-- Tournament selector -->
+    <div class="tournament-tabs">
+      <button class="tab active" onclick="setTournament('TST',this)">TST — The Soccer Tournament</button>
+      <button class="tab" onclick="setTournament('Cary Cup',this)">The Cary Cup</button>
+      <button class="tab" onclick="setTournament('Regional',this)">Regional Tournaments</button>
+    </div>
+
+    <div class="form-card">
+
+      <!-- Player Info -->
+      <div class="form-section">
+        <div class="section-title">Player Information</div>
+        <div class="field-grid">
+          <div class="field">
+            <label>First Name <span>*</span></label>
+            <input type="text" id="firstName" placeholder="First name" required>
+          </div>
+          <div class="field">
+            <label>Last Name <span>*</span></label>
+            <input type="text" id="lastName" placeholder="Last name" required>
+          </div>
+          <div class="field">
+            <label>Date of Birth <span>*</span></label>
+            <input type="text" id="birthDate" placeholder="MM/DD/YYYY" required>
+          </div>
+          <div class="field">
+            <label>Gender <span>*</span></label>
+            <select id="gender" required>
+              <option value="">Select gender</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Non-binary</option>
+              <option>Prefer not to say</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>Current Location (City, State) <span>*</span></label>
+            <input type="text" id="currentLocation" placeholder="e.g. Miami, Florida" required>
+          </div>
+          <div class="field full">
+            <label>ID Camp Location (City, State) <span>*</span></label>
+            <input type="text" id="idCampLocation" placeholder="Where would you like to attend the ID camp?" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playing History -->
+      <div class="form-section">
+        <div class="section-title">Playing History</div>
+        <div class="field-grid">
+          <div class="field full">
+            <label>Current Team & League <span>*</span></label>
+            <input type="text" id="currentTeam" placeholder="e.g. FC Miami UPSL" required>
+          </div>
+          <div class="field full">
+            <label>Past Playing Experience <span>*</span></label>
+            <textarea id="pastExperience" placeholder="Describe your playing background — clubs, leagues, levels, achievements…" required></textarea>
+          </div>
+          <div class="field full">
+            <label>Can You Travel? <span>*</span></label>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="canTravel" value="Yes" required><span>Yes — I have a valid passport / can travel</span></label>
+              <label class="radio-option"><input type="radio" name="canTravel" value="No"><span>No — local only</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="form-section">
+        <div class="section-title">Contact Information</div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Email Address <span>*</span></label>
+            <input type="email" id="email" placeholder="your@email.com" required>
+          </div>
+          <div class="field">
+            <label>Phone Number <span>*</span></label>
+            <input type="tel" id="phone" placeholder="e.g. 3051234567" required>
+            <span class="hint">Include country code for international numbers</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="submit-wrap">
+        <button class="submit-btn" id="submit-btn" onclick="submitForm()">
+          <span id="submit-text">Submit Registration</span>
+        </button>
+        <div class="submit-progress" id="submit-progress"><div class="submit-progress-bar"></div></div>
+        <div class="error-msg" id="error-msg"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIG — paste your Power Automate HTTP trigger URL here
+// ══════════════════════════════════════════════════════════
+const FLOW_URL = 'YOUR-POWER-AUTOMATE-HTTP-TRIGGER-URL-HERE';
+
+let selectedTournament = 'TST';
+
+function setTournament(name, el) {
+  selectedTournament = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function validate() {
+  const required = ['firstName','lastName','birthDate','gender','currentLocation','idCampLocation','currentTeam','email','phone'];
+  for (const id of required) {
+    const el = document.getElementById(id);
+    if (!el.value.trim()) {
+      el.focus();
+      el.style.borderColor = 'rgba(156,24,41,0.8)';
+      setTimeout(() => el.style.borderColor = '', 2000);
+      return false;
+    }
+  }
+  const travel = document.querySelector('input[name="canTravel"]:checked');
+  if (!travel) { showError('Please select whether you can travel.'); return false; }
+  const exp = document.getElementById('pastExperience');
+  if (!exp.value.trim()) { exp.focus(); exp.style.borderColor = 'rgba(156,24,41,0.8)'; setTimeout(() => exp.style.borderColor = '', 2000); return false; }
+  return true;
+}
+
+async function submitForm() {
+  if (!validate()) return;
+
+  const btn = document.getElementById('submit-btn');
+  const progress = document.getElementById('submit-progress');
+  btn.disabled = true;
+  document.getElementById('submit-text').textContent = 'Submitting…';
+  progress.style.display = 'block';
+  hideError();
+
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName  = document.getElementById('lastName').value.trim();
+
+  const payload = {
+    FullName:        `${firstName} ${lastName}`,
+    LastName:        lastName,
+    BirthDate:       document.getElementById('birthDate').value.trim(),
+    Gender:          document.getElementById('gender').value,
+    Email:           document.getElementById('email').value.trim(),
+    Phone:           document.getElementById('phone').value.trim(),
+    CurrentLocation: document.getElementById('currentLocation').value.trim(),
+    IDCampLocation:  document.getElementById('idCampLocation').value.trim(),
+    CurrentTeam:     document.getElementById('currentTeam').value.trim(),
+    PastExperience:  document.getElementById('pastExperience').value.trim(),
+    CanTravel:       document.querySelector('input[name="canTravel"]:checked').value,
+    Tournament:      selectedTournament,
+    SubmittedDate:   new Date().toISOString(),
+  };
+
+  try {
+    const res = await fetch(FLOW_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok || res.status === 202) {
+      document.getElementById('form-wrap').style.display = 'none';
+      document.getElementById('success-screen').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      throw new Error(`Server error: ${res.status}`);
+    }
+  } catch (e) {
+    showError('Submission failed. Please try again or contact operations@legiofc.com');
+    btn.disabled = false;
+    document.getElementById('submit-text').textContent = 'Submit Registration';
+    progress.style.display = 'none';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+// Pre-select tournament from URL param
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const t = params.get('t');
+  if (t) {
+    const map = {'TST':'TST','CaryCup':'Cary Cup','Regional':'Regional'};
+    const name = map[t];
+    if (name) {
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.textContent.includes(name === 'TST' ? 'TST' : name === 'Cary Cup' ? 'Cary' : 'Regional')) {
+          tab.classList.add('active');
+          selectedTournament = name;
+        }
+      });
+    }
+  }
+})();
+</script>
+</body>
+</html>
