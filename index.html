@@ -581,43 +581,6 @@ function selectLiveGame(idx) {
 // Start polling - v2
 pollForLiveMatch();
 liveInterval = setInterval(pollForLiveMatch, 30000);
-
-function openStreamOverlay(ytUrl, home, away, homeScore, awayScore, tournament) {
-  const overlay = document.getElementById('stream-overlay');
-  if (!overlay) return;
-  // Normalize URL to embed format
-  var embedUrl = ytUrl.replace('watch?v=','embed/').split('&')[0];
-  // Stream iframe
-  var streamIframe = document.getElementById('stream-iframe');
-  if (streamIframe) streamIframe.src = embedUrl + '?autoplay=1&mute=0';
-  // Chat iframe
-  var chatIframe = document.getElementById('chat-iframe');
-  if (chatIframe) {
-    var videoId = embedUrl.split('/embed/')[1] || '';
-    chatIframe.src = videoId ? 'https://www.youtube.com/live_chat?v=' + videoId + '&embed_domain=' + window.location.hostname : '';
-  }
-  // Scores
-  var homeEl = document.getElementById('overlay-home-score');
-  var awayEl = document.getElementById('overlay-away-score');
-  var tournEl = document.getElementById('overlay-tournament');
-  var matchEl = document.getElementById('overlay-match-title');
-  if (homeEl) homeEl.textContent = homeScore != null ? homeScore : '0';
-  if (awayEl) awayEl.textContent = awayScore != null ? awayScore : '0';
-  if (tournEl) tournEl.textContent = tournament || '';
-  if (matchEl) matchEl.textContent = (home||'Legio FC') + ' vs ' + (away||'');
-  overlay.style.display = 'block';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeStreamOverlay() {
-  var overlay = document.getElementById('stream-overlay');
-  if (overlay) overlay.style.display = 'none';
-  var streamIframe = document.getElementById('stream-iframe');
-  if (streamIframe) streamIframe.src = '';
-  var chatIframe = document.getElementById('chat-iframe');
-  if (chatIframe) chatIframe.src = '';
-  document.body.style.overflow = '';
-}
 </script>
 
 <!-- VIDEO MODAL -->
@@ -640,6 +603,41 @@ function closeVideoModal(e) {
     document.getElementById('video-modal').style.display = 'none';
     document.getElementById('video-iframe').src = '';
   }
+}
+function openStreamOverlay(ytUrl, home, away, homeScore, awayScore, tournament) {
+  var overlay = document.getElementById('stream-overlay');
+  if (!overlay) return;
+  var embedUrl = ytUrl.replace('watch?v=','embed/').split('&')[0];
+  var streamIframe = document.getElementById('stream-iframe');
+  if (streamIframe) streamIframe.src = embedUrl + '?autoplay=1';
+  var chatIframe = document.getElementById('chat-iframe');
+  if (chatIframe) {
+    var videoId = embedUrl.split('/embed/')[1] || '';
+    chatIframe.src = videoId ? 'https://www.youtube.com/live_chat?v=' + videoId + '&embed_domain=' + window.location.hostname : '';
+  }
+  var ytLink = document.getElementById('stream-yt-link');
+  if (ytLink) ytLink.href = ytUrl;
+  var homeEl = document.getElementById('stream-home-score');
+  var awayEl = document.getElementById('stream-away-score');
+  var homeNameEl = document.getElementById('stream-home');
+  var awayNameEl = document.getElementById('stream-away');
+  var tournEl = document.getElementById('stream-tournament');
+  if (homeEl) homeEl.textContent = homeScore != null ? homeScore : '0';
+  if (awayEl) awayEl.textContent = awayScore != null ? awayScore : '0';
+  if (homeNameEl) homeNameEl.textContent = home || 'Legio FC';
+  if (awayNameEl) awayNameEl.textContent = away || 'Opponent';
+  if (tournEl) tournEl.textContent = tournament || '';
+  overlay.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+function closeStreamOverlay() {
+  var overlay = document.getElementById('stream-overlay');
+  if (overlay) overlay.style.display = 'none';
+  var streamIframe = document.getElementById('stream-iframe');
+  if (streamIframe) streamIframe.src = '';
+  var chatIframe = document.getElementById('chat-iframe');
+  if (chatIframe) chatIframe.src = '';
+  document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => { if(e.key==='Escape') { closeVideoModal(); closeStreamOverlay(); } });
 </script>
