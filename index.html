@@ -117,6 +117,13 @@
             .videos-grid{flex-direction:column;align-items:center}
             .video-container{width:100%;max-width:300px}
             .channel-links{flex-direction:column;align-items:center;gap:10px}
+            /* Matches table — horizontal scroll, compact */
+            #schedule-section{overflow-x:auto;}
+            #schedule-section table{min-width:420px;font-size:10px;}
+            #schedule-section th,#schedule-section td{padding:6px 8px !important;}
+            /* Logo badge lockup — scale down */
+            .partner-badge{width:130px !important;height:130px !important;}
+            .partner-x{width:28px !important;height:28px !important;}
         }
     </style>
 </head>
@@ -166,22 +173,24 @@
             </div>
         </div>
 
+        <div class="divider-line"></div>
+
         <!-- MAMA AFRICA PARTNERSHIP -->
         <div class="tst-announcement" style="margin-bottom:50px;">
             <div class="tst-card">
                 <div class="tst-inner">
                     <!-- LOGO X LOCKUP HEADER -->
-                    <div style="display:flex;align-items:center;justify-content:center;gap:0;margin:0 0 28px;flex-wrap:wrap;">
-                        <div style="flex:0 0 auto;width:240px;height:240px;border-radius:50%;overflow:hidden;border:2px solid rgba(218,183,81,0.4);background:#fff;">
+                    <div class="partner-logo-lockup" style="display:flex;align-items:center;justify-content:center;gap:0;margin:0 0 28px;flex-wrap:wrap;">
+                        <div class="partner-badge" style="flex:0 0 auto;width:240px;height:240px;border-radius:50%;overflow:hidden;border:2px solid rgba(218,183,81,0.4);background:#fff;">
                             <img src="legio-logo-crest.jpg" alt="Legio FC" style="width:100%;height:100%;object-fit:cover;display:block;">
                         </div>
                         <div style="flex:0 0 auto;padding:0 24px;">
-                            <svg width="48" height="48" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                            <svg class="partner-x" width="48" height="48" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
                                 <line x1="4" y1="4" x2="32" y2="32" stroke="#dab751" stroke-width="4" stroke-linecap="round"/>
                                 <line x1="32" y1="4" x2="4" y2="32" stroke="#dab751" stroke-width="4" stroke-linecap="round"/>
                             </svg>
                         </div>
-                        <div style="flex:0 0 auto;width:240px;height:240px;border-radius:50%;overflow:hidden;border:2px solid rgba(218,183,81,0.4);background:#000;">
+                        <div class="partner-badge" style="flex:0 0 auto;width:240px;height:240px;border-radius:50%;overflow:hidden;border:2px solid rgba(218,183,81,0.4);background:#000;">
                             <img src="mama-africa-logo.jpg" alt="Mama Africa FC" style="width:100%;height:100%;object-fit:cover;display:block;">
                         </div>
                     </div>
@@ -202,6 +211,8 @@
                 </div>
             </div>
         </div>
+
+        <div class="divider-line"></div>
 
         <!-- DSTBTD STREAMING PARTNER -->
         <div class="tst-announcement" style="margin-bottom:50px;">
@@ -232,6 +243,8 @@
                 </div>
             </div>
         </div>
+
+        <div class="divider-line"></div>
 
         <!-- COPA LOBOS SECTION -->
         <div class="tst-announcement" style="margin-bottom:50px;">
@@ -291,6 +304,8 @@
             </div>
         </div>
 
+        <div class="divider-line"></div>
+
         <!-- SCHEDULE / LIVE GAMES TABLE -->
         <div id="schedule-section" style="margin-bottom:50px;">
           <div style="background:rgba(22,61,84,0.5);border:1px solid rgba(218,183,81,0.28);position:relative;">
@@ -322,6 +337,7 @@
           </div>
         </div>
 
+        <div class="divider-line"></div>
 
         <p class="section-label">Player ID Camps</p>
         <div class="camps-grid">
@@ -338,6 +354,8 @@
                 <a href="register.html?t=Regional" class="btn-camp">ID Camps</a>
             </div>
         </div>
+
+        <div class="divider-line"></div>
 
         <div class="supporters-section">
             <p class="section-label">Supporters</p>
