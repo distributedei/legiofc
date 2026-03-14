@@ -284,6 +284,7 @@
 const LIVE_FLOW_URL = 'https://default99b5fc0cbe854531a7debc8da0002e.c2.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/507f2fd745364b0bba4ef0690af99fe5/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=BZ_EsIeyOHWrS-Nu5kHxoHdgiUjhoQ1cSFFSjPNSgD4';
 let liveInterval = null;
 let currentLiveId = null;
+let dismissedIds = new Set(); // tracks permanently dismissed matches
 
 async function pollForLiveMatch() {
   try {
@@ -305,12 +306,21 @@ async function pollForLiveMatch() {
       console.log('Match:', i.Title, 'diff hours:', diffHours.toFixed(2));
       return diffHours >= -0.5 && diffHours <= 3;
     });
-    const manualLive = items.find(i => i.IsLive === true);
+    const manualLive = items.find(i => i.IsLive === true && !dismissedIds.has(i.ID));
     const live = manualLive || autoLive;
-    if (live) {
+    // Build live games section from all active matches
+    const allLive = items.filter(i => {
+      if (i.Status === 'Final') return false;
+      if (!i.YouTubeURL) return false;
+      const mt = new Date(i.MatchDate);
+      const diff = (new Date() - mt) / (1000*60*60);
+      return diff >= -0.5 && diff <= 3;
+    });
+    renderLiveGamesList(allLive);
+    if (live && !dismissedIds.has(live.ID)) {
       const f = live;
-      if (currentLiveId !== live.id) {
-        currentLiveId = live.id;
+      if (currentLiveId !== live.ID) {
+        currentLiveId = live.ID;
         showLiveBanner(f.HomeTeam||'Legio FC', f.Opponent||'Opponent', f.LegioScore!=null?f.LegioScore:0, f.OpponentScore!=null?f.OpponentScore:0, f.YouTubeURL||'', f.Tournament||'', f.Notes||'');
       } else {
         // Update scores only
@@ -344,7 +354,7 @@ function showLiveBanner(homeTeam, opponent, legioScore, oppScore, ytUrl, tournam
     '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live Now</span>' +
     (tournament ? '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.35);text-transform:uppercase;">&nbsp;·&nbsp;'+tournament+'</span>' : '') +
     '</div>' +
-    '<button onclick="hideLiveBanner()" style="background:transparent;border:1px solid rgba(248,246,241,0.2);color:rgba(248,246,241,0.4);width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">X</button>' +
+    '<button onclick="hideLiveBanner(true)" style="background:transparent;border:1px solid rgba(248,246,241,0.2);color:rgba(248,246,241,0.4);width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">X</button>' +
     '</div>' +
     // Score
     '<div style="display:flex;align-items:center;justify-content:center;gap:' + (ytEmbed?'40px':'60px') + ';padding:' + (ytEmbed?'16px 20px':'20px') + ';">' +
@@ -368,9 +378,55 @@ function showLiveBanner(homeTeam, opponent, legioScore, oppScore, ytUrl, tournam
     '<style>@keyframes livepls{0%,100%{opacity:1}50%{opacity:.3}}</style>';
 }
 
-function hideLiveBanner() {
+function hideLiveBanner(permanent) {
   const banner = document.getElementById('live-banner');
-  if (banner) { banner.style.transform = 'translateY(100%)'; currentLiveId = null; }
+  if (banner) {
+    banner.style.transform = 'translateY(100%)';
+    if (permanent && currentLiveId) dismissedIds.add(currentLiveId);
+    currentLiveId = null;
+  }
+}
+
+function switchLiveGame(item) {
+  dismissedIds.clear(); // allow showing when manually selecting
+  currentLiveId = null;
+  showLiveBanner(item.HomeTeam||'Legio FC', item.Opponent||'Opponent', item.LegioScore!=null?item.LegioScore:0, item.OpponentScore!=null?item.OpponentScore:0, item.YouTubeURL||'', item.Tournament||'', item.Notes||'');
+  currentLiveId = item.ID;
+}
+
+function renderLiveGamesList(matches) {
+  let section = document.getElementById('live-games-list');
+  if (!section) {
+    section = document.createElement('div');
+    section.id = 'live-games-list';
+    // Insert before the TST announcement
+    const tst = document.querySelector('.tst-announcement');
+    if (tst) tst.parentNode.insertBefore(section, tst);
+  }
+  if (!matches || matches.length === 0) { section.innerHTML = ''; return; }
+  section.style.cssText = 'margin-bottom:40px;';
+  section.innerHTML =
+    '<div style="background:rgba(22,61,84,0.5);border:1px solid rgba(76,175,80,0.3);padding:16px 24px;position:relative;">' +
+    '<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+    '<span style="width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;animation:livepls 1s ease-in-out infinite;"></span>' +
+    '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live & Upcoming</span>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;">' +
+    matches.map(m => {
+      const mt = new Date(m.MatchDate);
+      const diff = (new Date() - mt) / (1000*60*60);
+      const isLive = diff >= -0.5;
+      const timeStr = isLive ? 'Live Now' : mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      const isActive = currentLiveId === m.ID;
+      return '<div onclick="switchLiveGame(' + JSON.stringify(m).replace(/'/g,"\'") + ')" style="cursor:pointer;border:1px solid ' + (isActive?'#4caf50':'rgba(218,183,81,0.25)') + ';background:' + (isActive?'rgba(76,175,80,0.1)':'rgba(22,61,84,0.4)') + ';padding:10px 16px;transition:all .2s;min-width:200px;" onmouseover="this.style.borderColor='#4caf50'" onmouseout="this.style.borderColor='' + (isActive?'#4caf50':'rgba(218,183,81,0.25)') + ''">' +
+        '<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:' + (isLive?'#4caf50':'rgba(218,183,81,0.7)') + ';text-transform:uppercase;margin-bottom:4px;">' + timeStr + (m.Tournament?' · '+m.Tournament:'') + '</div>' +
+        '<div style="font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:1px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.4);font-size:9px;">vs</span> ' + (m.Opponent||'TBD') + '</div>' +
+        '</div>';
+    }).join('') +
+    '</div>' +
+    '<div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
+    '</div>';
 }
 
 // Start polling
