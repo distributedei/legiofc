@@ -265,6 +265,38 @@
             </div>
         </div>
 
+        <!-- SCHEDULE / LIVE GAMES TABLE -->
+        <div id="schedule-section" style="margin-bottom:50px;">
+          <div style="background:rgba(22,61,84,0.5);border:1px solid rgba(218,183,81,0.28);position:relative;">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#dab751,transparent);"></div>
+            <div style="padding:16px 24px;border-bottom:1px solid rgba(218,183,81,0.15);display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span id="schedule-live-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(218,183,81,0.4);display:inline-block;"></span>
+                <span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;">Upcoming Matches</span>
+              </div>
+              <span id="schedule-count" style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:rgba(218,183,81,0.4);text-transform:uppercase;"></span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;">
+                <thead>
+                  <tr style="background:rgba(22,61,84,0.6);border-bottom:1px solid rgba(218,183,81,0.12);">
+                    <th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Status</th>
+                    <th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Match</th>
+                    <th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Tournament</th>
+                    <th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Date & Time</th>
+                    <th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Venue</th>
+                    <th style="padding:8px 16px;text-align:center;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Watch</th>
+                  </tr>
+                </thead>
+                <tbody id="schedule-tbody">
+                  <tr><td colspan="6" style="padding:24px;text-align:center;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.3);text-transform:uppercase;">Loading matches...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+
         <div class="supporters-section">
             <p class="section-label">Supporters</p>
             <p class="supporters-text">Come watch us play in our next tournament</p>
@@ -285,6 +317,62 @@ const LIVE_FLOW_URL = 'https://default99b5fc0cbe854531a7debc8da0002e.c2.environm
 let liveInterval = null;
 let currentLiveId = null;
 let dismissedIds = new Set(); // tracks permanently dismissed matches
+
+
+function renderScheduleTable(items) {
+  const tbody = document.getElementById('schedule-tbody');
+  const countEl = document.getElementById('schedule-count');
+  const dotEl = document.getElementById('schedule-live-dot');
+  if (!tbody) return;
+
+  // Show all non-final matches
+  const matches = (items||[]).filter(i => i.Status !== 'Final');
+  if (!matches.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.3);text-transform:uppercase;">No upcoming matches scheduled</td></tr>';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+
+  const now = new Date();
+  const hasLive = matches.some(m => {
+    const mt = new Date(m.MatchDate);
+    const diff = (now - mt) / (1000*60*60);
+    return diff >= -0.5 && diff <= 3;
+  });
+
+  if (dotEl) {
+    dotEl.style.background = hasLive ? '#4caf50' : 'rgba(218,183,81,0.4)';
+    dotEl.style.animation = hasLive ? 'livepls 1s ease-in-out infinite' : 'none';
+  }
+  if (countEl) countEl.textContent = matches.length + ' match' + (matches.length>1?'es':'');
+
+  // Sort: live first, then by date
+  matches.sort((a,b) => new Date(a.MatchDate) - new Date(b.MatchDate));
+
+  tbody.innerHTML = matches.map((m, idx) => {
+    const mt = new Date(m.MatchDate);
+    const diff = (now - mt) / (1000*60*60);
+    const isLive = diff >= -0.5 && diff <= 3;
+    const dateStr = mt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' · ' + mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const statusHtml = isLive
+      ? '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#4caf50;animation:livepls 1s ease-in-out infinite;display:inline-block;"></span><span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:#4caf50;text-transform:uppercase;">Live</span></span>'
+      : '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(218,183,81,0.45);text-transform:uppercase;">Upcoming</span>';
+    const watchBtn = m.YouTubeURL
+      ? '<button onclick="selectLiveGame(' + idx + ')" style="background:' + (isLive?'#4caf50':'transparent') + ';border:1px solid ' + (isLive?'#4caf50':'rgba(218,183,81,0.3)') + ';color:' + (isLive?'#fff':'#dab751') + ';padding:5px 14px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:all .2s;" onmouseover="this.style.background='rgba(218,183,81,0.1)'" onmouseout="this.style.background='' + (isLive?'#4caf50':'transparent') + ''">&#9654; Watch</button>'
+      : '<span style="font-size:11px;color:rgba(218,183,81,0.2);">—</span>';
+    return '<tr style="border-bottom:1px solid rgba(218,183,81,0.06);background:' + (isLive?'rgba(76,175,80,0.05)':'transparent') + ';transition:background .15s;" onmouseover="this.style.background='rgba(248,246,241,0.03)'" onmouseout="this.style.background='' + (isLive?'rgba(76,175,80,0.05)':'transparent') + ''">' +
+      '<td style="padding:12px 16px;">' + statusHtml + '</td>' +
+      '<td style="padding:12px 16px;font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:.5px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 4px;">vs</span> ' + (m.Opponent||'TBD') + '</td>' +
+      '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + (m.Tournament||'—') + '</td>' +
+      '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + dateStr + '</td>' +
+      '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + (m.Venue||'—') + '</td>' +
+      '<td style="padding:12px 16px;text-align:center;">' + watchBtn + '</td>' +
+      '</tr>';
+  }).join('');
+
+  // Store for selectLiveGame
+  window._liveMatches = matches;
+}
 
 async function pollForLiveMatch() {
   try {
@@ -317,6 +405,7 @@ async function pollForLiveMatch() {
       return diff >= -0.5 && diff <= 3;
     });
     renderLiveGamesList(allLive);
+    renderScheduleTable(items);
     if (live && !dismissedIds.has(live.ID)) {
       const f = live;
       if (currentLiveId !== live.ID) {
