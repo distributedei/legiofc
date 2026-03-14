@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Legio FC | Fix Youssef</title>
+  <script src="https://unpkg.com/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
+  <style>
+    body{font-family:sans-serif;background:#163d54;color:#f8f6f1;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+    .card{background:rgba(28,85,117,.6);border:1px solid rgba(218,183,81,.3);padding:32px;max-width:500px;width:100%;text-align:center}
+    h2{color:#dab751;margin-bottom:16px;letter-spacing:2px}
+    button{padding:12px 28px;background:#dab751;color:#163d54;border:none;cursor:pointer;font-weight:700;font-size:14px;margin:8px;width:100%}
+    button:disabled{opacity:.4}
+    .log{margin-top:16px;font-family:monospace;font-size:13px;text-align:left}
+    .ok{color:#4caf50} .err{color:#e57373}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>FIX — YOUSSEF NACIRI</h2>
+  <button id="signin-btn" onclick="signIn()">Sign In with Microsoft</button>
+  <button id="upload-btn" onclick="upload()" disabled>Upload Record</button>
+  <div class="log" id="log"></div>
+</div>
+<script>
+const RECORDS = [
+  {
+    "FullName": "Youssef Naciri",
+    "LastName": "Naciri",
+    "BirthDate": "12/10/1993",
+    "Gender": "Male",
+    "Email": "youssef.naciri9@gmail.com",
+    "CurrentLocation": "Washington DC",
+    "IDCampLocation": "District of Columbia",
+    "CurrentTeam": "MISL Pro",
+    "PastExperience": "7+ year indoor pro (MASL and MISL). Won 100k Golden Goal Tournament Toronto. USL Harrisburg City Islanders 2016-2017. Icelandic first division 2017-2018. Botola Pro Morocco 2019-2020. Under 16 Moroccan National Team. D1 and D2 soccer scholarships.",
+    "CanTravel": "Yes"
+  }
+];
+const msal_ = new msal.PublicClientApplication({
+  auth:{ clientId:'b1c58e0f-4e20-40e8-be74-5c231a030a90', authority:'https://login.microsoftonline.com/99b5fc0c-be85-4531-a7de-bc8da0002ec2', redirectUri: window.location.href.split('?')[0] },
+  cache:{ cacheLocation:'sessionStorage' }
+});
+const req = { scopes:['Sites.ReadWrite.All','User.Read'] };
+async function init(){ await msal_.initialize(); if(msal_.getAllAccounts().length) document.getElementById('upload-btn').disabled=false; }
+async function signIn(){ await msal_.initialize(); await msal_.loginPopup(req); document.getElementById('upload-btn').disabled=false; document.getElementById('signin-btn').style.display='none'; }
+async function upload(){
+  document.getElementById('upload-btn').disabled=true;
+  const t = (await msal_.acquireTokenSilent({...req,account:msal_.getAllAccounts()[0]})).accessToken;
+  const h = {Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
+  const site = await (await fetch('https://graph.microsoft.com/v1.0/sites/legiofc.sharepoint.com',{headers:h})).json();
+  const lists = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=displayName eq 'IDCampRoster'&$select=id`,{headers:h})).json();
+  const lid = lists.value[0].id;
+  for(const p of RECORDS){
+    const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${lid}/items`,{
+      method:'POST',headers:h,
+      body:JSON.stringify({fields:{Title:p.FullName,LastName:p.LastName,BirthDate:p.BirthDate,Gender:p.Gender,Email:p.Email,CurrentLocation:p.CurrentLocation,IDCampLocation:p.IDCampLocation,CurrentTeam:p.CurrentTeam,PastExperience:p.PastExperience,CanTravel:p.CanTravel}})});
+    const d=await res.json();
+    const div=document.createElement('div');
+    div.className=res.ok?'ok':'err';
+    div.textContent=res.ok?`✓ ${p.FullName}`:`✗ ${p.FullName}: ${d.error?.message}`;
+    document.getElementById('log').appendChild(div);
+  }
+}
+init();
+</script>
+</body>
+</html>
