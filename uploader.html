@@ -2,78 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Legio FC | Re-Upload Full Dataset</title>
+  <title>Legio FC | Data Uploader</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     :root{--blue:#1c5575;--blue-dark:#163d54;--gold:#dab751;--gold-border:rgba(218,183,81,0.3);--cream:#f8f6f1;--text-dim:rgba(248,246,241,0.5)}
-    body{font-family:'Inter',sans-serif;background:var(--blue-dark);color:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 20px}
+    body{font-family:'Inter',sans-serif;background:var(--blue-dark);color:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
     .card{background:rgba(22,61,84,.6);border:1px solid var(--gold-border);padding:36px 40px;width:100%;max-width:700px;margin-bottom:20px}
     h1{font-family:'Cinzel',serif;font-size:18px;letter-spacing:3px;color:var(--gold);margin-bottom:8px}
-    .sub{font-size:13px;color:var(--text-dim);margin-bottom:24px;line-height:1.6}
-    .fields-list{font-size:11px;color:var(--text-dim);margin-bottom:20px;padding:12px;background:rgba(0,0,0,.2);border:1px solid var(--gold-border)}
-    .fields-list span{color:var(--gold);margin-right:8px}
-    .ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 28px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;width:100%;margin-bottom:10px}
+    .sub{font-size:13px;color:var(--text-dim);margin-bottom:20px;line-height:1.6}
+    .fields{font-size:11px;color:var(--text-dim);margin-bottom:20px;padding:12px;background:rgba(0,0,0,.2);border:1px solid var(--gold-border);line-height:1.8}
+    .fields strong{color:var(--cream);display:block;margin-bottom:4px}
+    .fields span{color:var(--gold);margin-right:8px}
+    .ms-btn{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;width:100%;margin-bottom:10px}
     .ms-btn:hover{background:var(--gold);color:var(--blue-dark)}
-    .upload-btn{display:flex;align-items:center;justify-content:center;padding:14px;background:var(--gold);color:var(--blue-dark);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;width:100%;font-weight:700;margin-bottom:10px}
-    .upload-btn:disabled{opacity:.4;cursor:not-allowed}
-    .delete-btn{display:flex;align-items:center;justify-content:center;padding:10px;background:transparent;color:#e57373;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid rgba(229,115,115,.4);width:100%;margin-bottom:10px}
-    .delete-btn:hover{background:rgba(229,115,115,.1)}
-    .delete-btn:disabled{opacity:.4;cursor:not-allowed}
+    .del-btn{display:flex;align-items:center;justify-content:center;padding:11px;background:transparent;color:#e57373;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid rgba(229,115,115,.4);width:100%;margin-bottom:10px;transition:background .2s}
+    .del-btn:hover{background:rgba(229,115,115,.1)}
+    .del-btn:disabled,.up-btn:disabled{opacity:.4;cursor:not-allowed}
+    .up-btn{display:flex;align-items:center;justify-content:center;padding:14px;background:var(--gold);color:var(--blue-dark);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;width:100%;font-weight:700;margin-bottom:10px;transition:background .2s}
+    .up-btn:hover{background:#c9a643}
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
     .stat{background:rgba(0,0,0,.2);border:1px solid var(--gold-border);padding:12px;text-align:center}
     .stat-val{font-family:'Cinzel',serif;font-size:24px;color:var(--gold)}
     .stat-label{font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-top:4px}
-    .progress-wrap{background:rgba(0,0,0,.3);height:6px;border-radius:3px;margin:14px 0 8px;overflow:hidden}
-    .progress-bar{height:100%;background:var(--gold);width:0%;transition:width .2s;border-radius:3px}
+    .pw{background:rgba(0,0,0,.3);height:6px;border-radius:3px;margin:14px 0 8px;overflow:hidden}
+    .pb{height:100%;background:var(--gold);width:0%;transition:width .2s;border-radius:3px}
     .status{font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:10px;min-height:18px}
-    .log{background:rgba(0,0,0,.3);border:1px solid var(--gold-border);padding:14px;max-height:280px;overflow-y:auto;font-size:11px;font-family:monospace}
-    .ok{color:#4caf50} .err{color:#e57373} .info{color:var(--gold)}
+    .log{background:rgba(0,0,0,.3);border:1px solid var(--gold-border);padding:14px;max-height:300px;overflow-y:auto;font-size:11px;font-family:monospace}
+    .ok{color:#4caf50}.err{color:#e57373}.info{color:var(--gold)}
     .user-row{display:none;align-items:center;gap:10px;padding:8px 14px;background:rgba(218,183,81,.08);border:1px solid var(--gold-border);margin-bottom:16px;font-size:12px}
     .av{width:26px;height:26px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--blue-dark)}
   </style>
 </head>
 <body>
 <div class="card">
-  <h1>LEGIO FC — FULL RE-UPLOAD</h1>
-  <p class="sub">Deletes all existing IDCampRoster items and re-uploads all 58 records with complete data including phone numbers and submission dates.</p>
-
-  <div class="fields-list">
-    <strong style="color:var(--cream);display:block;margin-bottom:6px;">Fields included in this upload:</strong>
+  <h1>LEGIO FC — DATA UPLOADER</h1>
+  <p class="sub">Clears the IDCampRoster SharePoint list and re-uploads all 58 records with complete data. Run Step 1 first, then Step 2.</p>
+  <div class="fields">
+    <strong>Fields included:</strong>
     <span>FullName</span><span>LastName</span><span>BirthDate</span><span>Gender</span>
     <span>Email</span><span>Phone</span><span>CurrentLocation</span><span>IDCampLocation</span>
     <span>CurrentTeam</span><span>PastExperience</span><span>CanTravel</span><span>SubmittedDate</span>
   </div>
-
   <div class="stats">
     <div class="stat"><div class="stat-val">58</div><div class="stat-label">Records</div></div>
     <div class="stat"><div class="stat-val" id="s-done">0</div><div class="stat-label">Uploaded</div></div>
     <div class="stat"><div class="stat-val" id="s-err">0</div><div class="stat-label">Errors</div></div>
   </div>
-
-  <div class="user-row" id="user-row">
-    <div class="av" id="av"></div>
-    <span id="uname"></span>
-  </div>
-
+  <div class="user-row" id="user-row"><div class="av" id="av"></div><span id="uname"></span></div>
   <button class="ms-btn" id="signin-btn" onclick="signIn()">
     <svg width="17" height="17" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
     Sign In with Microsoft
   </button>
-
-  <button class="delete-btn" id="delete-btn" onclick="deleteAll()" disabled>Step 1 — Delete All Existing Records</button>
-  <button class="upload-btn" id="upload-btn" onclick="uploadAll()" disabled>Step 2 — Upload 58 Records (Full Dataset)</button>
-
-  <div class="progress-wrap"><div class="progress-bar" id="pbar"></div></div>
+  <button class="del-btn" id="del-btn" onclick="deleteAll()" disabled>Step 1 — Delete All Existing Records</button>
+  <button class="up-btn" id="up-btn" onclick="uploadAll()" disabled>Step 2 — Upload All 58 Records</button>
+  <div class="pw"><div class="pb" id="pb"></div></div>
   <div class="status" id="status">Sign in to begin</div>
   <div class="log" id="log"></div>
 </div>
-
 <script>
-const CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
-const TENANT_ID = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
-const RECORDS = [
+const CLIENT_ID='b1c58e0f-4e20-40e8-be74-5c231a030a90';
+const TENANT_ID='99b5fc0c-be85-4531-a7de-bc8da0002ec2';
+const RECORDS=[
   {
     "FullName": "Sean Harrington",
     "LastName": "Harrington",
@@ -364,7 +355,7 @@ const RECORDS = [
     "CurrentLocation": "Fort Worth, Texas",
     "IDCampLocation": "PIT Frisco, Texas.",
     "CurrentTeam": "Tenfifteen UPSL / Denton Diablos USL2",
-    "PastExperience": "I played in Barcelona, Spain through youth (highest division played preferente) and senior teams up until 22 years old (highest division Primera Catalana). Then came over to the United States for College NAIA school in Kansas called Sterling College in 2020/21 & 2021/22. Graduated and went down to University of Houston-Victoria from 2022/23 & 2023. Graduated December of 2023 moved up to Dallas/Fort Worth and played under Michel Garbini at Foro up until he got promoted to FC Dallas first team and",
+    "PastExperience": "Played in Barcelona Spain through youth and senior teams. NAIA Sterling College 2020-2022. University of Houston-Victoria 2022-2023. Played under Michel Garbini at Foro until he was promoted to FC Dallas.",
     "CanTravel": "Yes",
     "SubmittedDate": "2025-11-25T11:45:45Z"
   },
@@ -742,7 +733,7 @@ const RECORDS = [
     "CurrentLocation": "Freeport, Florida",
     "IDCampLocation": "Unk",
     "CurrentTeam": "Trident FC / TST",
-    "PastExperience": "I played in TST the last 2 years with Trident FC and Kingdom FC. I played against premier league winners, Sergio Aguero, atletico Madrid, pro indoor teams, etc. I have vast experience with numerous players (playing both against and with) involved with TST.",
+    "PastExperience": "Played TST last 2 years with Trident FC and Kingdom FC. Played against premier league winners, Sergio Aguero, Atletico Madrid, pro indoor teams.",
     "CanTravel": "Yes",
     "SubmittedDate": "2026-01-29T15:36:52Z"
   },
@@ -826,7 +817,7 @@ const RECORDS = [
     "CurrentLocation": "Washington DC",
     "IDCampLocation": "District of Columbia",
     "CurrentTeam": "MISL Pro",
-    "PastExperience": "Current 7+ year indoor pro player ( mostly MASL and MISL ) \ncompeting in top-level tournaments in Colombia, Mexico, Philippines, Canada , USA , France and Morocco, including major prize-money events where I won titles . My most recent one the 100k Golden Goal Tournament in Toronto in Canada where we reached the finals and I captained the team \n\n\nProfessional Soccer Player in the USL for the Harrisburg City Islanders 2016-2017.\nReynir S in the Icelandic first division 2017-2018\nRacing Casablanca ",
+    "PastExperience": "7+ year indoor pro (MASL and MISL). Won 100k Golden Goal Tournament Toronto. USL Harrisburg City Islanders 2016-2017. Icelandic first division 2017-2018. Botola Pro Morocco 2019-2020. Under 16 Moroccan National Team.",
     "CanTravel": "Yes",
     "SubmittedDate": "2026-03-07T07:12:05Z"
   },
@@ -887,64 +878,57 @@ const RECORDS = [
     "SubmittedDate": "2026-03-09T18:54:25Z"
   }
 ];
-
-const msal_ = new msal.PublicClientApplication({
-  auth:{clientId:CLIENT_ID,authority:`https://login.microsoftonline.com/${TENANT_ID}`,redirectUri:window.location.href.split('?')[0]},
-  cache:{cacheLocation:'sessionStorage'}
-});
-const req = {scopes:['Sites.ReadWrite.All','User.Read']};
-let siteId, listId;
-
+const msal_=new msal.PublicClientApplication({auth:{clientId:CLIENT_ID,authority:`https://login.microsoftonline.com/${TENANT_ID}`,redirectUri:window.location.href.split('?')[0]},cache:{cacheLocation:'sessionStorage'}});
+const req={scopes:['Sites.ReadWrite.All','User.Read']};
+let siteId,listId;
 async function init(){await msal_.initialize();if(msal_.getAllAccounts().length)showUser(msal_.getAllAccounts()[0]);}
 async function signIn(){await msal_.initialize();const r=await msal_.loginPopup(req);showUser(r.account);}
 function showUser(a){
-  const name=a.name||a.username;
-  document.getElementById('av').textContent=name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('uname').textContent=name;
+  const n=a.name||a.username;
+  document.getElementById('av').textContent=n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('uname').textContent=n;
   document.getElementById('user-row').style.display='flex';
   document.getElementById('signin-btn').style.display='none';
-  document.getElementById('delete-btn').disabled=false;
-  document.getElementById('upload-btn').disabled=false;
-  setStatus('Ready — Step 1 then Step 2');
+  document.getElementById('del-btn').disabled=false;
+  document.getElementById('up-btn').disabled=false;
+  setStatus('Ready — run Step 1 then Step 2');
 }
-async function getToken(){const r=await msal_.acquireTokenSilent({...req,account:msal_.getAllAccounts()[0]});return r.accessToken;}
-async function getIds(){
+async function tok(){const r=await msal_.acquireTokenSilent({...req,account:msal_.getAllAccounts()[0]});return r.accessToken;}
+async function connect(){
   if(siteId)return;
-  const t=await getToken();const h={Authorization:`Bearer ${t}`};
-  const s=await(await fetch('https://graph.microsoft.com/v1.0/sites/legiofc.sharepoint.com',{headers:h})).json();
-  siteId=s.id;
+  const h={Authorization:`Bearer ${await tok()}`};
+  siteId=(await(await fetch('https://graph.microsoft.com/v1.0/sites/legiofc.sharepoint.com',{headers:h})).json()).id;
   const l=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$filter=displayName eq 'IDCampRoster'&$select=id`,{headers:h})).json();
   listId=l.value[0].id;
-  addLog(`Connected to IDCampRoster list`,'info');
+  log(`Connected to IDCampRoster`,'info');
 }
-
 async function deleteAll(){
-  document.getElementById('delete-btn').disabled=true;
+  document.getElementById('del-btn').disabled=true;
   setStatus('Connecting...');
-  const t=await getToken();const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
-  await getIds();
-  setStatus('Fetching existing items...');
+  const h={Authorization:`Bearer ${await tok()}`,'Content-Type':'application/json'};
+  await connect();
+  setStatus('Fetching items...');
   let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$select=id&$top=999`;
   let ids=[];
   while(url){const r=await(await fetch(url,{headers:h})).json();ids=ids.concat(r.value.map(i=>i.id));url=r['@odata.nextLink']||null;}
-  addLog(`Found ${ids.length} existing records to delete`,'info');
-  let deleted=0;
+  log(`Deleting ${ids.length} records...`,'info');
+  let n=0;
   for(const id of ids){
     await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items/${id}`,{method:'DELETE',headers:h});
-    deleted++;setStatus(`Deleting ${deleted} of ${ids.length}...`);
-    document.getElementById('pbar').style.width=(deleted/ids.length*100)+'%';
+    n++;setStatus(`Deleting ${n}/${ids.length}...`);
+    document.getElementById('pb').style.width=(n/ids.length*100)+'%';
     await new Promise(r=>setTimeout(r,150));
   }
-  addLog(`✓ Deleted ${deleted} records`,'ok');
-  setStatus('Delete complete — ready for Step 2');
-  document.getElementById('pbar').style.width='0%';
+  log(`Deleted ${n} records`,'ok');
+  setStatus('Delete done — ready for Step 2');
+  document.getElementById('pb').style.width='0%';
+  document.getElementById('del-btn').disabled=false;
 }
-
 async function uploadAll(){
-  document.getElementById('upload-btn').disabled=true;
-  const t=await getToken();const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
-  await getIds();
-  let done=0,errors=0;
+  document.getElementById('up-btn').disabled=true;
+  const h={Authorization:`Bearer ${await tok()}`,'Content-Type':'application/json'};
+  await connect();
+  let done=0,errs=0;
   for(let i=0;i<RECORDS.length;i++){
     const p=RECORDS[i];
     try{
@@ -953,26 +937,22 @@ async function uploadAll(){
         Gender:p.Gender,Email:p.Email,Phone:p.Phone,
         CurrentLocation:p.CurrentLocation,IDCampLocation:p.IDCampLocation,
         CurrentTeam:p.CurrentTeam,PastExperience:p.PastExperience,
-        CanTravel:p.CanTravel,
+        CanTravel:p.CanTravel
       };
-      // SubmittedDate needs ISO format for SharePoint date field
       if(p.SubmittedDate)fields.SubmittedDate=p.SubmittedDate;
-      const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items`,{
-        method:'POST',headers:h,body:JSON.stringify({fields})
-      });
-      if(res.ok){done++;document.getElementById('s-done').textContent=done;addLog(`✓ ${p.FullName} | ${p.Phone||'no phone'} | ${p.SubmittedDate?.split('T')[0]||'no date'}`,'ok');}
-      else{const d=await res.json();errors++;document.getElementById('s-err').textContent=errors;addLog(`✗ ${p.FullName}: ${d.error?.message}`,'err');}
-    }catch(e){errors++;document.getElementById('s-err').textContent=errors;addLog(`✗ ${p.FullName}: ${e.message}`,'err');}
-    document.getElementById('pbar').style.width=((i+1)/RECORDS.length*100)+'%';
-    setStatus(`Uploading ${i+1} of ${RECORDS.length}...`);
+      const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items`,{method:'POST',headers:h,body:JSON.stringify({fields})});
+      if(res.ok){done++;document.getElementById('s-done').textContent=done;log(`${p.FullName} | ${p.Phone||'—'} | ${p.SubmittedDate?.split('T')[0]||'—'}`,'ok');}
+      else{const d=await res.json();errs++;document.getElementById('s-err').textContent=errs;log(`${p.FullName}: ${d.error?.message}`,'err');}
+    }catch(e){errs++;document.getElementById('s-err').textContent=errs;log(`${p.FullName}: ${e.message}`,'err');}
+    document.getElementById('pb').style.width=((i+1)/RECORDS.length*100)+'%';
+    setStatus(`Uploading ${i+1}/${RECORDS.length}...`);
     await new Promise(r=>setTimeout(r,200));
   }
-  setStatus(`Complete — ${done} uploaded, ${errors} errors`);
-  if(errors===0)addLog(`✓ All ${done} records uploaded successfully`,'ok');
+  setStatus(`Done — ${done} uploaded, ${errs} errors`);
+  document.getElementById('up-btn').disabled=false;
 }
-
 function setStatus(m){document.getElementById('status').textContent=m;}
-function addLog(m,c){const d=document.createElement('div');d.className=c;d.textContent=m;const l=document.getElementById('log');l.appendChild(d);l.scrollTop=l.scrollHeight;}
+function log(m,c){const d=document.createElement('div');d.className=c;d.textContent=(c==='ok'?'✓ ':c==='err'?'✗ ':'')+m;const l=document.getElementById('log');l.appendChild(d);l.scrollTop=l.scrollHeight;}
 init();
 </script>
 </body>
