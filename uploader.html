@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legio FC | Data Uploader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--blue:#1c5575;--blue-dark:#163d54;--gold:#dab751;--gold-border:rgba(218,183,81,0.3);--cream:#f8f6f1;--text:rgba(248,246,241,0.85);--text-dim:rgba(248,246,241,0.5);--green:#2d7a4f;--red:#9c1829}
+    body{font-family:'Inter',sans-serif;background:var(--blue-dark);color:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 20px}
+    .card{background:rgba(22,61,84,.6);border:1px solid var(--gold-border);padding:36px 40px;width:100%;max-width:700px;margin-bottom:24px}
+    h1{font-family:'Cinzel',serif;font-size:20px;letter-spacing:3px;color:var(--gold);margin-bottom:8px}
+    .sub{font-size:13px;color:var(--text-dim);margin-bottom:28px;line-height:1.6}
+    .ms-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;width:100%;justify-content:center;margin-bottom:16px}
+    .ms-btn:hover{background:var(--gold);color:var(--blue-dark)}
+    .ms-btn:disabled{opacity:.4;cursor:not-allowed}
+    .ms-icon{width:17px;height:17px}
+    .upload-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 28px;background:var(--gold);color:var(--blue-dark);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;width:100%;font-weight:600;transition:all .2s}
+    .upload-btn:hover{background:#c9a643}
+    .upload-btn:disabled{opacity:.4;cursor:not-allowed}
+    .progress-wrap{background:rgba(0,0,0,.3);height:6px;border-radius:3px;margin:20px 0 12px;overflow:hidden;display:none}
+    .progress-bar{height:100%;background:var(--gold);width:0%;transition:width .3s;border-radius:3px}
+    .status{font-size:13px;color:var(--text-dim);text-align:center;min-height:20px;margin-bottom:16px}
+    .log{background:rgba(0,0,0,.3);border:1px solid var(--gold-border);padding:16px;max-height:280px;overflow-y:auto;font-size:11px;font-family:'Courier New',monospace;color:var(--text-dim);display:none}
+    .log .ok{color:#4caf50}
+    .log .err{color:#e57373}
+    .log .info{color:var(--gold)}
+    .user-info{display:none;align-items:center;gap:10px;padding:10px 16px;background:rgba(218,183,81,.1);border:1px solid var(--gold-border);margin-bottom:20px;font-size:13px}
+    .avatar{width:28px;height:28px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue-dark)}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .stat{background:rgba(0,0,0,.2);border:1px solid var(--gold-border);padding:12px;text-align:center}
+    .stat-val{font-family:'Cinzel',serif;font-size:24px;color:var(--gold)}
+    .stat-label{font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-top:4px}
+    .done-msg{display:none;text-align:center;padding:20px;color:#4caf50;font-family:'Cinzel',serif;letter-spacing:2px;font-size:13px}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>LEGIO FC — DATA UPLOADER</h1>
+  <p class="sub">One-time import of 58 existing ID Camp registrations into SharePoint IDCampRoster list. Sign in with your legiofc.com account then click Upload.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val">58</div><div class="stat-label">Records</div></div>
+    <div class="stat"><div class="stat-val" id="s-done">0</div><div class="stat-label">Uploaded</div></div>
+    <div class="stat"><div class="stat-val" id="s-err">0</div><div class="stat-label">Errors</div></div>
+  </div>
+
+  <div class="user-info" id="user-info">
+    <div class="avatar" id="avatar"></div>
+    <span id="user-name"></span>
+  </div>
+
+  <button class="ms-btn" id="signin-btn" onclick="signIn()">
+    <svg class="ms-icon" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+    Sign In with Microsoft
+  </button>
+
+  <button class="upload-btn" id="upload-btn" onclick="startUpload()" disabled>
+    ⚔ Upload 58 Records to SharePoint
+  </button>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  <div class="status" id="status">Sign in to begin</div>
+  <div class="done-msg" id="done-msg">✓ ALL RECORDS UPLOADED SUCCESSFULLY</div>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+const CLIENT_ID  = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
+const TENANT_ID  = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
+const SITE_URL   = 'legiofc.sharepoint.com';
+const LIST_NAME  = 'IDCampRoster';
+
+const RECORDS = [
+  {
+    "FullName": "Sean Harrington",
+    "FirstName": "Sean",
+    "LastName": "Harrington",
+    "BirthDate": "02/19/2070",
+    "Gender": "Male",
+    "Phone": "6039035484",
+    "Email": "sharrington@legiofc.com",
+    "CurrentLocation": "Florida",
+    "IDCampLocation": "Texas",
+    "CurrentTeam": "Ballers FC",
+    "PastExperience": "Big Ballers FC",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Jonas Bukh",
+    "FirstName": "Jonas",
+    "LastName": "Bukh",
+    "BirthDate": "07/16/1993",
+    "Gender": "Male",
+    "Phone": "7723013309",
+    "Email": "jbukh@distributedei.com",
+    "CurrentLocation": "Stuart FL",
+    "IDCampLocation": "South Florida",
+    "CurrentTeam": "NA",
+    "PastExperience": "NA",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Kevin Yanez",
+    "FirstName": "Kevin",
+    "LastName": "Yanez",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "",
+    "Email": "",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Upsl",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Connor Desmond",
+    "FirstName": "Connor",
+    "LastName": "Desmond",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "",
+    "Email": "",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "McKinney Chupacabras\nTexas Spurs MASL2",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Jesus Castro Espinoza",
+    "FirstName": "Jesus",
+    "LastName": "Castro Espinoza",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "",
+    "Email": "",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Dallas Spurs (MASL)",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Cash Nweze",
+    "FirstName": "Cash",
+    "LastName": "Nweze",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "",
+    "Email": "",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "SportingNTX UPSL",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Rahul Ramavajjala",
+    "FirstName": "Rahul",
+    "LastName": "Ramavajjala",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "",
+    "Email": "",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Plays for Sporting NTX in the UPSL Premier division",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Jason Payne",
+    "FirstName": "Jason",
+    "LastName": "Payne",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "",
+    "Email": "",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "UPSL Premier to stay in shape until I find next opportunity.",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Jesus Castro Espinoza Goalkeeper",
+    "FirstName": "Jesus",
+    "LastName": "Castro Espinoza Goalkeeper",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "8174353565",
+    "Email": "Jesuscastroespinoza00@gmail.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Dallas Spurs (Indoor)",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Wyatt Fowler",
+    "FirstName": "Wyatt",
+    "LastName": "Fowler",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "9133602550",
+    "Email": "",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "MASL2 - Spurs, UPSL - SNTX",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Leonardo Magana",
+    "FirstName": "Leonardo",
+    "LastName": "Magana",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "7085418994",
+    "Email": "Lmagana0518@icloud.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "MLIS - CD La Cuadra\nMASL2- Texas Spurs\nUSL2 - McKinney chupacabras",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Jack Monte",
+    "FirstName": "Jack",
+    "LastName": "Monte",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "4697665965",
+    "Email": "jackpedro22@gmail.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "UPSL / USL 2 (Texas spurs / McKinney chupacabras)",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Nate Kopetsky",
+    "FirstName": "Nate",
+    "LastName": "Kopetsky",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "8174565938",
+    "Email": "Kopetskynate@gmail.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Foro, money tournament teams",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Suriel Arauz",
+    "FirstName": "Suriel",
+    "LastName": "Arauz",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "6468084211",
+    "Email": "surypuri07@gmail.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Denton Diablos (US Open Cup)\nTexas Spurs (Indoor)",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Jair Ruiz",
+    "FirstName": "Jair",
+    "LastName": "Ruiz",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "9365261272",
+    "Email": "Ruiz.jair17@icloud.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "CD La Cuadra-MLIS\nTexas Spurs-MASL",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "William Cetz",
+    "FirstName": "William",
+    "LastName": "Cetz",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "9728413928",
+    "Email": "williamcetz@gmail.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Sporting NTX upsl\nAD Union Adarve\nCD San Roque",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Noah Samadian",
+    "FirstName": "Noah",
+    "LastName": "Samadian",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "4697812781",
+    "Email": "Noah.samadian1999@gmail.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Upsl premier/ upsl d1/ usl2 / trial with ntsc",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Alex Perez",
+    "FirstName": "Alex",
+    "LastName": "Perez",
+    "BirthDate": "",
+    "Gender": "Male",
+    "Phone": "4692333431",
+    "Email": "Perezalex1310@yahoo.com",
+    "CurrentLocation": "",
+    "IDCampLocation": "",
+    "CurrentTeam": "Playing with Tenfifteen FC in UPSL",
+    "PastExperience": "",
+    "CanTravel": ""
+  },
+  {
+    "FullName": "Yosmar Reyes",
+    "FirstName": "Yosmar",
+    "LastName": "Reyes",
+    "BirthDate": "10232002",
+    "Gender": "Male",
+    "Phone": "4694788387",
+    "Email": "yosreyes02@gmail.com",
+    "CurrentLocation": "The Colony, Texas",
+    "IDCampLocation": "Frisco, Texas",
+    "CurrentTeam": "No team",
+    "PastExperience": "College D3 \nUPSL",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Paul Kossehasse",
+    "FirstName": "Paul",
+    "LastName": "Kossehasse",
+    "BirthDate": "06/18/1998",
+    "Gender": "Male",
+    "Phone": "8178066323",
+    "Email": "Kopaul@hotmail.fr",
+    "CurrentLocation": "McKinney TX",
+    "IDCampLocation": "Texas",
+    "CurrentTeam": "Tenfifteen",
+    "PastExperience": "TST x2 Supra United, Tenfiftenn FC",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Matthew Albury",
+    "FirstName": "Matthew",
+    "LastName": "Albury",
+    "BirthDate": "09011997",
+    "Gender": "Male",
+    "Phone": "6206802409",
+    "Email": "matthew.james.albury@gmail.com",
+    "CurrentLocation": "Fort Worth, Texas",
+    "IDCampLocation": "PIT Frisco, Texas.",
+    "CurrentTeam": "Tenfifteen UPSL / Denton Diablos USL2",
+    "PastExperience": "I played in Barcelona, Spain through youth (highest division played preferente) and senior teams up until 22 years old (highest division Primera Catalana). Then came over to the United States for College NAIA school in Kansas called Sterling College in 2020/21 & 2021/22. Graduated and went down to University of Houston-Victoria from 2022/23 & 2023. Graduated December of 2023 moved up to Dallas/Fort Worth and played under Michel Garbini at Foro up until he got promoted to FC Dallas first team and left Foro.",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Jack Monte",
+    "FirstName": "Jack",
+    "LastName": "Monte",
+    "BirthDate": "01092000",
+    "Gender": "Male",
+    "Phone": "4697665965",
+    "Email": "Jackpedro22@gmail.com",
+    "CurrentLocation": "Dallas TX",
+    "IDCampLocation": "Frisco",
+    "CurrentTeam": "McKinney Chupacabras USL 2",
+    "PastExperience": "NCAA D1 - Northeastern University \nUSL 2 - Texas United / McKinney Chupacabras \nUPSL - Texas Spurs",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Jesus Perez",
+    "FirstName": "Jesus",
+    "LastName": "Perez",
+    "BirthDate": "02/18/1994",
+    "Gender": "Male",
+    "Phone": "9153288348",
+    "Email": "Jperezbebo10@gmail.com",
+    "CurrentLocation": "Irving, Texas",
+    "IDCampLocation": "Dallas, Texas",
+    "CurrentTeam": "Tenfifteen - UPSL",
+    "PastExperience": "-Division 1 NCAA -University of Nebraska at Omaha \n-TST - Have gone each of the past 3 years",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Samuele Muroni",
+    "FirstName": "Samuele",
+    "LastName": "Muroni",
+    "BirthDate": "03/24/1997",
+    "Gender": "Male",
+    "Phone": "9408827215",
+    "Email": "s.muroni97@gmail.com",
+    "CurrentLocation": "Addison, TX",
+    "IDCampLocation": "N/A",
+    "CurrentTeam": "Ten Fifteen FC",
+    "PastExperience": "Italian 4^ division\nNJCAA Richland Dallas College \nNCAA Midwestern State University",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Gonzalo Santa Martinez",
+    "FirstName": "Gonzalo",
+    "LastName": "Santa Martinez",
+    "BirthDate": "06251993",
+    "Gender": "Male",
+    "Phone": "9563129692",
+    "Email": "Gonzalolalogon@gmail.com",
+    "CurrentLocation": "Garland, TX",
+    "IDCampLocation": "75043",
+    "CurrentTeam": "N/D",
+    "PastExperience": "- MASL Dallas Sidekicks\n- TST 2025 certified Lions\n- 2nd Division Spain",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Thomas Robinson",
+    "FirstName": "Thomas",
+    "LastName": "Robinson",
+    "BirthDate": "04/27/2001",
+    "Gender": "Male",
+    "Phone": "404-977-0441",
+    "Email": "tvrsoccer@gmail.com",
+    "CurrentLocation": "Irving, TX",
+    "IDCampLocation": "Frisco/Denton, TX",
+    "CurrentTeam": "Foro SC",
+    "PastExperience": "U19 Bundesliga - DFB Pokal 1st Round - 3 Years at TST Tournament.",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Mason Kutch",
+    "FirstName": "Mason",
+    "LastName": "Kutch",
+    "BirthDate": "08/21/2007",
+    "Gender": "Male",
+    "Phone": "2144912745",
+    "Email": "masonkutch9@gmail.com",
+    "CurrentLocation": "Mckinney, Texas",
+    "IDCampLocation": "Frisco, Texas",
+    "CurrentTeam": "Solar u19 Academy ECNL",
+    "PastExperience": "ECNL",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Rene Garcia",
+    "FirstName": "Rene",
+    "LastName": "Garcia",
+    "BirthDate": "04281987",
+    "Gender": "Male",
+    "Phone": "9152418866",
+    "Email": "renegarcialine@gmail.com",
+    "CurrentLocation": "Irving, TX",
+    "IDCampLocation": "Frisco, TX",
+    "CurrentTeam": "Tenfifteen FC",
+    "PastExperience": "College - University of San Diego and SMU\nTST - 2023-2025 (Dallas United and Tenfifteen)\nKings League World Cup - Team USA",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Nate Kopetsky",
+    "FirstName": "Nate",
+    "LastName": "Kopetsky",
+    "BirthDate": "11/29/2000",
+    "Gender": "Male",
+    "Phone": "Paul",
+    "Email": "Kopetskynate@gmail.com",
+    "CurrentLocation": "Las colinas, Texas",
+    "IDCampLocation": "frisco, Texas",
+    "CurrentTeam": "Foro SC UPSL",
+    "PastExperience": "2x open cup qualifier going to 2nd round\nNational upsl tournament \nProfessional trials",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Andrew Hernandez",
+    "FirstName": "Andrew",
+    "LastName": "Hernandez",
+    "BirthDate": "12/15/1998",
+    "Gender": "Male",
+    "Phone": "9452370132",
+    "Email": "andrewhernandez983@gmail.com",
+    "CurrentLocation": "Allen, TX",
+    "IDCampLocation": "Frisco, Texas",
+    "CurrentTeam": "Denton Diablos/Dallas Dragons. US Open Cup and UPSL",
+    "PastExperience": "FC Dallas Academy growing up. D3 College Soccer. Semi Pro experience with Texas Spurs, Dallas Dragons, and currently playing US Open Cup with Denton Diablos",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Thierry Assamoi",
+    "FirstName": "Thierry",
+    "LastName": "Assamoi",
+    "BirthDate": "10/10/1996",
+    "Gender": "Male",
+    "Phone": "4696013835",
+    "Email": "a.t.assamoi@gmail.com",
+    "CurrentLocation": "Terrell, Texas",
+    "IDCampLocation": "Frisco, Texas",
+    "CurrentTeam": "Tenfifteen FC, UPSL",
+    "PastExperience": "Richland College (Dallas, TX)\nUT Tyler (Tyler, TX)",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Eric Gomez Silva",
+    "FirstName": "Eric",
+    "LastName": "Gomez Silva",
+    "BirthDate": "01/02/2000",
+    "Gender": "Male",
+    "Phone": "8014000182",
+    "Email": "Ericgomezsilva@gmail.com",
+    "CurrentLocation": "Frisco Texas",
+    "IDCampLocation": "Frisco Texas",
+    "CurrentTeam": "Foro Upsl\nDenton Diablos",
+    "PastExperience": "Dallas Sidekicks MASL",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Erik Stoisa",
+    "FirstName": "Erik",
+    "LastName": "Stoisa",
+    "BirthDate": "12/17/1996",
+    "Gender": "Male",
+    "Phone": "4693872098",
+    "Email": "stoisaebus@gmail.com",
+    "CurrentLocation": "McKinney, Texas",
+    "IDCampLocation": "Frisco, Texas",
+    "CurrentTeam": "Tenfifteen - upsl",
+    "PastExperience": "Torino FC- Italy \nRichland College\nGiaveno Coazze - Italy 4th div. \nForo SC - upsl \nDenton diablos - USL\nTenfifteen- upsl",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Kristian Quintana",
+    "FirstName": "Kristian",
+    "LastName": "Quintana",
+    "BirthDate": "02211990",
+    "Gender": "Male",
+    "Phone": "4696840402",
+    "Email": "Kquintana100@outlook.com",
+    "CurrentLocation": "Dallas TX",
+    "IDCampLocation": "Frisco",
+    "CurrentTeam": "San Diego Sockers MASL",
+    "PastExperience": "San Diego Sockers, Chihuahua Savage, Dallas Sidekicks, Chivas USA, Fort Lauderdale.",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Juan Tinajero",
+    "FirstName": "Juan",
+    "LastName": "Tinajero",
+    "BirthDate": "01261998",
+    "Gender": "Male",
+    "Phone": "7725305132",
+    "Email": "Juanmanuel98@yahoo.com",
+    "CurrentLocation": "Port St. Lucie Florida",
+    "IDCampLocation": "Florida",
+    "CurrentTeam": "N/A",
+    "PastExperience": "Semi pro",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Jose Fernandez",
+    "FirstName": "Jose",
+    "LastName": "Fernandez",
+    "BirthDate": "09021999",
+    "Gender": "Male",
+    "Phone": "7727224415",
+    "Email": "Roostah.Fernandez13@gmail.com",
+    "CurrentLocation": "Fort Pierce FL",
+    "IDCampLocation": "Copa pelada",
+    "CurrentTeam": "Cerritos FC",
+    "PastExperience": "Played club for mako soccer , high school , semi pro for fort pierce pumas",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Manuel German",
+    "FirstName": "Manuel",
+    "LastName": "German",
+    "BirthDate": "09212005",
+    "Gender": "Male",
+    "Phone": "7723075321",
+    "Email": "manuelgerman13@icloud.com",
+    "CurrentLocation": "1962 Southwest Diamond St. Port St. Lucie, Florida",
+    "IDCampLocation": "Copa Pelada",
+    "CurrentTeam": "Currently in the transfer portal still looking for a college to play at.",
+    "PastExperience": "Just recently finished a season at Eastern Florida State College (JUCO D1)\nODP all region and state team (Florida)\nUPSL ( Palm beach flames & Mako SC)\nPlayed with Altitude Rush vs. MLS academies",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Thomas Marin Velez",
+    "FirstName": "Thomas",
+    "LastName": "Marin Velez",
+    "BirthDate": "08/09/2025",
+    "Gender": "Male",
+    "Phone": "3055080611",
+    "Email": "Marinvelezt@gmail.com",
+    "CurrentLocation": "Hollywood Florida",
+    "IDCampLocation": "Copa Pelada",
+    "CurrentTeam": "BOCA JRS MIAMI",
+    "PastExperience": "I\u2019ve been playing in tournaments including UPSL and SPL in South Florida and I also have experience traveling to Texas to compete in a 7v7 tournament as preparation for the TST tournament next year",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Emmanuel Perez",
+    "FirstName": "Emmanuel",
+    "LastName": "Perez",
+    "BirthDate": "03161998",
+    "Gender": "Male",
+    "Phone": "5618602836",
+    "Email": "Emmanuel19perez@gmail.com",
+    "CurrentLocation": "North Palm Beach Florida",
+    "IDCampLocation": "Miami Florida",
+    "CurrentTeam": "FC Florida",
+    "PastExperience": "College",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Julio Torres",
+    "FirstName": "Julio",
+    "LastName": "Torres",
+    "BirthDate": "112/28/2006",
+    "Gender": "Male",
+    "Phone": "5617795106",
+    "Email": "juliot1128@gmail.com",
+    "CurrentLocation": "Greenacres Florida",
+    "IDCampLocation": "Copa Pelada",
+    "CurrentTeam": "FC Florida UPSL",
+    "PastExperience": "Fc Florida, Lake Worth Sharks, WPBEliteFC",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Cristian Marich",
+    "FirstName": "Cristian",
+    "LastName": "Marich",
+    "BirthDate": "01-12-1998",
+    "Gender": "Male",
+    "Phone": "5615236597",
+    "Email": "Cmarich@hotmail.com",
+    "CurrentLocation": "Lake Worth, Florida",
+    "IDCampLocation": "Copa Pelada",
+    "CurrentTeam": "FC Florida - UPSL",
+    "PastExperience": "EE Guineueta - Spain\nIndependente Limeira - Brazil \nPortuguesa Santista - Brazil \nFC Florida\nSunrise Elite",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Khristian Turcios",
+    "FirstName": "Khristian",
+    "LastName": "Turcios",
+    "BirthDate": "10-28-2004",
+    "Gender": "Male",
+    "Phone": "5617185916",
+    "Email": "khristian.turcioss@gmail.com",
+    "CurrentLocation": "Copa Pelada",
+    "IDCampLocation": "Copa Pelada",
+    "CurrentTeam": "FC Florida, UPSL",
+    "PastExperience": "USA (ECNL/MLS) Spain (La Liga youth) , Argentina (Huracan youth) , Uruguay ( Club Deportivo Melilla 1st team)",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Andr\u00e9s Rodriguez",
+    "FirstName": "Andr\u00e9s",
+    "LastName": "Rodriguez",
+    "BirthDate": "11/03/1995",
+    "Gender": "Male",
+    "Phone": "4075206468",
+    "Email": "Andresmauri710@gmail.com",
+    "CurrentLocation": "Orlando FL",
+    "IDCampLocation": "Copa Pelada 10K",
+    "CurrentTeam": "Sunday League Baller",
+    "PastExperience": "NPSL - New Orleans Jesters 2021\n\nWMF World Cup (Colombia) u21 - 2018 3rd Place \n\nUPSL Premier 1st Division FL Winner - FC Ginga 2017-2018",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Ryan Bourne",
+    "FirstName": "Ryan",
+    "LastName": "Bourne",
+    "BirthDate": "09122002",
+    "Gender": "Male",
+    "Phone": "5612670867",
+    "Email": "rnbourne40@gmail.com",
+    "CurrentLocation": "LakeWorthFlorida",
+    "IDCampLocation": "Copa pelada",
+    "CurrentTeam": "FC Florida UPSL Premier",
+    "PastExperience": "Played since I was 4. Played on academy teams, with FC Florida, and ODP",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Joshua Burton",
+    "FirstName": "Joshua",
+    "LastName": "Burton",
+    "BirthDate": "08/08/2001",
+    "Gender": "Male",
+    "Phone": "2513278966",
+    "Email": "burton.joshuac@gmail.com",
+    "CurrentLocation": "Port Saint Lucie Florida",
+    "IDCampLocation": "Orlando",
+    "CurrentTeam": "Legio Fc",
+    "PastExperience": "USL1, NPSL, NCAA Division 2",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Alex Rocha",
+    "FirstName": "Alex",
+    "LastName": "Rocha",
+    "BirthDate": "06282001",
+    "Gender": "Male",
+    "Phone": "7724758592",
+    "Email": "alex405021@gmail.com",
+    "CurrentLocation": "Fort pierce Fl",
+    "IDCampLocation": "Fort pierce fl",
+    "CurrentTeam": "Atl\u00e9tico de fellsmere",
+    "PastExperience": "Competition",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Jorge Jonathan Diaz",
+    "FirstName": "Jorge Jonathan",
+    "LastName": "Diaz",
+    "BirthDate": "02/04/2007",
+    "Gender": "Male",
+    "Phone": "3125386977",
+    "Email": "vamosclubamerica1@gmail.com",
+    "CurrentLocation": "Chicago Illinois",
+    "IDCampLocation": "II fc",
+    "CurrentTeam": "Daley College Njcaa Chicago Togo gcsl",
+    "PastExperience": "College soccer, semi pro, and pro indoor opportunities",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Preston Meador",
+    "FirstName": "Preston",
+    "LastName": "Meador",
+    "BirthDate": "05241991",
+    "Gender": "Male",
+    "Phone": "8127468604",
+    "Email": "Pmeador16@gmail.com",
+    "CurrentLocation": "Freeport, Florida",
+    "IDCampLocation": "Unk",
+    "CurrentTeam": "Trident FC / TST",
+    "PastExperience": "I played in TST the last 2 years with Trident FC and Kingdom FC. I played against premier league winners, Sergio Aguero, atletico Madrid, pro indoor teams, etc. I have vast experience with numerous players (playing both against and with) involved with TST.",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Daniel Lordkipanidze",
+    "FirstName": "Daniel",
+    "LastName": "Lordkipanidze",
+    "BirthDate": "07312007",
+    "Gender": "Male",
+    "Phone": "16479199909",
+    "Email": "danielalord07@gmail.com",
+    "CurrentLocation": "Toronto, Ontario",
+    "IDCampLocation": "Montrea Quebec",
+    "CurrentTeam": "York united CPL",
+    "PastExperience": "Play pro Futsal in Toronto and pro in Georgia",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Marques Mayorga",
+    "FirstName": "Marques",
+    "LastName": "Mayorga",
+    "BirthDate": "04/10/2006",
+    "Gender": "Male",
+    "Phone": "4166024064",
+    "Email": "Marquesmayorga35@gmail.com",
+    "CurrentLocation": "Toronto",
+    "IDCampLocation": "Ottawa",
+    "CurrentTeam": "Red bull four2score team Canada",
+    "PastExperience": "AMF Canadian futsal team\nRed bull team Canada",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Eli Zamora",
+    "FirstName": "Eli",
+    "LastName": "Zamora",
+    "BirthDate": "09221990",
+    "Gender": "Male",
+    "Phone": "8186679759",
+    "Email": "Eli.zamora922@gmail.com",
+    "CurrentLocation": "Los Angeles, California",
+    "IDCampLocation": "California",
+    "CurrentTeam": "Gullit Academy UPSL",
+    "PastExperience": "San Diego Sockers (MASL)\nCSU Monterey Bay (College)\nFC Hasental (NPSL)\nOzzy\u2019s Laguna (PDL)\nFC Golden State (PDL)\nChiriaco FC (UPSL)\nMesoAmerica",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Bogart Roca",
+    "FirstName": "Bogart",
+    "LastName": "Roca",
+    "BirthDate": "03/09/2003",
+    "Gender": "Male",
+    "Phone": "7605150880",
+    "Email": "Bogart.roca@gmail.com",
+    "CurrentLocation": "Bakersfield, California",
+    "IDCampLocation": "TST ID Camp",
+    "CurrentTeam": "Cal State Bakersfield (D1College)",
+    "PastExperience": "LAFC Academy and Division 1 College",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Anthony Rouse",
+    "FirstName": "Anthony",
+    "LastName": "Rouse",
+    "BirthDate": "12/29/2002",
+    "Gender": "Male",
+    "Phone": "518-364-8970",
+    "Email": "Anthonyrouse2002@gmail.com",
+    "CurrentLocation": "Atlanta, Georgia",
+    "IDCampLocation": "Atlanta, Georgia",
+    "CurrentTeam": "Just finished playing Collegiate soccer",
+    "PastExperience": "Division 1 college soccer, NPSL summer, youth USA national team",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Youssef Naciri",
+    "FirstName": "Youssef",
+    "LastName": "Naciri",
+    "BirthDate": "12101993",
+    "Gender": "Male",
+    "Phone": "7035896535",
+    "Email": "youssef.naciri9@gmail.com",
+    "CurrentLocation": "Washington DC",
+    "IDCampLocation": "District of Columbia",
+    "CurrentTeam": "MISL Pro",
+    "PastExperience": "Current 7+ year indoor pro player ( mostly MASL and MISL ) \ncompeting in top-level tournaments in Colombia, Mexico, Philippines, Canada , USA , France and Morocco, including major prize-money events where I won titles . My most recent one the 100k Golden Goal Tournament in Toronto in Canada where we reached the finals and I captained the team \n\n\nProfessional Soccer Player in the USL for the Harrisburg City Islanders 2016-2017.\nReynir S in the Icelandic first division 2017-2018\nRacing Casablanca in the Botola Top league in Morocco 2019-2020. \n.\nEducation : Bachelor of Finance from Christian Brothers University\nAll teams: Reyn S in Iceland ,Harrisburg City Islanders , Richmond Kickers, Stade Malherbe de Caen, Indepediente Medellin , Aguilas Doradas,  Raja De Casablanca , Wydad De Casablanca, South Bronx United , Pacesetter Villa Ohio , Aston Villa ...\n\nImpressive Youth Level Experience:\n-Played over 10 years of top-level youth soccer for the two best academies in Africa:Raja Casablanca and Wydad Casablanca \n-Under 16 Moroccan National Team \nCompeted in tournaments all over the world (Spain, France, Sweden, Denmark, Thailand, Columbia, USA, Algeria, Netherlands, Belgium, Germany, and Canada )\n- Soccer scholarships from D1 and D2 schools: Saint johns University 2012, Christian brothers university 2013 -2015.\n- USL under 20 National Finalist with Pacesetter Villa Summer 2013\n- Spent Summer 2014 training with Colombian Powerhouse Aguilas Doradas for pre-season.",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Hamid Safi",
+    "FirstName": "Hamid",
+    "LastName": "Safi",
+    "BirthDate": "05/14/2006",
+    "Gender": "Male",
+    "Phone": "9168379786",
+    "Email": "Hamidsafi20006@gmail.com",
+    "CurrentLocation": "Sacramento , CA",
+    "IDCampLocation": "N/A",
+    "CurrentTeam": "Sacramento United mls next",
+    "PastExperience": "Afghanistan u20 national team \nSacramento United MLS next",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Oury Diane",
+    "FirstName": "Oury",
+    "LastName": "Diane",
+    "BirthDate": "01/06/2003",
+    "Gender": "Male",
+    "Phone": "2033611060",
+    "Email": "dianeoury72@gmail.com",
+    "CurrentLocation": "West haven, CT",
+    "IDCampLocation": "N/A",
+    "CurrentTeam": "Spice city fc (MASL2)\nGzs bridgeport (UPSL)",
+    "PastExperience": "Collegiate: Connecticut College, Occidental College\nUPSL: Ole FC, Gzs Bridgeport\nUSL Championship Trialist: Orange County SC",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Sebastian Diaz vega",
+    "FirstName": "Sebastian",
+    "LastName": "Diaz vega",
+    "BirthDate": "09/29/1999",
+    "Gender": "Male",
+    "Phone": "3237085190",
+    "Email": "johandiazvega@gmail.com",
+    "CurrentLocation": "Los \u00c1ngeles california",
+    "IDCampLocation": "Los \u00c1ngeles california",
+    "CurrentTeam": "Currently without equipment due to change of status",
+    "PastExperience": "Experience in the second division of Colombian professional soccer, I also have experience in futsal, and indor 6v6",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Aidan Melville",
+    "FirstName": "Aidan",
+    "LastName": "Melville",
+    "BirthDate": "02/03/2002",
+    "Gender": "Male",
+    "Phone": "2077769071",
+    "Email": "Aidan7melville@gmail.com",
+    "CurrentLocation": "Myrtle Beach, SC",
+    "IDCampLocation": "?",
+    "CurrentTeam": "Graduated\u2026 most recently USL 1 pre season",
+    "PastExperience": "MLS Academy - DC United & New England Revolution , NCAA D1 Captain for JMU, US Youth Futsal National Team, multiple professional preseason invites (USL 1 & MLSNext Pro).",
+    "CanTravel": "Yes"
+  }
+];
+
+const msalConfig = {
+  auth: {
+    clientId: CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+    redirectUri: window.location.href.split('?')[0],
+  },
+  cache: { cacheLocation: 'sessionStorage' }
+};
+const loginReq = { scopes: ['Sites.ReadWrite.All', 'User.Read'] };
+const msal_ = new msal.PublicClientApplication(msalConfig);
+
+async function init() {
+  await msal_.initialize();
+  const accts = msal_.getAllAccounts();
+  if (accts.length) showUser(accts[0]);
+}
+
+async function signIn() {
+  const btn = document.getElementById('signin-btn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const r = await msal_.loginPopup(loginReq);
+    showUser(r.account);
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg class="ms-icon" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign In with Microsoft`;
+    setStatus('Sign-in failed: ' + e.message);
+  }
+}
+
+function showUser(a) {
+  const name = a.name || a.username;
+  const ini = name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('avatar').textContent = ini;
+  document.getElementById('user-name').textContent = name;
+  document.getElementById('user-info').style.display = 'flex';
+  document.getElementById('signin-btn').style.display = 'none';
+  document.getElementById('upload-btn').disabled = false;
+  setStatus('Ready to upload 58 records');
+}
+
+async function getToken() {
+  const accts = msal_.getAllAccounts();
+  const r = await msal_.acquireTokenSilent({ ...loginReq, account: accts[0] });
+  return r.accessToken;
+}
+
+async function startUpload() {
+  const btn = document.getElementById('upload-btn');
+  btn.disabled = true;
+  btn.textContent = 'Uploading…';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('log').style.display = 'block';
+
+  const token = await getToken();
+  const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  // Get site ID
+  setStatus('Connecting to SharePoint…');
+  const siteRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${SITE_URL}`, {headers:h});
+  const site = await siteRes.json();
+  const siteId = site.id;
+
+  // Get list ID
+  const listRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$filter=displayName eq '${LIST_NAME}'&$select=id`, {headers:h});
+  const listData = await listRes.json();
+  const listId = listData.value[0].id;
+
+  let done = 0, errors = 0;
+  const total = RECORDS.length;
+
+  for (let i = 0; i < total; i++) {
+    const p = RECORDS[i];
+    try {
+      const body = {
+        fields: {
+          Title:           p.FullName,
+          FirstName:       p.FirstName,
+          LastName:        p.LastName,
+          BirthDate:       p.BirthDate,
+          Gender:          p.Gender,
+          Email:           p.Email,
+          CurrentLocation: p.CurrentLocation,
+          IDCampLocation:  p.IDCampLocation,
+          CurrentTeam:     p.CurrentTeam,
+          PastExperience:  p.PastExperience,
+          CanTravel:       p.CanTravel,
+        }
+      };
+      const res = await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items`,
+        { method: 'POST', headers: h, body: JSON.stringify(body) }
+      );
+      if (res.ok) {
+        done++;
+        document.getElementById('s-done').textContent = done;
+        addLog(`✓ ${p.FirstName} ${p.LastName}`, 'ok');
+      } else {
+        const err = await res.json();
+        errors++;
+        document.getElementById('s-err').textContent = errors;
+        addLog(`✗ ${p.FirstName} ${p.LastName}: ${err.error?.message}`, 'err');
+      }
+    } catch(e) {
+      errors++;
+      document.getElementById('s-err').textContent = errors;
+      addLog(`✗ ${p.FirstName} ${p.LastName}: ${e.message}`, 'err');
+    }
+
+    // Update progress
+    const pct = Math.round((i+1)/total*100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    setStatus(`Uploading ${i+1} of ${total}…`);
+    await new Promise(r => setTimeout(r, 200)); // small delay to avoid throttling
+  }
+
+  setStatus(`Complete — ${done} uploaded, ${errors} errors`);
+  if (errors === 0) document.getElementById('done-msg').style.display = 'block';
+  btn.textContent = '✓ Upload Complete';
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function addLog(msg, cls) {
+  const log = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className = cls; div.textContent = msg;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+init();
+</script>
+</body>
+</html>
