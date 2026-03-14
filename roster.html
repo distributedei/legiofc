@@ -602,7 +602,7 @@ async function loadMatches(){
     if(!matchListId)throw new Error('LegioMatches list not found');
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
     const fields='Title,Opponent,Tournament,MatchDate,Venue,LegioScore,OpponentScore,Status,YouTubeURL,Notes';
-    let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items?$expand=fields($select=${fields})&$top=999&$orderby=fields/MatchDate desc`;
+    let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
       const res=await fetch(url,{headers:h});
