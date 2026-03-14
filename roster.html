@@ -381,8 +381,6 @@ async function loadRoster() {
     const h = { Authorization: `Bearer ${token}` };
 
     // Get the user's drive item for the Excel file by file ID
-    // Using /users/{upn}/drive/items/{fileId}/workbook/tables/{table}/rows
-    const upn = OWNER_UPN.replace(/_/g, '.'); // sharrington_legiofc_com → sharrington.legiofc.com
     
     // First try to get table list to find correct table name
     const tablesUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${FILE_ID}/workbook/tables`;
