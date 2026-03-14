@@ -422,7 +422,7 @@ function renderLiveGamesList(matches) {
       ? '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#4caf50;animation:livepls 1s ease-in-out infinite;"></span><span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:#4caf50;text-transform:uppercase;">Live</span></span>'
       : '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Upcoming</span>';
     const watchBtn = m.YouTubeURL
-      ? '<button onclick="event.stopPropagation();selectLiveGame(' + idx + ')" style="background:' + (isLive?'#4caf50':'rgba(218,183,81,0.15)') + ';border:1px solid ' + (isLive?'#4caf50':'rgba(218,183,81,0.3)') + ';color:' + (isLive?'#fff':'#dab751') + ';padding:4px 12px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">&#9654; Watch</button>'
+      ? '<button onclick="event.stopPropagation();openStreamOverlay(m.YouTubeURL,m.HomeTeam||' + "'Legio FC'" + ',m.Opponent,m.LegioScore,m.OpponentScore,m.Tournament)" style="background:' + (isLive?'#4caf50':'rgba(218,183,81,0.15)') + ';border:1px solid ' + (isLive?'#4caf50':'rgba(218,183,81,0.3)') + ';color:' + (isLive?'#fff':'#dab751') + ';padding:4px 12px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">&#9654; Watch</button>'
       : '—';
     return '<tr style="border-bottom:1px solid rgba(218,183,81,0.06);background:' + (isActive?'rgba(76,175,80,0.07)':'transparent') + ';cursor:pointer;transition:background .15s;" onclick="selectLiveGame(' + idx + ')">' +
       '<td style="padding:10px 16px;">' + statusHtml + '</td>' +
@@ -458,6 +458,41 @@ function renderLiveGamesList(matches) {
     '</table></div></div>';
 }
 
+
+function openStreamOverlay(ytUrl, homeTeam, awayTeam, homeScore, awayScore, tournament) {
+  // Extract video ID
+  const match = ytUrl.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (!match) { window.open(ytUrl, '_blank'); return; }
+  const videoId = match[1];
+
+  // Set stream iframe
+  document.getElementById('stream-iframe').src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0';
+  // Set chat iframe
+  document.getElementById('chat-iframe').src = 'https://www.youtube.com/live_chat?v=' + videoId + '&embed_domain=' + window.location.hostname;
+  // Set match info
+  document.getElementById('stream-match-title').textContent = (homeTeam||'Legio FC') + ' vs ' + (awayTeam||'Opponent') + (tournament?' · '+tournament:'');
+  document.getElementById('stream-home').textContent = homeTeam||'Legio FC';
+  document.getElementById('stream-away').textContent = awayTeam||'Opponent';
+  document.getElementById('stream-home-score').textContent = homeScore!=null?homeScore:0;
+  document.getElementById('stream-away-score').textContent = awayScore!=null?awayScore:0;
+  document.getElementById('stream-yt-link').href = ytUrl;
+
+  // Show overlay
+  const overlay = document.getElementById('stream-overlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeStreamOverlay(e) {
+  if (e && e.target !== document.getElementById('stream-overlay')) return;
+  const overlay = document.getElementById('stream-overlay');
+  overlay.style.display = 'none';
+  document.body.style.overflow = '';
+  // Stop streams
+  document.getElementById('stream-iframe').src = '';
+  document.getElementById('chat-iframe').src = '';
+}
+
 function closeLiveTable() {
   var g = document.getElementById('live-games-list');
   if (g) g.style.transform = 'translateY(100%)';
@@ -465,7 +500,11 @@ function closeLiveTable() {
 
 function selectLiveGame(idx) {
   var m = window._liveMatches && window._liveMatches[idx];
-  if (m) switchLiveGame(m);
+  if (!m) return;
+  if (m.YouTubeURL) {
+    openStreamOverlay(m.YouTubeURL, m.HomeTeam||"Legio FC", m.Opponent, m.LegioScore, m.OpponentScore, m.Tournament);
+  }
+  switchLiveGame(m);
 }
 
 // Start polling
@@ -496,5 +535,60 @@ function closeVideoModal(e) {
 }
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeVideoModal(); });
 </script>
+
+<!-- STREAM OVERLAY MODAL -->
+<div id="stream-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(8,24,36,0.96);backdrop-filter:blur(8px);flex-direction:column;" onclick="closeStreamOverlay(event)">
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;height:100%;max-width:1400px;margin:0 auto;width:100%;padding:0;">
+
+    <!-- Header -->
+    <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(22,61,84,0.98);border-bottom:1px solid rgba(218,183,81,0.2);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:28px;height:28px;border:1px solid rgba(218,183,81,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dab751" stroke-width="2"><polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9"/></svg>
+        </div>
+        <span style="font-family:Cinzel,serif;font-size:13px;font-weight:600;letter-spacing:3px;color:#f8f6f1;">LEGIO FC</span>
+        <div style="width:1px;height:18px;background:rgba(218,183,81,0.2);"></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;animation:livepls 1s ease-in-out infinite;"></span>
+          <span id="stream-match-title" style="font-family:Cinzel,serif;font-size:10px;letter-spacing:2px;color:#4caf50;text-transform:uppercase;">Live Now</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <a id="stream-yt-link" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid rgba(218,183,81,0.3);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:#dab751;text-decoration:none;text-transform:uppercase;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          YouTube
+        </a>
+        <button onclick="closeStreamOverlay()" style="background:transparent;border:1px solid rgba(218,183,81,0.3);color:rgba(248,246,241,0.5);width:30px;height:30px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;" onmouseover="this.style.borderColor='#dab751';this.style.color='#dab751'" onmouseout="this.style.borderColor='rgba(218,183,81,0.3)';this.style.color='rgba(248,246,241,0.5)'">✕</button>
+      </div>
+    </div>
+
+    <!-- Score bar -->
+    <div id="stream-score-bar" style="flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:24px;padding:10px 20px;background:rgba(22,61,84,0.6);border-bottom:1px solid rgba(218,183,81,0.1);">
+      <span id="stream-home" style="font-family:Cinzel,serif;font-size:13px;font-weight:600;color:#f8f6f1;letter-spacing:2px;">Legio FC</span>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span id="stream-home-score" style="font-family:Cinzel,serif;font-size:28px;font-weight:700;color:#f8f6f1;min-width:32px;text-align:center;">0</span>
+        <span style="font-family:Cinzel,serif;font-size:14px;color:rgba(218,183,81,0.3);">–</span>
+        <span id="stream-away-score" style="font-family:Cinzel,serif;font-size:28px;font-weight:700;color:#f8f6f1;min-width:32px;text-align:center;">0</span>
+      </div>
+      <span id="stream-away" style="font-family:Cinzel,serif;font-size:13px;font-weight:600;color:#f8f6f1;letter-spacing:2px;">Opponent</span>
+    </div>
+
+    <!-- Stream + Chat -->
+    <div style="flex:1;display:flex;min-height:0;overflow:hidden;">
+      <!-- Stream -->
+      <div style="flex:1;min-width:0;position:relative;background:#000;">
+        <iframe id="stream-iframe" src="" style="width:100%;height:100%;border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+      <!-- Chat -->
+      <div style="width:340px;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid rgba(218,183,81,0.15);">
+        <div style="padding:10px 14px;background:rgba(22,61,84,0.8);border-bottom:1px solid rgba(218,183,81,0.1);">
+          <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:rgba(218,183,81,0.6);text-transform:uppercase;">Live Chat</span>
+        </div>
+        <iframe id="chat-iframe" src="" style="flex:1;border:none;background:#0f1923;" allow="autoplay"></iframe>
+      </div>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
