@@ -663,10 +663,10 @@ async function savePlayer(id){
     // Update local cache
     const p=all.find(x=>x._id===id);
     if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
-    showToast('Player saved ✓');
+    toast('Player saved ✓','success');
     openModal(id);
   }catch(e){
-    showToast('Error: '+e.message,true);
+    toast('Error: '+e.message,'error');
     btn.textContent='Save Player';btn.disabled=false;
   }
 }
@@ -842,6 +842,7 @@ function closeMatchModal(e){if(!e||e.target===document.getElementById('match-ov'
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function spinning(on,btnId,iconId){document.getElementById(btnId).disabled=on;document.getElementById(iconId).className=on?'spinning':'';}
 let _t;
+function closeModal(e){if(!e||e.target===document.getElementById('m-ov'))document.getElementById('m-ov').classList.remove('open');}
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(_t);_t=setTimeout(()=>el.classList.remove('show'),3800);}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();}});
 
