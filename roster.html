@@ -201,11 +201,13 @@
             <th onclick="sortBy('IDCampLocation')">Camp Site <span class="sa">↕</span></th>
             <th onclick="sortBy('CurrentTeam')">Current Team <span class="sa">↕</span></th>
             <th onclick="sortBy('CanTravel')">Travel <span class="sa">↕</span></th>
+            <th>Phone</th>
+            <th onclick="sortBy('SubmittedDate')">Submitted <span class="sa">↕</span></th>
             <th>Email</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="9"><div class="state-box">
+          <tr><td colspan="11"><div class="state-box">
             <div class="state-icon">⚔</div>
             <div class="state-title">Summoning The Legion</div>
             <div class="dots"><span></span><span></span><span></span></div>
@@ -284,7 +286,7 @@ async function loadRoster(){
     const{value:lists}=await listRes.json();
     if(!lists?.length)throw new Error(`List "${LIST_NAME}" not found`);
     const listId=lists[0].id;
-    const fields='Title,LastName,BirthDate,Gender,Email,CurrentLocation,IDCampLocation,CurrentTeam,PastExperience,CanTravel';
+    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -298,6 +300,8 @@ async function loadRoster(){
         Email:item.fields.Email||'',CurrentLocation:item.fields.CurrentLocation||'',
         IDCampLocation:item.fields.IDCampLocation||'',CurrentTeam:item.fields.CurrentTeam||'',
         PastExperience:item.fields.PastExperience||'',CanTravel:item.fields.CanTravel||'',
+        Phone:item.fields.Phone||'',
+        SubmittedDate:item.fields.SubmittedDate||'',
       })));
       url=data['@odata.nextLink']||null;
     }
@@ -307,7 +311,7 @@ async function loadRoster(){
     toast(`${all.length} registrations loaded`,'success');
   }catch(e){
     console.error(e);
-    document.getElementById('tbody').innerHTML=`<tr><td colspan="9"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="11"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
     toast(e.message,'error');
   }finally{spinning(false);}
 }
@@ -346,7 +350,7 @@ function render(){
   document.getElementById('s-camps').textContent=new Set(all.map(p=>p.IDCampLocation).filter(Boolean)).size;
   const tbody=document.getElementById('tbody');
   if(!filtered.length){
-    tbody.innerHTML=`<tr><td colspan="9"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="11"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;
     document.getElementById('foot-label').textContent='';return;
   }
   tbody.innerHTML=filtered.map((p,i)=>`
@@ -359,6 +363,8 @@ function render(){
       <td>${esc(p.IDCampLocation||'—')}</td>
       <td>${esc(p.CurrentTeam||'—')}</td>
       <td><span class="tag ${p.CanTravel==='No'?'tag-no':''}">${esc(p.CanTravel||'—')}</span></td>
+      <td>${p.Phone?`<a class="email-link" href="tel:${esc(p.Phone)}">${esc(p.Phone)}</a>`:'—'}</td>
+      <td>${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
       <td>${p.Email?`<a class="email-link" href="mailto:${esc(p.Email)}" onclick="event.stopPropagation()">✉ ${esc(p.Email)}</a>`:'—'}</td>
     </tr>`).join('');
   document.getElementById('foot-label').textContent=`${filtered.length} of ${all.length} registrants · click name to view profile`;
@@ -385,7 +391,8 @@ function openModal(id){
         <div class="m-field"><label>Date of Birth</label><div class="val">${esc(p.BirthDate||'—')}</div></div>
         <div class="m-field"><label>Gender</label><div class="val">${esc(p.Gender||'—')}</div></div>
         <div class="m-field"><label>Can Travel</label><div class="val">${esc(p.CanTravel||'—')}</div></div>
-        <div class="m-field full"><label>Current Location</label><div class="val">${esc(p.CurrentLocation||'—')}</div></div>
+        <div class="m-field"><label>Current Location</label><div class="val">${esc(p.CurrentLocation||'—')}</div></div>
+        <div class="m-field"><label>Submitted</label><div class="val">${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'—'}</div></div>
       </div>
     </div>
     <div class="m-section">
@@ -406,8 +413,13 @@ function openModal(id){
     </div>
     <div class="m-section">
       <div class="m-sec-title">Contact</div>
-      <div class="m-field full"><label>Email</label>
-        <div class="val">${p.Email?`<a href="mailto:${esc(p.Email)}" style="color:var(--gold);text-decoration:none">${esc(p.Email)}</a>`:'—'}</div>
+      <div class="m-grid">
+        <div class="m-field"><label>Email</label>
+          <div class="val">${p.Email?`<a href="mailto:${esc(p.Email)}" style="color:var(--gold);text-decoration:none">${esc(p.Email)}</a>`:'—'}</div>
+        </div>
+        <div class="m-field"><label>Phone</label>
+          <div class="val">${p.Phone?`<a href="tel:${esc(p.Phone)}" style="color:var(--gold);text-decoration:none">${esc(p.Phone)}</a>`:'—'}</div>
+        </div>
       </div>
     </div>`;
   document.getElementById('m-ov').classList.add('open');
