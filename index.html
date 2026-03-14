@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legio Football Club | Est. 2025</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--blue:#1c5575;--blue-dark:#163d54;--crimson:#9c1829;--gold:#dab751;--gold-bright:#e3ba24;--cream:#f8f6f1}
+        body{font-family:'Inter',sans-serif;background:var(--blue);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;position:relative;overflow-x:hidden}
+        .ribbon-bg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden}
+        .ribbon-bg svg{position:absolute;width:150%;height:150%;top:-25%;left:-25%;opacity:0.15}
+        .container{max-width:900px;width:100%;text-align:center;position:relative;z-index:1}
+        .logo{width:500px;height:500px;margin:0 auto 20px;animation:fadeIn 1s ease-out}
+        .logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 15px 40px rgba(0,0,0,0.4))}
+        .motto-english{font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:3px;color:rgba(248,246,241,0.7);text-transform:uppercase;margin-bottom:8px;animation:fadeIn 1s ease-out 0.2s backwards}
+        .founded{font-family:'Cinzel',serif;font-size:16px;font-weight:600;letter-spacing:8px;color:var(--gold);opacity:0.8;margin-bottom:50px;animation:fadeIn 1s ease-out 0.3s backwards}
+        .section-label{font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:4px;color:var(--gold);text-transform:uppercase;margin-bottom:30px;animation:fadeIn 1s ease-out 0.4s backwards}
+        .camps-grid{display:flex;gap:50px;justify-content:center;align-items:flex-end;margin-bottom:35px;animation:fadeIn 1s ease-out 0.5s backwards}
+        .camp-column{display:flex;flex-direction:column;align-items:center}
+        .camp-logo-link{display:flex;align-items:center;justify-content:center;height:90px;margin-bottom:15px;transition:transform 0.3s ease,opacity 0.3s ease}
+        .camp-logo-link:hover{transform:scale(1.05);opacity:0.9}
+        .camp-logo{height:100%;width:auto;object-fit:contain}
+        .tst-logo{filter:invert(1) brightness(2);height:75px}
+        .cary-logo{height:90px}
+        .camp-title{font-family:'Cinzel',serif;font-size:14px;font-weight:600;letter-spacing:2px;color:#fff;text-transform:uppercase;height:90px;display:flex;align-items:center;justify-content:center;margin-bottom:15px;text-decoration:none;transition:transform 0.3s ease,opacity 0.3s ease}
+        .camp-title:hover{transform:scale(1.05);opacity:0.9}
+        .btn-camp{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 35px;font-family:'Cinzel',serif;font-size:12px;font-weight:500;letter-spacing:2px;text-decoration:none;text-transform:uppercase;transition:all 0.3s ease;cursor:pointer;border:1px solid var(--gold);background:transparent;color:var(--gold)}
+        .btn-camp:hover{background:var(--gold);color:var(--blue-dark)}
+        .divider-line{width:60px;height:1px;background:var(--gold);margin:0 auto 35px;opacity:0.4;animation:fadeIn 1s ease-out 0.6s backwards}
+        .supporters-section{text-align:center;margin-bottom:35px;animation:fadeIn 1s ease-out 0.65s backwards}
+        .supporters-section .section-label{margin-bottom:10px}
+        .supporters-text{font-family:'Inter',sans-serif;font-size:14px;font-weight:300;color:rgba(248,246,241,0.7);margin-bottom:15px}
+        .btn-youtube{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;text-decoration:none;background:#FF0000;color:#fff;border-radius:4px;transition:all 0.3s ease;margin-bottom:25px}
+        .btn-youtube:hover{background:#cc0000;transform:scale(1.05)}
+        .btn-youtube svg{width:20px;height:20px}
+        .videos-grid{display:flex;gap:15px;justify-content:center;margin-bottom:15px;flex-wrap:wrap}
+        .video-container{position:relative;width:280px;aspect-ratio:16/9;border:1px solid var(--gold);border-radius:4px;overflow:hidden}
+        .video-container iframe{position:absolute;top:0;left:0;width:100%;height:100%}
+        .channel-links{display:flex;gap:20px;justify-content:center;margin-bottom:25px;flex-wrap:wrap}
+        .channel-link{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-family:'Inter',sans-serif;font-size:11px;font-weight:400;text-decoration:none;color:rgba(248,246,241,0.7);border:1px solid rgba(248,246,241,0.3);border-radius:4px;transition:all 0.3s ease}
+        .channel-link:hover{background:rgba(255,255,255,0.1);color:var(--cream);border-color:var(--gold)}
+        .channel-link svg{width:16px;height:16px;fill:#FF0000}
+        .btn-supporters{display:inline-flex;align-items:center;gap:10px;padding:12px 35px;font-family:'Cinzel',serif;font-size:12px;font-weight:500;letter-spacing:2px;text-decoration:none;text-transform:uppercase;transition:all 0.3s ease;cursor:pointer;border:1px solid var(--gold);background:transparent;color:var(--gold)}
+        .btn-supporters:hover{background:var(--gold);color:var(--blue-dark)}
+        .instagram-icon{width:18px;height:18px}
+        .contact-link{font-family:'Inter',sans-serif;font-size:12px;font-weight:400;letter-spacing:2px;color:rgba(248,246,241,0.5);text-decoration:none;text-transform:uppercase;transition:color 0.3s ease;animation:fadeIn 1s ease-out 0.7s backwards}
+        .contact-link:hover{color:var(--cream)}
+        footer{margin-top:60px;animation:fadeIn 1s ease-out 0.8s backwards}
+        footer p{font-family:'Inter',sans-serif;color:rgba(248,246,241,0.25);font-size:11px;letter-spacing:1px}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @media(max-width:480px){body{padding:40px 10px;justify-content:flex-start;padding-top:20px}.container{max-width:320px;width:100%}.logo{width:280px;height:280px;margin:0 auto 15px}.motto-english{font-size:9px;letter-spacing:3px}.founded{font-size:12px;letter-spacing:6px;margin-bottom:35px}.section-label{font-size:9px;letter-spacing:3px;margin-bottom:20px}.camps-grid{gap:20px;flex-wrap:wrap}.camp-column{min-width:95px}.camp-logo-link{height:50px;margin-bottom:10px}.tst-logo{height:40px}.cary-logo{height:50px}.camp-title{height:50px;font-size:9px;margin-bottom:10px}.btn-camp{padding:10px 20px;font-size:10px;letter-spacing:1.5px}.supporters-text{font-size:12px}.btn-supporters{padding:10px 25px;font-size:10px}.instagram-icon{width:16px;height:16px}.contact-link{font-size:10px}footer p{font-size:10px}.videos-grid{flex-direction:column;align-items:center}.video-container{width:100%;max-width:300px}.channel-links{flex-direction:column;align-items:center;gap:10px}}
+    </style>
+</head>
+<body>
+    <div class="ribbon-bg">
+        <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="gold1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#dab751;stop-opacity:0.1"/><stop offset="50%" style="stop-color:#e3ba24;stop-opacity:0.7"/><stop offset="100%" style="stop-color:#dab751;stop-opacity:0.1"/></linearGradient>
+                <linearGradient id="gold2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#e3ba24;stop-opacity:0.15"/><stop offset="50%" style="stop-color:#dab751;stop-opacity:0.5"/><stop offset="100%" style="stop-color:#e3ba24;stop-opacity:0.15"/></linearGradient>
+            </defs>
+            <g opacity="0.5"><path stroke="url(#gold1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700;M-30,80 Q120,180 270,250 T520,400 T720,520 T870,680;M-70,30 Q80,120 230,180 T480,320 T680,480 T830,720;M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700" dur="20s" repeatCount="indefinite"/></path><path stroke="url(#gold2)" stroke-width="2" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-40,60 Q110,160 260,210 T510,360 T710,510 T860,710;M-20,90 Q130,190 280,260 T530,410 T730,530 T880,690;M-60,40 Q90,130 240,190 T490,330 T690,490 T840,730;M-40,60 Q110,160 260,210 T510,360 T710,510 T860,710" dur="20s" repeatCount="indefinite"/></path></g>
+            <g opacity="0.4"><path stroke="url(#gold1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500;M1050,180 Q880,300 730,380 T480,420 T280,450 T80,520;M1050,220 Q920,230 770,320 T520,480 T320,380 T120,480;M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500" dur="18s" repeatCount="indefinite"/></path><path stroke="url(#gold2)" stroke-width="0.75" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,210 Q910,260 760,360 T510,460 T310,410 T110,510;M1050,190 Q890,310 740,390 T490,430 T290,460 T90,530;M1050,230 Q930,240 780,330 T530,490 T330,390 T130,490;M1050,210 Q910,260 760,360 T510,460 T310,410 T110,510" dur="18s" repeatCount="indefinite"/></path></g>
+            <g opacity="0.45"><path stroke="url(#gold1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M200,1050 Q250,900 400,750 T550,550 T450,350 T600,150;M180,1050 Q300,880 420,730 T530,520 T470,380 T580,180;M220,1050 Q230,920 380,770 T570,580 T430,320 T620,120;M200,1050 Q250,900 400,750 T550,550 T450,350 T600,150" dur="22s" repeatCount="indefinite"/></path><path stroke="url(#gold2)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M210,1050 Q260,910 410,760 T560,560 T460,360 T610,160;M190,1050 Q310,890 430,740 T540,530 T480,390 T590,190;M230,1050 Q240,930 390,780 T580,590 T440,330 T630,130;M210,1050 Q260,910 410,760 T560,560 T460,360 T610,160" dur="22s" repeatCount="indefinite"/></path></g>
+            <g opacity="0.35"><path stroke="url(#gold1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,600 Q150,550 350,650 T600,580 T850,660 T1050,600;M-50,580 Q150,630 350,560 T600,640 T850,570 T1050,620;M-50,620 Q150,570 350,640 T600,560 T850,650 T1050,580;M-50,600 Q150,550 350,650 T600,580 T850,660 T1050,600" dur="16s" repeatCount="indefinite"/></path></g>
+            <g opacity="0.3"><path stroke="url(#gold1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,50 Q850,150 700,300 T450,500 T250,650 T50,850;M1050,80 Q830,180 680,320 T430,480 T230,680 T30,870;M1050,30 Q870,120 720,280 T470,520 T270,620 T70,830;M1050,50 Q850,150 700,300 T450,500 T250,650 T50,850" dur="24s" repeatCount="indefinite"/></path></g>
+            <g opacity="0.4"><path stroke="url(#gold1)" stroke-width="0.75" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,800 Q100,700 200,550 T350,350 T450,200 T400,50;M-30,820 Q120,680 220,530 T370,380 T430,180 T420,30;M-70,780 Q80,720 180,570 T330,320 T470,220 T380,70;M-50,800 Q100,700 200,550 T350,350 T450,200 T400,50" dur="19s" repeatCount="indefinite"/></path><path stroke="url(#gold2)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-40,810 Q110,710 210,560 T360,360 T460,210 T410,60;M-20,830 Q130,690 230,540 T380,390 T440,190 T430,40;M-60,790 Q90,730 190,580 T340,330 T480,230 T390,80;M-40,810 Q110,710 210,560 T360,360 T460,210 T410,60" dur="19s" repeatCount="indefinite"/></path></g>
+        </svg>
+    </div>
+    <div class="container">
+        <div class="logo"><img src="logo.png" alt="Legio Football Club Crest"></div>
+        <p class="motto-english">We Gather The Best Against The World</p>
+        <p class="founded">MMXXV</p>
+        <p class="section-label">Player ID Camps</p>
+        <div class="camps-grid">
+            <div class="camp-column">
+                <a href="https://tst7v7.com/" target="_blank" class="camp-logo-link"><img src="tst-logo.png" alt="TST - The Soccer Tournament" class="camp-logo tst-logo"></a>
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DPy1mYW-MUWn3ryNoAAuwqlBGSo-bwJMoZS3DwqdmMlUM0hRVkRVUzZXRkY5WDE1SUhYRkhLVVdHOS4u" class="btn-camp" target="_blank">ID Camps</a>
+            </div>
+            <div class="camp-column">
+                <a href="https://www.townofcary.org/carycup" target="_blank" class="camp-logo-link"><img src="cary-cup-logo.png" alt="The Cary Cup" class="camp-logo cary-logo"></a>
+                <a href="https://forms.office.com/r/ZCWZU6yHzg" class="btn-camp" target="_blank">ID Camps</a>
+            </div>
+            <div class="camp-column">
+                <span class="camp-title">Regional<br>Tournaments</span>
+                <a href="https://forms.office.com/r/jzGzrQRpcu" class="btn-camp" target="_blank">ID Camps</a>
+            </div>
+        </div>
+        <div class="divider-line"></div>
+        <div class="supporters-section">
+            <p class="section-label">Supporters</p>
+            <p class="supporters-text">Come watch us play in our next tournament</p>
+            <a href="https://www.youtube.com/@DSTBTD?sub_confirmation=1" target="_blank" class="btn-youtube">
+                <svg viewBox="0 0 24 24" fill="#fff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                Subscribe
+            </a>
+            <div class="videos-grid">
+                <div class="video-container">
+                    <iframe src="https://www.youtube.com/embed/vASAFuKIAlU" title="Soccer 2 Night" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="channel-links">
+                <a href="https://www.youtube.com/@DallasStreetSoccer" target="_blank" class="channel-link">
+                    <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    Dallas Street Soccer
+                </a>
+                <a href="https://www.youtube.com/@CrossbarDallas" target="_blank" class="channel-link">
+                    <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    Crossbar Dallas
+                </a>
+            </div>
+            <a href="https://www.instagram.com/legio.fc" class="btn-supporters" target="_blank">
+                <svg class="instagram-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                Follow Us
+            </a>
+        </div>
+        <div class="divider-line"></div>
+        <a href="mailto:operations@legiofc.com" class="contact-link">Contact Us</a>
+        <footer><p>&copy; 2025 Legio Football Club</p></footer>
+    </div>
+</body>
+</html>
