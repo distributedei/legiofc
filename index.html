@@ -280,62 +280,33 @@
 
 <script>
 // ── LIVE MATCH POLLING ──
-// Polls SharePoint every 30s for any match with IsLive = true
-// Uses public anonymous token from a registered app with Sites.Read.All
-const LIVE_CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
-const LIVE_TENANT_ID = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
-const LIVE_SITE_HOST = 'legiofc.sharepoint.com';
-let liveToken = null, liveSiteId = null, liveListId = null, liveInterval = null;
+// Polls via Power Automate public endpoint every 30s — no auth needed
+const LIVE_FLOW_URL = 'https://default99b5fc0cbe854531a7debc8da0002e.c2.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/507f2fd745364b0bba4ef0690af99fe5/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=BZ_EsIeyOHWrS-Nu5kHxoHdgiUjhoQ1cSFFSjPNSgD4';
+let liveInterval = null;
 let currentLiveId = null;
-
-async function getLiveToken() {
-  if (liveToken) return liveToken;
-  // Use MSAL silent token if available (staff logged in on same browser)
-  try {
-    const msal2 = new msal.PublicClientApplication({
-      auth:{clientId:LIVE_CLIENT_ID,authority:`https://login.microsoftonline.com/${LIVE_TENANT_ID}`},
-      cache:{cacheLocation:'localStorage'}
-    });
-    await msal2.initialize();
-    const accts = msal2.getAllAccounts();
-    if (accts.length) {
-      const r = await msal2.acquireTokenSilent({scopes:['Sites.Read.All'],account:accts[0]});
-      liveToken = r.accessToken;
-      return liveToken;
-    }
-  } catch(e) {}
-  return null;
-}
-
-async function getLiveIds(token) {
-  if (liveSiteId) return;
-  const h = {Authorization:`Bearer ${token}`};
-  const s = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${LIVE_SITE_HOST}`,{headers:h})).json();
-  liveSiteId = s.id;
-  const ls = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${liveSiteId}/lists?$select=id,displayName`,{headers:h})).json();
-  for (const l of ls.value) if (l.displayName === 'LegioMatches') liveListId = l.id;
-}
 
 async function pollForLiveMatch() {
   try {
-    const token = await getLiveToken();
-    if (!token) return;
-    await getLiveIds(token);
-    if (!liveListId) return;
-    const h = {Authorization:`Bearer ${token}`};
-    const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${liveSiteId}/lists/${liveListId}/items?$expand=fields($select=Title,Opponent,Tournament,LegioScore,OpponentScore,YouTubeURL,Notes,IsLive,Status)&$top=50`,{headers:h});
+    const res = await fetch(LIVE_FLOW_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({})
+    });
+    if (!res.ok) return;
     const data = await res.json();
+    const items = Array.isArray(data) ? data : (data.value || []);
     const now = new Date();
-    // Auto-trigger: match has YouTubeURL and MatchDate within 3 hours of now
-    const autoLive = (data.value||[]).find(i => {
-      const f = i.fields;
+    // Auto-trigger: IsLive=true OR has YouTubeURL + MatchDate within window
+    const autoLive = items.find(i => {
+      const f = i.fields || i;
       if (!f.YouTubeURL || !f.MatchDate) return false;
       if (f.Status === 'Final') return false;
       const matchTime = new Date(f.MatchDate);
       const diffHours = (now - matchTime) / (1000 * 60 * 60);
-      return diffHours >= -0.5 && diffHours <= 3; // 30min before to 3hrs after
+      return diffHours >= -0.5 && diffHours <= 3;
     });
-    const live = autoLive || (data.value||[]).find(i => i.fields.IsLive === true);
+    const manualLive = items.find(i => (i.fields || i).IsLive === true);
+    const live = manualLive || autoLive;
     if (live) {
       const f = live.fields;
       if (currentLiveId !== live.id) {
