@@ -656,7 +656,16 @@ function renderMatches(){
       const cls=m.LegioScore>m.OpponentScore?'score-w':m.LegioScore<m.OpponentScore?'score-l':'score-d';
       scoreHtml=`<span class="score-cell ${cls}">${ls} – ${os}</span>${m.Notes?`<span style="font-size:9px;color:var(--text-faint);margin-left:6px;">${esc(m.Notes)}</span>`:''}`;
     }
-    const statusTag=m.Status==='Live'?'tag-live':m.Status==='Final'?'tag-final':'tag-upcoming';
+    // Calculate effective status from MatchDate
+    const now2 = new Date();
+    let effectiveStatus = m.Status;
+    if (m.MatchDate && m.Status !== 'Final') {
+      const mt = new Date(m.MatchDate);
+      const diff = (now2 - mt) / (1000 * 60 * 60);
+      if (diff >= -0.5 && diff <= 3) effectiveStatus = 'Live';
+      else if (diff < -0.5) effectiveStatus = 'Upcoming';
+    }
+    const statusTag=effectiveStatus==='Live'?'tag-live':effectiveStatus==='Final'?'tag-final':'tag-upcoming';
     return `<tr>
       <td class="td-num">${i+1}</td>
       <td class="td-name" style="cursor:default">${esc(m.Title||'—')}</td>
@@ -664,7 +673,7 @@ function renderMatches(){
       <td style="font-size:12px">${dateStr}</td>
       <td>${esc(m.Venue||'—')}</td>
       <td>${scoreHtml}</td>
-      <td><span class="tag ${statusTag}">${esc(m.Status)}</span></td>
+      <td><span class="tag ${statusTag}">${esc(effectiveStatus)}</span></td>
       <td style="white-space:nowrap">
         <button onclick="editMatch('${m._id}')" style="background:transparent;border:1px solid var(--gold-border);color:var(--gold);padding:4px 10px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;cursor:pointer;margin-right:4px" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='transparent'">Edit</button>
         <button onclick="deleteMatch('${m._id}')" style="background:transparent;border:1px solid rgba(156,24,41,.4);color:#d07080;padding:4px 10px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;cursor:pointer" onmouseover="this.style.background='rgba(156,24,41,.1)'" onmouseout="this.style.background='transparent'">Delete</button>
