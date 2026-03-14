@@ -305,11 +305,11 @@
             <div style="padding:16px 24px;border-bottom:1px solid rgba(218,183,81,0.15);display:flex;align-items:center;justify-content:space-between;">
               <div style="display:flex;align-items:center;gap:10px;">
                 <span id="schedule-live-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(218,183,81,0.4);display:inline-block;"></span>
-                <span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;">Upcoming Matches</span>
+                <span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;">Matches</span>
               </div>
               <span id="schedule-count" style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:rgba(218,183,81,0.4);text-transform:uppercase;"></span>
             </div>
-            <div style="overflow-x:auto;">
+            <div style="overflow-x:auto;max-height:370px;overflow-y:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px;">
                 <thead>
                   <tr style="background:rgba(22,61,84,0.6);border-bottom:1px solid rgba(218,183,81,0.12);">
@@ -358,11 +358,11 @@ function renderScheduleTable(items) {
   const dotEl = document.getElementById('schedule-live-dot');
   if (!tbody) return;
 
-  const matches = (items||[]).filter(i => i.Status !== 'Final');
+  const matches = (items||[]);
   window._liveMatches = matches;
 
   if (!matches.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.3);text-transform:uppercase;">No upcoming matches scheduled</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.3);text-transform:uppercase;">No matches scheduled</td></tr>';
     if (countEl) countEl.textContent = '';
     return;
   }
@@ -380,7 +380,20 @@ function renderScheduleTable(items) {
   }
   if (countEl) countEl.textContent = matches.length + ' match' + (matches.length>1?'es':'');
 
-  matches.sort(function(a,b){ return new Date(a.MatchDate) - new Date(b.MatchDate); });
+  matches.sort(function(a,b) {
+    var now2 = new Date();
+    function rank(m) {
+      var mt = new Date(m.MatchDate);
+      var diff = (now2 - mt) / (1000*60*60);
+      if (diff >= -0.5 && diff <= 3) return 0; // live
+      if (m.Status === 'Final') return 2;
+      return 1; // upcoming
+    }
+    var ra = rank(a), rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    if (ra === 2) return new Date(b.MatchDate) - new Date(a.MatchDate); // finals newest first
+    return new Date(a.MatchDate) - new Date(b.MatchDate); // upcoming soonest first
+  });
 
   var rows = '';
   for (var idx=0; idx<matches.length; idx++) {
@@ -389,9 +402,12 @@ function renderScheduleTable(items) {
     var diff = (now - mt) / (1000*60*60);
     var isLive = diff >= -0.5 && diff <= 3;
     var dateStr = mt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' · ' + mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    var isFinal = m.Status === 'Final';
     var statusHtml = isLive
       ? '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#4caf50;animation:livepls 1s ease-in-out infinite;display:inline-block;"></span><span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:#4caf50;text-transform:uppercase;">Live</span></span>'
-      : '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(218,183,81,0.45);text-transform:uppercase;">Upcoming</span>';
+      : isFinal
+        ? '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(248,246,241,0.25);text-transform:uppercase;">Final</span>'
+        : '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(218,183,81,0.45);text-transform:uppercase;">Upcoming</span>';
     var bg = isLive ? 'rgba(76,175,80,0.05)' : 'transparent';
     var btnBg = isLive ? '#4caf50' : 'transparent';
     var btnBorder = isLive ? '#4caf50' : 'rgba(218,183,81,0.3)';
@@ -401,7 +417,7 @@ function renderScheduleTable(items) {
       : '<span style="font-size:11px;color:rgba(218,183,81,0.2);">—</span>';
     rows += '<tr style="border-bottom:1px solid rgba(218,183,81,0.06);background:' + bg + ';">' +
       '<td style="padding:12px 16px;">' + statusHtml + '</td>' +
-      '<td style="padding:12px 16px;font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:.5px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 4px;">vs</span> ' + (m.Opponent||'TBD') + '</td>' +
+      '<td style="padding:12px 16px;font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:.5px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 4px;">vs</span> ' + (m.Opponent||'TBD') + (isFinal && m.LegioScore!=null ? '<span style="font-family:Cinzel,serif;font-size:11px;color:rgba(218,183,81,0.5);margin-left:10px;">' + m.LegioScore + '–' + m.OpponentScore + '</span>' : '') + '</td>' +
       '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + (m.Tournament||'—') + '</td>' +
       '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + dateStr + '</td>' +
       '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + (m.Venue||'—') + '</td>' +
