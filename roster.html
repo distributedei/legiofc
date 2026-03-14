@@ -569,8 +569,14 @@ function openModal(id){
     if(wa)html+=`<a class="m-email-btn" href="https://wa.me/${wa}" target="_blank" style="background:#25D366"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp</a>`;
     if(!p.Email&&!wa)html=`<span class="m-email-addr" style="color:var(--text-faint)">No contact info on file</span>`;
     if(p.Email&&!wa)html+=`<span class="m-email-addr">${esc(p.Email)}</span>`;
+    html+=`<button class="m-email-btn" style="background:transparent;border:1px solid var(--gold-border);color:var(--gold);cursor:pointer;margin-left:auto;" onclick="editPlayer('${id}')">✏ Edit</button>`;
     return html;
   })();
+  renderPlayerView(p);
+  document.getElementById('m-ov').classList.add('open');
+}
+
+function renderPlayerView(p){
   document.getElementById('m-body').innerHTML=`
     <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
       <div class="m-field"><label>Full Name</label><div class="val">${esc(p.FullName||'—')}</div></div>
@@ -593,10 +599,77 @@ function openModal(id){
       <div class="m-field"><label>Email</label><div class="val">${p.Email?`<a href="#" onclick="event.preventDefault();window.open('mailto:${esc(p.Email)}','_self')" style="color:var(--gold);text-decoration:none">${esc(p.Email)}</a>`:'—'}</div></div>
       <div class="m-field"><label>Phone</label><div class="val">${p.Phone?`<a href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none">${esc(p.Phone)}</a>`:'—'}</div></div>
     </div></div>`;
-  document.getElementById('m-ov').classList.add('open');
 }
 
-function closeModal(e){if(!e||e.target===document.getElementById('m-ov'))document.getElementById('m-ov').classList.remove('open');}
+function editPlayer(id){
+  const p=all.find(x=>x._id===id);if(!p)return;
+  document.getElementById('m-body').innerHTML=`
+    <div class="match-form">
+      <div class="mf-field"><label>First / Full Name</label><input type="text" id="pf-fullname" value="${esc(p.FullName||'')}"></div>
+      <div class="mf-field"><label>Last Name</label><input type="text" id="pf-lastname" value="${esc(p.LastName||'')}"></div>
+      <div class="mf-field"><label>Date of Birth</label><input type="text" id="pf-dob" value="${esc(p.BirthDate||'')}"></div>
+      <div class="mf-field"><label>Gender</label>
+        <select id="pf-gender">
+          <option value="">—</option>
+          <option value="Male" ${p.Gender==='Male'?'selected':''}>Male</option>
+          <option value="Female" ${p.Gender==='Female'?'selected':''}>Female</option>
+          <option value="Other" ${p.Gender==='Other'?'selected':''}>Other</option>
+        </select>
+      </div>
+      <div class="mf-field"><label>Can Travel</label>
+        <select id="pf-travel">
+          <option value="">—</option>
+          <option value="Yes" ${p.CanTravel==='Yes'?'selected':''}>Yes</option>
+          <option value="No" ${p.CanTravel==='No'?'selected':''}>No</option>
+        </select>
+      </div>
+      <div class="mf-field"><label>Current Location</label><input type="text" id="pf-location" value="${esc(p.CurrentLocation||'')}"></div>
+      <div class="mf-field"><label>Country</label><input type="text" id="pf-country" value="${esc(p.Country||'')}"></div>
+      <div class="mf-field"><label>ID Camp Location</label><input type="text" id="pf-camp" value="${esc(p.IDCampLocation||'')}"></div>
+      <div class="mf-field full"><label>Current Team & League</label><input type="text" id="pf-team" value="${esc(p.CurrentTeam||'')}"></div>
+      <div class="mf-field full"><label>Past Experience</label><textarea id="pf-exp" rows="4" style="width:100%;background:var(--blue);border:1px solid var(--gold-border);color:var(--text);padding:8px;font-family:inherit;font-size:12px;resize:vertical;">${esc(p.PastExperience||'')}</textarea></div>
+      <div class="mf-field"><label>Email</label><input type="email" id="pf-email" value="${esc(p.Email||'')}"></div>
+      <div class="mf-field"><label>Phone</label><input type="text" id="pf-phone" value="${esc(p.Phone||'')}"></div>
+      <div class="mf-actions">
+        <button class="cancel-btn" onclick="openModal('${id}')">Cancel</button>
+        <button class="save-btn" id="pf-save-btn" onclick="savePlayer('${id}')">Save Player</button>
+      </div>
+    </div>`;
+}
+
+async function savePlayer(id){
+  const btn=document.getElementById('pf-save-btn');
+  btn.textContent='Saving…';btn.disabled=true;
+  try{
+    await getSiteAndLists();
+    const t=await getToken();
+    const fields={
+      Title:document.getElementById('pf-fullname').value,
+      LastName:document.getElementById('pf-lastname').value,
+      BirthDate:document.getElementById('pf-dob').value,
+      Gender:document.getElementById('pf-gender').value,
+      CanTravel:document.getElementById('pf-travel').value,
+      CurrentLocation:document.getElementById('pf-location').value,
+      Country:document.getElementById('pf-country').value,
+      IDCampLocation:document.getElementById('pf-camp').value,
+      CurrentTeam:document.getElementById('pf-team').value,
+      PastExperience:document.getElementById('pf-exp').value,
+      Email:document.getElementById('pf-email').value,
+      Phone:document.getElementById('pf-phone').value,
+    };
+    const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items/${id}/fields`,
+      {method:'PATCH',headers:{Authorization:`Bearer ${t}`,'Content-Type':'application/json'},body:JSON.stringify(fields)});
+    if(!r.ok)throw new Error(await r.text());
+    // Update local cache
+    const p=all.find(x=>x._id===id);
+    if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
+    showToast('Player saved ✓');
+    openModal(id);
+  }catch(e){
+    showToast('Error: '+e.message,true);
+    btn.textContent='Save Player';btn.disabled=false;
+  }
+}
 
 // ── MATCHES ──
 async function loadMatches(){
