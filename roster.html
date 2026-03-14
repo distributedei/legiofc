@@ -21,11 +21,8 @@
     }
     html{scroll-behavior:smooth}
     body{font-family:'Inter',sans-serif;background:var(--blue-dark);color:var(--cream);min-height:100vh;position:relative;overflow-x:hidden}
-
-    /* ribbon */
     .ribbon-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
     .ribbon-bg svg{position:absolute;width:150%;height:150%;top:-25%;left:-25%;opacity:0.06}
-
     .page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
 
     /* nav */
@@ -47,7 +44,6 @@
     .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;font-family:'Cinzel',serif;font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold);background:transparent;color:var(--gold);transition:all .25s ease;text-decoration:none}
     .btn:hover{background:var(--gold);color:var(--blue-dark)}
     .btn:disabled{opacity:.4;cursor:not-allowed}
-    .btn:disabled:hover{background:transparent;color:var(--gold)}
     .btn-sm{padding:5px 13px;font-size:9px;letter-spacing:1.5px}
     .btn-ghost{border-color:var(--gold-border);color:var(--text-dim)}
     .btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:transparent}
@@ -63,13 +59,12 @@
     .ms-btn{display:inline-flex;align-items:center;gap:11px;padding:13px 34px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:10px;font-weight:500;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:all .25s ease;animation:fadeUp .8s ease-out .28s backwards}
     .ms-btn:hover{background:var(--gold);color:var(--blue-dark)}
     .ms-btn:disabled{opacity:.5;cursor:not-allowed}
-    .ms-btn:disabled:hover{background:transparent;color:var(--gold)}
     .ms-icon{width:17px;height:17px;flex-shrink:0}
     .auth-note{margin-top:16px;font-size:10px;letter-spacing:1px;color:var(--text-faint);animation:fadeUp .8s ease-out .33s backwards}
 
     /* app */
     #app-screen{display:none;flex:1;flex-direction:column}
-    .container{max-width:1360px;margin:0 auto;padding:28px 26px}
+    .container{max-width:1400px;margin:0 auto;padding:28px 26px}
 
     /* stats */
     .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
@@ -97,7 +92,7 @@
     /* table */
     .tbl-wrap{background:rgba(22,61,84,.4);border:1px solid var(--gold-border);backdrop-filter:blur(6px);overflow:hidden}
     .tbl-scroll{overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:13px;min-width:960px}
+    table{width:100%;border-collapse:collapse;font-size:13px;min-width:1100px}
     thead{position:sticky;top:62px;z-index:50}
     thead tr{background:rgba(22,61,84,.98);border-bottom:1px solid var(--gold-border)}
     th{padding:11px 15px;text-align:left;font-family:'Cinzel',serif;font-size:8.5px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);cursor:pointer;user-select:none;white-space:nowrap;transition:color .15s}
@@ -108,11 +103,11 @@
     tbody tr{border-bottom:1px solid rgba(218,183,81,.07);cursor:pointer;transition:background .12s}
     tbody tr:hover{background:var(--cream-dim)}
     tbody tr:last-child{border-bottom:none}
-    td{padding:11px 15px;color:var(--text);max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+    td{padding:11px 15px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
     .td-n{color:var(--text-faint);font-size:11px;width:36px}
     .td-name{font-weight:500;color:var(--cream);letter-spacing:.3px}
     .tag{display:inline-block;padding:2px 9px;font-size:9px;font-weight:500;letter-spacing:1.5px;border:1px solid var(--gold-border);color:var(--gold);text-transform:uppercase}
-    .tag-pos{border-color:rgba(156,24,41,.4);color:#d97080}
+    .tag-gender{border-color:rgba(156,24,41,.4);color:#d97080}
     .tbl-foot{padding:11px 17px;border-top:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between}
     .foot-label{font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase}
 
@@ -120,7 +115,7 @@
     .state-box{padding:70px 40px;text-align:center}
     .state-icon{font-size:36px;margin-bottom:18px;opacity:.4}
     .state-title{font-family:'Cinzel',serif;font-size:12px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:10px}
-    .state-text{font-size:12px;font-weight:300;color:var(--text-dim);line-height:1.7}
+    .state-text{font-size:12px;font-weight:300;color:var(--text-dim);line-height:1.7;max-width:500px;margin:0 auto}
     .dots{display:flex;gap:6px;justify-content:center;margin-top:18px}
     .dots span{width:7px;height:7px;border-radius:50%;background:var(--gold);opacity:.35;animation:pls 1.2s ease-in-out infinite}
     .dots span:nth-child(2){animation-delay:.2s}
@@ -130,7 +125,7 @@
     /* modal */
     .m-overlay{display:none;position:fixed;inset:0;background:rgba(10,28,42,.76);backdrop-filter:blur(4px);z-index:500;align-items:center;justify-content:center;padding:20px}
     .m-overlay.open{display:flex}
-    .modal{background:var(--blue-dark);border:1px solid var(--gold-border);width:100%;max-width:570px;max-height:90vh;overflow-y:auto;animation:mIn .2s ease-out}
+    .modal{background:var(--blue-dark);border:1px solid var(--gold-border);width:100%;max-width:600px;max-height:90vh;overflow-y:auto;animation:mIn .2s ease-out}
     @keyframes mIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
     .m-head{background:rgba(22,61,84,.9);border-bottom:1px solid var(--gold-border);padding:22px 26px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .m-title{font-family:'Cinzel',serif;font-size:19px;font-weight:600;color:var(--cream)}
@@ -144,7 +139,7 @@
     .m-field label{display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:3px}
     .m-field .val{font-size:14px;color:var(--cream);font-weight:400;line-height:1.5}
     .m-field.full{grid-column:1/-1}
-    .med-box{background:var(--cream-faint);border:1px solid var(--gold-border);padding:13px;font-size:13px;color:var(--text);line-height:1.7;min-height:48px;font-weight:300}
+    .exp-box{background:var(--cream-faint);border:1px solid var(--gold-border);padding:13px;font-size:13px;color:var(--text);line-height:1.7;min-height:48px;font-weight:300}
 
     /* toast */
     .toast{position:fixed;bottom:26px;right:26px;background:rgba(22,61,84,.97);border:1px solid var(--gold-border);color:var(--cream);padding:11px 20px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:1000;transform:translateY(16px);opacity:0;transition:all .3s}
@@ -153,9 +148,8 @@
     .toast.error{border-color:#9c1829;color:#d97080}
 
     @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-
-    @media(max-width:900px){nav{padding:0 16px}.container{padding:20px 14px}.stats-row{grid-template-columns:repeat(3,1fr)}.cmd{gap:9px}.sel{min-width:105px}}
-    @media(max-width:600px){.stats-row{grid-template-columns:repeat(2,1fr)}.nav-wordmark .sub,.nav-div,.nav-section{display:none}.auth-headline{font-size:21px}}
+    @media(max-width:900px){nav{padding:0 16px}.container{padding:20px 14px}.stats-row{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:600px){.stats-row{grid-template-columns:repeat(2,1fr)}.nav-wordmark .sub,.nav-div,.nav-section{display:none}}
   </style>
 </head>
 <body>
@@ -166,15 +160,13 @@
       <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#dab751;stop-opacity:.1"/><stop offset="50%" style="stop-color:#e3ba24;stop-opacity:.7"/><stop offset="100%" style="stop-color:#dab751;stop-opacity:.1"/></linearGradient>
       <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#e3ba24;stop-opacity:.15"/><stop offset="50%" style="stop-color:#dab751;stop-opacity:.5"/><stop offset="100%" style="stop-color:#e3ba24;stop-opacity:.15"/></linearGradient>
     </defs>
-    <g opacity=".7"><path stroke="url(#g1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700;M-30,80 Q120,180 270,250 T520,400 T720,520 T870,680;M-70,30 Q80,120 230,180 T480,320 T680,480 T830,720;M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700" dur="20s" repeatCount="indefinite"/></path><path stroke="url(#g2)" stroke-width="2" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-40,60 Q110,160 260,210 T510,360 T710,510 T860,710;M-20,90 Q130,190 280,260 T530,410 T730,530 T880,690;M-60,40 Q90,130 240,190 T490,330 T690,490 T840,730;M-40,60 Q110,160 260,210 T510,360 T710,510 T860,710" dur="20s" repeatCount="indefinite"/></path></g>
+    <g opacity=".7"><path stroke="url(#g1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700;M-30,80 Q120,180 270,250 T520,400 T720,520 T870,680;M-70,30 Q80,120 230,180 T480,320 T680,480 T830,720;M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700" dur="20s" repeatCount="indefinite"/></path></g>
     <g opacity=".4"><path stroke="url(#g1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500;M1050,180 Q880,300 730,380 T480,420 T280,450 T80,520;M1050,220 Q920,230 770,320 T520,480 T320,380 T120,480;M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500" dur="18s" repeatCount="indefinite"/></path></g>
     <g opacity=".3"><path stroke="url(#g1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,600 Q150,550 350,650 T600,580 T850,660 T1050,600;M-50,580 Q150,630 350,560 T600,640 T850,570 T1050,620;M-50,620 Q150,570 350,640 T600,560 T850,650 T1050,580;M-50,600 Q150,550 350,650 T600,580 T850,660 T1050,600" dur="16s" repeatCount="indefinite"/></path></g>
   </svg>
 </div>
 
 <div class="page">
-
-  <!-- NAV -->
   <nav>
     <div class="nav-left">
       <a href="index.html" class="nav-logo-link">
@@ -195,7 +187,7 @@
   <!-- AUTH -->
   <div id="auth-screen">
     <div class="auth-logo">
-      <img src="logo.png" alt="Legio FC Crest" onerror="this.style.display='none'">
+      <img src="logo.png" alt="Legio FC" onerror="this.style.display='none'">
     </div>
     <p class="auth-eyebrow">Staff Access</p>
     <h1 class="auth-headline">ID Camp Roster</h1>
@@ -220,22 +212,22 @@
       <div class="stats-row">
         <div class="stat"><div class="stat-label">Total Registered</div><div class="stat-val" id="s-total">—</div></div>
         <div class="stat"><div class="stat-label">Showing</div><div class="stat-val" id="s-show">—</div></div>
-        <div class="stat"><div class="stat-label">Positions</div><div class="stat-val" id="s-pos">—</div></div>
-        <div class="stat"><div class="stat-label">Grad Years</div><div class="stat-val" id="s-yrs">—</div></div>
-        <div class="stat"><div class="stat-label">Tournaments</div><div class="stat-val" id="s-torn">—</div></div>
+        <div class="stat"><div class="stat-label">Locations</div><div class="stat-val" id="s-loc">—</div></div>
+        <div class="stat"><div class="stat-label">Can Travel</div><div class="stat-val" id="s-travel">—</div></div>
+        <div class="stat"><div class="stat-label">ID Camp Sites</div><div class="stat-val" id="s-camps">—</div></div>
       </div>
 
       <div class="cmd">
         <div class="search-wrap">
           <span class="s-icon">⚔</span>
-          <input class="search-input" id="q" placeholder="Search name, club, position, coach…" oninput="applyFilters()">
+          <input class="search-input" id="q" placeholder="Search name, location, team, league…" oninput="applyFilters()">
         </div>
-        <select class="sel" id="f-pos" onchange="applyFilters()"><option value="">All Positions</option></select>
-        <select class="sel" id="f-yr" onchange="applyFilters()"><option value="">All Grad Years</option></select>
-        <select class="sel" id="f-tr" onchange="applyFilters()"><option value="">All Tournaments</option></select>
-        <select class="sel" id="f-sz" onchange="applyFilters()">
-          <option value="">All Sizes</option>
-          <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+        <select class="sel" id="f-gender" onchange="applyFilters()"><option value="">All Genders</option></select>
+        <select class="sel" id="f-camp" onchange="applyFilters()"><option value="">All Camp Locations</option></select>
+        <select class="sel" id="f-travel" onchange="applyFilters()">
+          <option value="">Can Travel?</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
         </select>
         <button class="ref-btn" id="ref-btn" onclick="loadRoster()">
           <span id="ref-icon" style="font-size:14px">↻</span> Refresh
@@ -248,20 +240,19 @@
             <thead>
               <tr>
                 <th style="width:38px"></th>
-                <th onclick="sortBy('FullName')">Name <span class="sa">↕</span></th>
-                <th onclick="sortBy('Age')">Age <span class="sa">↕</span></th>
-                <th onclick="sortBy('GradYear')">Grad <span class="sa">↕</span></th>
-                <th onclick="sortBy('Position')">Position <span class="sa">↕</span></th>
-                <th onclick="sortBy('CurrentClub')">Club <span class="sa">↕</span></th>
-                <th>Coach</th>
-                <th onclick="sortBy('Tournament')">Tournament <span class="sa">↕</span></th>
-                <th>Parent</th>
-                <th>Parent Email</th>
-                <th>Size</th>
+                <th onclick="sortBy('FirstName')">Name <span class="sa">↕</span></th>
+                <th onclick="sortBy('BirthDateMMDDYY')">DOB <span class="sa">↕</span></th>
+                <th onclick="sortBy('Gender')">Gender <span class="sa">↕</span></th>
+                <th onclick="sortBy('CurrentLocationCityand')">Location <span class="sa">↕</span></th>
+                <th onclick="sortBy('IDCampLocationCityandState')">ID Camp Site <span class="sa">↕</span></th>
+                <th onclick="sortBy('WhatIsYourCurrentTeamandLeague')">Current Team <span class="sa">↕</span></th>
+                <th>Past Experience</th>
+                <th onclick="sortBy('AreYouAbleToTravel')">Can Travel <span class="sa">↕</span></th>
+                <th>Email</th>
               </tr>
             </thead>
             <tbody id="tbody">
-              <tr><td colspan="11">
+              <tr><td colspan="10">
                 <div class="state-box">
                   <div class="state-icon">⚔</div>
                   <div class="state-title">Summoning The Legion</div>
@@ -276,7 +267,6 @@
           <span class="foot-label" id="foot-time"></span>
         </div>
       </div>
-
     </div>
   </div>
 </div>
@@ -299,13 +289,16 @@
 
 <script>
 // ══════════════════════════════════════════════════════════
-//  CONFIG  ←  update these 5 values before deploying
+//  CONFIG — update before deploying
 // ══════════════════════════════════════════════════════════
-const CLIENT_ID = 'YOUR-CLIENT-ID-HERE';       // Azure → App registrations → Application (client) ID
-const TENANT_ID = 'YOUR-TENANT-ID-HERE';        // Azure → App registrations → Directory (tenant) ID
-const SITE_HOST = 'legiofc.sharepoint.com';     // no https://
-const SITE_PATH = '/sites/LegioFC';             // verify against your SharePoint URL
-const LIST_NAME = 'IDCampRoster';               // exact, case-sensitive
+const CLIENT_ID   = 'YOUR-CLIENT-ID-HERE';
+const TENANT_ID   = 'YOUR-TENANT-ID-HERE';
+
+// Excel file location — from the SharePoint URL you provided
+const DRIVE_HOST  = 'legiofc-my.sharepoint.com';
+const OWNER_UPN   = 'sharrington_legiofc_com';   // the personal site owner
+const FILE_ID     = '38891796-BF1D-45EE-8035-19ED32A2FC8E';
+const TABLE_NAME  = 'Table1';  // ← update if your table has a different name
 
 // ══════════════════════════════════════════════════════════
 //  MSAL
@@ -318,13 +311,15 @@ const msalConfig = {
   },
   cache: { cacheLocation: 'sessionStorage' }
 };
-const loginReq = { scopes: ['Sites.Read.All','User.Read'] };
+
+// Need Files.Read to read Excel via Graph
+const loginReq = { scopes: ['Files.Read.All', 'User.Read'] };
 const msal_ = new msal.PublicClientApplication(msalConfig);
 
 // ══════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════
-let all = [], filtered = [], sortCol = 'FullName', sortAsc = true;
+let all = [], filtered = [], sortCol = 'FirstName', sortAsc = true;
 
 // ══════════════════════════════════════════════════════════
 //  AUTH
@@ -342,7 +337,7 @@ async function signIn() {
   try {
     const r = await msal_.loginPopup(loginReq);
     showApp(r.account); loadRoster();
-  } catch {
+  } catch(e) {
     btn.innerHTML = `<svg class="ms-icon" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign In with Microsoft`;
     btn.disabled = false;
     toast('Sign-in failed — try again', 'error');
@@ -360,7 +355,7 @@ function showApp(a) {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'flex';
   const name = a.name || a.username;
-  const ini  = name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  const ini = name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-right').innerHTML = `
     <div class="user-pill">
       <div class="user-avatar">${ini}</div>
@@ -377,7 +372,7 @@ async function getToken() {
 }
 
 // ══════════════════════════════════════════════════════════
-//  DATA
+//  LOAD DATA — reads directly from Excel via Graph API
 // ══════════════════════════════════════════════════════════
 async function loadRoster() {
   spinning(true);
@@ -385,40 +380,77 @@ async function loadRoster() {
     const token = await getToken();
     const h = { Authorization: `Bearer ${token}` };
 
-    const siteR = await fetch(`https://graph.microsoft.com/v1.0/sites/${SITE_HOST}:${SITE_PATH}`, {headers:h});
-    if (!siteR.ok) throw new Error(`Site lookup failed (${siteR.status}) — check SITE_PATH`);
-    const { id: siteId } = await siteR.json();
-
-    const listR = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$filter=displayName eq '${LIST_NAME}'&$select=id`, {headers:h});
-    const { value: lists } = await listR.json();
-    if (!lists?.length) throw new Error(`List "${LIST_NAME}" not found`);
-    const listId = lists[0].id;
-
-    const flds = 'FullName,Age,GradYear,Position,CurrentClub,CurrentCoach,CoachPhone,ParentName,ParentEmail,ParentPhone,ShirtSize,EmergencyContact,MedicalNotes,Tournament,SubmittedDate';
-    let url = `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=${flds})&$top=999`;
-    let rows = [];
-    while (url) {
-      const r = await fetch(url, {headers:h});
-      if (!r.ok) throw new Error(`Items fetch failed: ${r.status}`);
-      const d = await r.json();
-      rows = rows.concat(d.value.map(i => ({id:i.id,...i.fields})));
-      url = d['@odata.nextLink'] || null;
+    // Get the user's drive item for the Excel file by file ID
+    // Using /users/{upn}/drive/items/{fileId}/workbook/tables/{table}/rows
+    const upn = OWNER_UPN.replace(/_/g, '.'); // sharrington_legiofc_com → sharrington.legiofc.com
+    
+    // First try to get table list to find correct table name
+    const tablesUrl = `https://graph.microsoft.com/v1.0/users/${upn}/drive/items/${FILE_ID}/workbook/tables`;
+    const tablesRes = await fetch(tablesUrl, { headers: h });
+    
+    let tableName = TABLE_NAME;
+    if (tablesRes.ok) {
+      const tablesData = await tablesRes.json();
+      if (tablesData.value && tablesData.value.length > 0) {
+        tableName = tablesData.value[0].name; // use first table found
+      }
     }
 
-    all = rows;
+    // Fetch all rows from the table
+    let url = `https://graph.microsoft.com/v1.0/users/${upn}/drive/items/${FILE_ID}/workbook/tables/${encodeURIComponent(tableName)}/rows?$top=500`;
+    let rows = [];
+    let headers = [];
+
+    // Get headers from columns endpoint
+    const colsRes = await fetch(
+      `https://graph.microsoft.com/v1.0/users/${upn}/drive/items/${FILE_ID}/workbook/tables/${encodeURIComponent(tableName)}/columns`,
+      { headers: h }
+    );
+    if (colsRes.ok) {
+      const colsData = await colsRes.json();
+      headers = colsData.value.map(c => c.name);
+    }
+
+    // Fetch rows
+    while (url) {
+      const res = await fetch(url, { headers: h });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || `Fetch failed: ${res.status}`);
+      }
+      const data = await res.json();
+      
+      // Convert row values arrays to objects using headers
+      data.value.forEach(row => {
+        const obj = { _id: rows.length };
+        row.values[0].forEach((val, i) => {
+          obj[headers[i] || `col${i}`] = val;
+        });
+        rows.push(obj);
+      });
+
+      url = data['@odata.nextLink'] || null;
+    }
+
+    // Filter out empty rows
+    all = rows.filter(r => r.FirstName || r.LastName || r.Name);
     buildFilters();
     applyFilters();
     document.getElementById('foot-time').textContent =
       `Updated ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
-    toast(`${rows.length} registrations loaded`, 'success');
+    toast(`${all.length} registrations loaded`, 'success');
 
   } catch(e) {
     console.error(e);
-    document.getElementById('tbody').innerHTML = `<tr><td colspan="11"><div class="state-box">
-      <div class="state-icon">⚠</div>
-      <div class="state-title">Could Not Load Roster</div>
-      <div class="state-text">${esc(e.message)}</div>
-    </div></td></tr>`;
+    document.getElementById('tbody').innerHTML = `<tr><td colspan="10">
+      <div class="state-box">
+        <div class="state-icon">⚠</div>
+        <div class="state-title">Could Not Load Roster</div>
+        <div class="state-text">${esc(e.message)}<br><br>
+          Make sure your Azure app has <strong>Files.Read.All</strong> permission granted,
+          and that the signed-in user has access to sharrington's OneDrive file.
+        </div>
+      </div></td></tr>`;
     toast(e.message, 'error');
   } finally { spinning(false); }
 }
@@ -428,27 +460,30 @@ async function loadRoster() {
 // ══════════════════════════════════════════════════════════
 function buildFilters() {
   const u = arr => [...new Set(arr.filter(Boolean))].sort();
-  const pos  = u(all.map(p=>p.Position));
-  const yrs  = u(all.map(p=>p.GradYear ? String(p.GradYear) : ''));
-  const torn = u(all.map(p=>p.Tournament));
+  const genders = u(all.map(p => p.Gender));
+  const camps   = u(all.map(p => p.IDCampLocationCityandState));
 
-  document.getElementById('f-pos').innerHTML = '<option value="">All Positions</option>' + pos.map(v=>`<option>${v}</option>`).join('');
-  document.getElementById('f-yr').innerHTML  = '<option value="">All Grad Years</option>' + yrs.map(v=>`<option>${v}</option>`).join('');
-  document.getElementById('f-tr').innerHTML  = '<option value="">All Tournaments</option>' + torn.map(v=>`<option>${v}</option>`).join('');
+  document.getElementById('f-gender').innerHTML =
+    '<option value="">All Genders</option>' + genders.map(v=>`<option>${v}</option>`).join('');
+  document.getElementById('f-camp').innerHTML =
+    '<option value="">All Camp Locations</option>' + camps.map(v=>`<option>${v}</option>`).join('');
 }
 
 function applyFilters() {
-  const q   = document.getElementById('q').value.toLowerCase();
-  const pos = document.getElementById('f-pos').value;
-  const yr  = document.getElementById('f-yr').value;
-  const tr  = document.getElementById('f-tr').value;
-  const sz  = document.getElementById('f-sz').value;
+  const q      = document.getElementById('q').value.toLowerCase();
+  const gender = document.getElementById('f-gender').value;
+  const camp   = document.getElementById('f-camp').value;
+  const travel = document.getElementById('f-travel').value;
 
   filtered = all.filter(p => {
-    const mq = !q || [p.FullName,p.CurrentClub,p.Position,p.CurrentCoach,p.Tournament,p.ParentName]
+    const name = `${p.FirstName||''} ${p.LastName||''}`.toLowerCase();
+    const mq = !q || [name, p.CurrentLocationCityand, p.WhatIsYourCurrentTeamandLeague,
+      p.WhatIsYourPastPlayingExperience, p.IDCampLocationCityandState]
       .some(v => v && String(v).toLowerCase().includes(q));
-    return mq && (!pos||p.Position===pos) && (!yr||String(p.GradYear)===yr)
-              && (!tr||p.Tournament===tr) && (!sz||p.ShirtSize===sz);
+    return mq
+      && (!gender || p.Gender === gender)
+      && (!camp   || p.IDCampLocationCityandState === camp)
+      && (!travel || p.AreYouAbleToTravel === travel);
   });
   doSort();
 }
@@ -472,17 +507,17 @@ function doSort() {
 //  RENDER
 // ══════════════════════════════════════════════════════════
 function render() {
-  document.getElementById('s-total').textContent = all.length;
-  document.getElementById('s-show').textContent  = filtered.length;
-  document.getElementById('s-pos').textContent   = new Set(all.map(p=>p.Position).filter(Boolean)).size;
-  document.getElementById('s-yrs').textContent   = new Set(all.map(p=>p.GradYear).filter(Boolean)).size;
-  document.getElementById('s-torn').textContent  = new Set(all.map(p=>p.Tournament).filter(Boolean)).size;
+  document.getElementById('s-total').textContent  = all.length;
+  document.getElementById('s-show').textContent   = filtered.length;
+  document.getElementById('s-loc').textContent    = new Set(all.map(p=>p.CurrentLocationCityand).filter(Boolean)).size;
+  document.getElementById('s-travel').textContent = all.filter(p=>p.AreYouAbleToTravel==='Yes').length;
+  document.getElementById('s-camps').textContent  = new Set(all.map(p=>p.IDCampLocationCityandState).filter(Boolean)).size;
 
   const tbody = document.getElementById('tbody');
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="11"><div class="state-box">
+    tbody.innerHTML = `<tr><td colspan="10"><div class="state-box">
       <div class="state-icon">⚔</div>
-      <div class="state-title">No Recruits Found</div>
+      <div class="state-title">No Players Found</div>
       <div class="state-text">Adjust your search or filters.</div>
     </div></td></tr>`;
     document.getElementById('foot-label').textContent = '';
@@ -490,18 +525,17 @@ function render() {
   }
 
   tbody.innerHTML = filtered.map((p,i) => `
-    <tr onclick="openModal('${esc(p.id)}')">
+    <tr onclick="openModal(${p._id})">
       <td class="td-n">${i+1}</td>
-      <td class="td-name">${esc(p.FullName||'—')}</td>
-      <td>${esc(p.Age||'—')}</td>
-      <td><span class="tag">${esc(p.GradYear||'—')}</span></td>
-      <td><span class="tag tag-pos">${esc(p.Position||'—')}</span></td>
-      <td>${esc(p.CurrentClub||'—')}</td>
-      <td>${esc(p.CurrentCoach||'—')}</td>
-      <td>${esc(p.Tournament||'—')}</td>
-      <td>${esc(p.ParentName||'—')}</td>
-      <td>${esc(p.ParentEmail||'—')}</td>
-      <td>${esc(p.ShirtSize||'—')}</td>
+      <td class="td-name">${esc((p.FirstName||'')+' '+(p.LastName||''))}</td>
+      <td>${esc(p.BirthDateMMDDYY||'—')}</td>
+      <td><span class="tag tag-gender">${esc(p.Gender||'—')}</span></td>
+      <td>${esc(p.CurrentLocationCityand||'—')}</td>
+      <td>${esc(p.IDCampLocationCityandState||'—')}</td>
+      <td>${esc(p.WhatIsYourCurrentTeamandLeague||'—')}</td>
+      <td>${esc(p.WhatIsYourPastPlayingExperience||'—')}</td>
+      <td><span class="tag">${esc(p.AreYouAbleToTravel||'—')}</span></td>
+      <td>${esc(p.Email||'—')}</td>
     </tr>`).join('');
 
   document.getElementById('foot-label').textContent = `${filtered.length} of ${all.length} registrants`;
@@ -511,43 +545,47 @@ function render() {
 //  MODAL
 // ══════════════════════════════════════════════════════════
 function openModal(id) {
-  const p = all.find(x=>x.id===id); if(!p) return;
-  document.getElementById('m-name').textContent = p.FullName || '—';
-  document.getElementById('m-sub').textContent  =
-    [p.Position, p.Age?`Age ${p.Age}`:null, p.GradYear?`Class of ${p.GradYear}`:null, p.Tournament]
-      .filter(Boolean).join('  ·  ');
+  const p = all.find(x => x._id === id); if (!p) return;
+  const fullName = `${p.FirstName||''} ${p.LastName||''}`.trim();
+  document.getElementById('m-name').textContent = fullName || '—';
+  document.getElementById('m-sub').textContent =
+    [p.Gender, p.IDCampLocationCityandState].filter(Boolean).join('  ·  ');
+
   document.getElementById('m-body').innerHTML = `
     <div class="m-section">
       <div class="m-section-title">Player</div>
       <div class="m-grid">
-        <div class="m-field"><label>Full Name</label><div class="val">${esc(p.FullName||'—')}</div></div>
-        <div class="m-field"><label>Age</label><div class="val">${esc(p.Age||'—')}</div></div>
-        <div class="m-field"><label>Graduation Year</label><div class="val">${esc(p.GradYear||'—')}</div></div>
-        <div class="m-field"><label>Position(s)</label><div class="val">${esc(p.Position||'—')}</div></div>
-        <div class="m-field"><label>Shirt Size</label><div class="val">${esc(p.ShirtSize||'—')}</div></div>
-        <div class="m-field"><label>Tournament</label><div class="val">${esc(p.Tournament||'—')}</div></div>
+        <div class="m-field"><label>First Name</label><div class="val">${esc(p.FirstName||'—')}</div></div>
+        <div class="m-field"><label>Last Name</label><div class="val">${esc(p.LastName||'—')}</div></div>
+        <div class="m-field"><label>Date of Birth</label><div class="val">${esc(p.BirthDateMMDDYY||'—')}</div></div>
+        <div class="m-field"><label>Gender</label><div class="val">${esc(p.Gender||'—')}</div></div>
+        <div class="m-field"><label>Current Location</label><div class="val">${esc(p.CurrentLocationCityand||'—')}</div></div>
+        <div class="m-field"><label>Can Travel</label><div class="val">${esc(p.AreYouAbleToTravel||'—')}</div></div>
       </div>
     </div>
     <div class="m-section">
-      <div class="m-section-title">Club & Coach</div>
+      <div class="m-section-title">ID Camp</div>
       <div class="m-grid">
-        <div class="m-field"><label>Current Club</label><div class="val">${esc(p.CurrentClub||'—')}</div></div>
-        <div class="m-field"><label>Coach</label><div class="val">${esc(p.CurrentCoach||'—')}</div></div>
-        <div class="m-field full"><label>Coach Phone</label><div class="val">${esc(p.CoachPhone||'—')}</div></div>
+        <div class="m-field full"><label>ID Camp Location</label><div class="val">${esc(p.IDCampLocationCityandState||'—')}</div></div>
       </div>
     </div>
     <div class="m-section">
-      <div class="m-section-title">Parent / Guardian</div>
+      <div class="m-section-title">Playing History</div>
       <div class="m-grid">
-        <div class="m-field"><label>Name</label><div class="val">${esc(p.ParentName||'—')}</div></div>
-        <div class="m-field"><label>Email</label><div class="val">${esc(p.ParentEmail||'—')}</div></div>
-        <div class="m-field"><label>Phone</label><div class="val">${esc(p.ParentPhone||'—')}</div></div>
-        <div class="m-field"><label>Emergency Contact</label><div class="val">${esc(p.EmergencyContact||'—')}</div></div>
+        <div class="m-field full"><label>Current Team & League</label><div class="val">${esc(p.WhatIsYourCurrentTeamandLeague||'—')}</div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="m-field full">
+          <label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px">Past Playing Experience</label>
+          <div class="exp-box">${esc(p.WhatIsYourPastPlayingExperience||'None provided')}</div>
+        </div>
       </div>
     </div>
     <div class="m-section">
-      <div class="m-section-title">Medical Notes</div>
-      <div class="med-box">${esc(p.MedicalNotes||'None noted')}</div>
+      <div class="m-section-title">Contact</div>
+      <div class="m-grid">
+        <div class="m-field full"><label>Email</label><div class="val">${esc(p.Email||'—')}</div></div>
+      </div>
     </div>`;
   document.getElementById('m-ov').classList.add('open');
 }
