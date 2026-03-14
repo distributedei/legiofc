@@ -279,51 +279,121 @@
     </div>
 
 <script>
-async function checkLiveGames() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('live') === '1') {
-    const opponent = params.get('opponent') || 'Opponent';
-    const legio = params.get('legio') || '0';
-    const opp = params.get('opp') || '0';
-    const yt = params.get('yt') || '';
-    const tournament = params.get('tournament') || '';
-    showLiveSection(opponent, legio, opp, yt, tournament);
-  }
+// ── LIVE MATCH POLLING ──
+// Polls SharePoint every 30s for any match with IsLive = true
+// Uses public anonymous token from a registered app with Sites.Read.All
+const LIVE_CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
+const LIVE_TENANT_ID = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
+const LIVE_SITE_HOST = 'legiofc.sharepoint.com';
+let liveToken = null, liveSiteId = null, liveListId = null, liveInterval = null;
+let currentLiveId = null;
+
+async function getLiveToken() {
+  if (liveToken) return liveToken;
+  // Use MSAL silent token if available (staff logged in on same browser)
+  try {
+    const msal2 = new msal.PublicClientApplication({
+      auth:{clientId:LIVE_CLIENT_ID,authority:`https://login.microsoftonline.com/${LIVE_TENANT_ID}`},
+      cache:{cacheLocation:'localStorage'}
+    });
+    await msal2.initialize();
+    const accts = msal2.getAllAccounts();
+    if (accts.length) {
+      const r = await msal2.acquireTokenSilent({scopes:['Sites.Read.All'],account:accts[0]});
+      liveToken = r.accessToken;
+      return liveToken;
+    }
+  } catch(e) {}
+  return null;
 }
 
-function showLiveSection(opponent, legioScore, oppScore, ytUrl, tournament) {
-  // Create sticky bottom popup
-  let section = document.getElementById('live-section');
-  if (!section) {
-    section = document.createElement('div');
-    section.id = 'live-section';
-    section.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999;transform:translateY(100%);transition:transform 0.4s ease;';
-    document.body.appendChild(section);
-    setTimeout(() => section.style.transform = 'translateY(0)', 100);
+async function getLiveIds(token) {
+  if (liveSiteId) return;
+  const h = {Authorization:`Bearer ${token}`};
+  const s = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${LIVE_SITE_HOST}`,{headers:h})).json();
+  liveSiteId = s.id;
+  const ls = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${liveSiteId}/lists?$select=id,displayName`,{headers:h})).json();
+  for (const l of ls.value) if (l.displayName === 'LegioMatches') liveListId = l.id;
+}
+
+async function pollForLiveMatch() {
+  try {
+    const token = await getLiveToken();
+    if (!token) return;
+    await getLiveIds(token);
+    if (!liveListId) return;
+    const h = {Authorization:`Bearer ${token}`};
+    const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${liveSiteId}/lists/${liveListId}/items?$expand=fields($select=Title,Opponent,Tournament,LegioScore,OpponentScore,YouTubeURL,Notes,IsLive,Status)&$top=50`,{headers:h});
+    const data = await res.json();
+    const live = (data.value||[]).find(i => i.fields.IsLive === true);
+    if (live) {
+      const f = live.fields;
+      if (currentLiveId !== live.id) {
+        currentLiveId = live.id;
+        showLiveBanner(f.Opponent||'Opponent', f.LegioScore!=null?f.LegioScore:0, f.OpponentScore!=null?f.OpponentScore:0, f.YouTubeURL||'', f.Tournament||'', f.Notes||'');
+      } else {
+        // Update scores only
+        const ls = document.getElementById('live-legio-score');
+        const os = document.getElementById('live-opp-score');
+        if (ls) ls.textContent = f.LegioScore!=null?f.LegioScore:0;
+        if (os) os.textContent = f.OpponentScore!=null?f.OpponentScore:0;
+      }
+    } else {
+      hideLiveBanner();
+    }
+  } catch(e) {}
+}
+
+function showLiveBanner(opponent, legioScore, oppScore, ytUrl, tournament, notes) {
+  let banner = document.getElementById('live-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'live-banner';
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;transform:translateY(100%);transition:transform 0.4s ease;';
+    document.body.appendChild(banner);
+    setTimeout(() => banner.style.transform = 'translateY(0)', 100);
   }
-  const ytEmbed = ytUrl ? ytUrl.replace('watch?v=', 'embed/').split('&')[0] : '';
-  section.innerHTML =
-    '<div style="background:rgba(22,61,84,0.7);border:1px solid rgba(76,175,80,0.5);position:relative;overflow:hidden;">' +
-    '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
-    '<div style="padding:20px 28px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(76,175,80,0.2);">' +
-    '<span style="width:8px;height:8px;border-radius:50%;background:#4caf50;display:inline-block;animation:livepulse 1s ease-in-out infinite;"></span>' +
+  const ytEmbed = ytUrl ? ytUrl.replace('watch?v=','embed/').split('&')[0] : '';
+  banner.innerHTML =
+    '<div style="background:#163d54;border-top:2px solid #4caf50;box-shadow:0 -4px 30px rgba(0,0,0,0.5);">' +
+    // Top bar
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid rgba(76,175,80,0.2);background:rgba(22,61,84,0.98);">' +
+    '<div style="display:flex;align-items:center;gap:10px;">' +
+    '<span style="width:8px;height:8px;border-radius:50%;background:#4caf50;display:inline-block;animation:livepls 1s ease-in-out infinite;flex-shrink:0;"></span>' +
     '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live Now</span>' +
-    (tournament ? '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.4);text-transform:uppercase;">&nbsp;·&nbsp; ' + tournament + '</span>' : '') +
+    (tournament ? '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.35);text-transform:uppercase;">&nbsp;·&nbsp;'+tournament+'</span>' : '') +
     '</div>' +
-    '<div style="padding:24px 28px;">' +
-    '<div style="display:flex;align-items:center;justify-content:center;gap:32px;margin-bottom:' + (ytEmbed ? '24px' : '0') + ';">' +
-    '<div style="text-align:center;"><div style="font-family:Cinzel,serif;font-size:11px;letter-spacing:3px;color:rgba(218,183,81,0.7);text-transform:uppercase;margin-bottom:6px;">Legio FC</div><div style="font-family:Cinzel,serif;font-size:52px;font-weight:700;color:#f8f6f1;line-height:1;">' + legioScore + '</div></div>' +
-    '<div style="font-family:Cinzel,serif;font-size:16px;letter-spacing:4px;color:rgba(218,183,81,0.35);">VS</div>' +
-    '<div style="text-align:center;"><div style="font-family:Cinzel,serif;font-size:11px;letter-spacing:3px;color:rgba(218,183,81,0.7);text-transform:uppercase;margin-bottom:6px;">' + opponent + '</div><div style="font-family:Cinzel,serif;font-size:52px;font-weight:700;color:#f8f6f1;line-height:1;">' + oppScore + '</div></div>' +
+    '<button onclick="document.getElementById('live-banner').style.transform='translateY(100%)'" style="background:transparent;border:1px solid rgba(248,246,241,0.2);color:rgba(248,246,241,0.4);width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">✕</button>' +
     '</div>' +
-    (ytEmbed ? '<div style="position:relative;width:100%;aspect-ratio:16/9;max-width:680px;margin:0 auto;"><iframe src="' + ytEmbed + '?autoplay=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:1px solid rgba(76,175,80,0.3);" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>' : '') +
+    // Score
+    '<div style="display:flex;align-items:center;justify-content:center;gap:' + (ytEmbed?'40px':'60px') + ';padding:' + (ytEmbed?'16px 20px':'20px') + ';">' +
+    '<div style="text-align:center;">' +
+    '<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.6);text-transform:uppercase;margin-bottom:4px;">Legio FC</div>' +
+    '<div id="live-legio-score" style="font-family:Cinzel,serif;font-size:' + (ytEmbed?'36px':'48px') + ';font-weight:700;color:#f8f6f1;line-height:1;">'+legioScore+'</div>' +
     '</div>' +
-    '<div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
+    '<div style="font-family:Cinzel,serif;font-size:14px;letter-spacing:4px;color:rgba(218,183,81,0.3);">–</div>' +
+    '<div style="text-align:center;">' +
+    '<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.6);text-transform:uppercase;margin-bottom:4px;">'+opponent+'</div>' +
+    '<div id="live-opp-score" style="font-family:Cinzel,serif;font-size:' + (ytEmbed?'36px':'48px') + ';font-weight:700;color:#f8f6f1;line-height:1;">'+oppScore+'</div>' +
     '</div>' +
-    '<style>@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}</style>';
+    (ytEmbed ?
+    '<div style="flex-shrink:0;width:280px;aspect-ratio:16/9;">' +
+    '<iframe src="'+ytEmbed+'?autoplay=1&mute=1" style="width:100%;height:100%;border:1px solid rgba(76,175,80,0.3);" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>' +
+    '</div>' : '') +
+    '</div>' +
+    (notes ? '<div style="text-align:center;padding:0 20px 12px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.35);text-transform:uppercase;">'+notes+'</div>' : '') +
+    '</div>' +
+    '<style>@keyframes livepls{0%,100%{opacity:1}50%{opacity:.3}}</style>';
 }
 
-checkLiveGames();
+function hideLiveBanner() {
+  const banner = document.getElementById('live-banner');
+  if (banner) { banner.style.transform = 'translateY(100%)'; currentLiveId = null; }
+}
+
+// Start polling
+pollForLiveMatch();
+liveInterval = setInterval(pollForLiveMatch, 30000);
 </script>
 </body>
 </html>
