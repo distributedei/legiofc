@@ -448,7 +448,6 @@ async function pollForLiveMatch() {
       const diff = (new Date() - mt) / (1000*60*60);
       return diff >= -0.5 && diff <= 3;
     });
-    renderLiveGamesList(allLive);
     renderScheduleTable(items);
     if (live && !dismissedIds.has(live.ID)) {
       const f = live;
@@ -526,109 +525,6 @@ function switchLiveGame(item) {
   showLiveBanner(item.HomeTeam||'Legio FC', item.Opponent||'Opponent', item.LegioScore!=null?item.LegioScore:0, item.OpponentScore!=null?item.OpponentScore:0, item.YouTubeURL||'', item.Tournament||'', item.Notes||'');
   currentLiveId = item.ID;
   if (item.YouTubeURL) openVideoModal(item.YouTubeURL.replace('watch?v=','embed/').split('&')[0]);
-}
-
-function renderLiveGamesList(matches) {
-  // Store matches globally for click handlers
-  window._liveMatches = matches;
-
-  let section = document.getElementById('live-games-list');
-  if (!section) {
-    section = document.createElement('div');
-    section.id = 'live-games-list';
-    section.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:998;transform:translateY(100%);transition:transform 0.4s ease;';
-    document.body.appendChild(section);
-  }
-  if (!matches || matches.length === 0) {
-    section.style.transform = 'translateY(100%)';
-    return;
-  }
-  section.style.transform = 'translateY(0)';
-
-  let rows = matches.map((m, idx) => {
-    const mt = new Date(m.MatchDate);
-    const diff = (new Date() - mt) / (1000*60*60);
-    const isLive = diff >= -0.5 && diff <= 3;
-    const timeStr = mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + ' · ' + mt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const isActive = currentLiveId === m.ID;
-    const statusHtml = isLive
-      ? '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#4caf50;animation:livepls 1s ease-in-out infinite;"></span><span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:#4caf50;text-transform:uppercase;">Live</span></span>'
-      : '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Upcoming</span>';
-    const watchBtn = m.YouTubeURL
-      ? '<button onclick="event.stopPropagation();selectLiveGame(' + idx + ')" style="background:' + (isLive?'#4caf50':'rgba(218,183,81,0.15)') + ';border:1px solid ' + (isLive?'#4caf50':'rgba(218,183,81,0.3)') + ';color:' + (isLive?'#fff':'#dab751') + ';padding:4px 12px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">&#9654; Watch</button>'
-      : '—';
-    return '<tr style="border-bottom:1px solid rgba(218,183,81,0.06);background:' + (isActive?'rgba(76,175,80,0.07)':'transparent') + ';cursor:pointer;transition:background .15s;" onclick="selectLiveGame(' + idx + ')">' +
-      '<td style="padding:10px 16px;">' + statusHtml + '</td>' +
-      '<td style="padding:10px 16px;font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:.5px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 4px;">vs</span> ' + (m.Opponent||'TBD') + '</td>' +
-      '<td style="padding:10px 16px;font-size:11px;color:rgba(248,246,241,0.5);">' + (m.Tournament||'—') + '</td>' +
-      '<td style="padding:10px 16px;font-size:11px;color:rgba(248,246,241,0.5);">' + timeStr + '</td>' +
-      '<td style="padding:10px 16px;font-size:11px;color:rgba(248,246,241,0.5);">' + (m.Venue||'—') + '</td>' +
-      '<td style="padding:10px 16px;text-align:center;">' + watchBtn + '</td>' +
-      '</tr>';
-  }).join('');
-
-  section.innerHTML =
-    '<div style="background:#163d54;border-top:1px solid rgba(218,183,81,0.25);box-shadow:0 -4px 20px rgba(0,0,0,0.4);">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:rgba(22,61,84,0.98);border-bottom:1px solid rgba(218,183,81,0.15);">' +
-    '<div style="display:flex;align-items:center;gap:10px;">' +
-    '<span style="width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;animation:livepls 1s ease-in-out infinite;"></span>' +
-    '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live &amp; Upcoming</span>' +
-    '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.25);text-transform:uppercase;">&nbsp;·&nbsp; ' + matches.length + ' match' + (matches.length>1?'es':'') + '</span>' +
-    '</div>' +
-    '<button onclick="closeLiveTable()" style="background:transparent;border:1px solid rgba(248,246,241,0.15);color:rgba(248,246,241,0.35);width:22px;height:22px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;">X</button>' +
-    '</div>' +
-    '<div style="overflow-x:auto;">' +
-    '<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px;">' +
-    '<thead><tr style="background:rgba(22,61,84,0.6);border-bottom:1px solid rgba(218,183,81,0.15);">' +
-    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Status</th>' +
-    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Match</th>' +
-    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Tournament</th>' +
-    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Time</th>' +
-    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Venue</th>' +
-    '<th style="padding:8px 16px;text-align:center;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Watch</th>' +
-    '</tr></thead>' +
-    '<tbody>' + rows + '</tbody>' +
-    '</table></div></div>';
-}
-
-
-function openStreamOverlay(ytUrl, homeTeam, awayTeam, homeScore, awayScore, tournament) {
-  // Extract video ID
-  const match = ytUrl.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (!match) { window.open(ytUrl, '_blank'); return; }
-  const videoId = match[1];
-
-  // Set stream iframe
-  document.getElementById('stream-iframe').src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0';
-  // Set chat iframe
-  document.getElementById('chat-iframe').src = 'https://www.youtube.com/live_chat?v=' + videoId + '&embed_domain=' + window.location.hostname;
-  // Set match info
-  document.getElementById('stream-tournament').textContent = tournament||'';
-  document.getElementById('stream-home').textContent = homeTeam||'Legio FC';
-  document.getElementById('stream-away').textContent = awayTeam||'Opponent';
-  document.getElementById('stream-home-score').textContent = homeScore!=null?homeScore:0;
-  document.getElementById('stream-away-score').textContent = awayScore!=null?awayScore:0;
-  document.getElementById('stream-yt-link').href = ytUrl;
-
-  // Show overlay
-  const overlay = document.getElementById('stream-overlay');
-  overlay.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-
-function closeStreamOverlay(e) {
-  if (e && e.target !== document.getElementById('stream-overlay')) return;
-  const overlay = document.getElementById('stream-overlay');
-  overlay.style.display = 'none';
-  document.body.style.overflow = '';
-  // Stop streams
-  document.getElementById('stream-iframe').src = '';
-  document.getElementById('chat-iframe').src = '';
-}
-
-function closeLiveTable() {
-  var g = document.getElementById('live-games-list');
-  if (g) g.style.transform = 'translateY(100%)';
 }
 
 function selectLiveGame(idx) {
