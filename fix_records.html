@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Legio FC | Fix 4 Records</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--blue:#1c5575;--blue-dark:#163d54;--gold:#dab751;--gold-border:rgba(218,183,81,0.3);--cream:#f8f6f1;--text-dim:rgba(248,246,241,0.5)}
+    body{font-family:'Inter',sans-serif;background:var(--blue-dark);color:var(--cream);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+    .card{background:rgba(22,61,84,.6);border:1px solid var(--gold-border);padding:36px 40px;width:100%;max-width:600px}
+    h1{font-family:'Cinzel',serif;font-size:18px;letter-spacing:3px;color:var(--gold);margin-bottom:8px}
+    .sub{font-size:13px;color:var(--text-dim);margin-bottom:24px}
+    .ms-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;width:100%;justify-content:center;margin-bottom:12px}
+    .ms-btn:hover{background:var(--gold);color:var(--blue-dark)}
+    .upload-btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 28px;background:var(--gold);color:var(--blue-dark);font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;width:100%;font-weight:600}
+    .upload-btn:disabled{opacity:.4;cursor:not-allowed}
+    .log{background:rgba(0,0,0,.3);border:1px solid var(--gold-border);padding:16px;margin-top:16px;font-size:12px;font-family:monospace;color:var(--text-dim);min-height:80px}
+    .ok{color:#4caf50} .err{color:#e57373}
+    .status{font-size:13px;color:var(--text-dim);text-align:center;margin:12px 0}
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>LEGIO FC — FIX 4 RECORDS</h1>
+  <p class="sub">Uploads the 4 records that failed due to special characters: Jorge Jonathan Diaz, Preston Meador, Youssef Naciri, Matthew Albury.</p>
+  <button class="ms-btn" id="signin-btn" onclick="signIn()">
+    <svg width="17" height="17" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+    Sign In with Microsoft
+  </button>
+  <button class="upload-btn" id="upload-btn" onclick="startUpload()" disabled>Upload 4 Records</button>
+  <div class="status" id="status">Sign in to begin</div>
+  <div class="log" id="log"></div>
+</div>
+<script>
+const CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
+const TENANT_ID = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
+const RECORDS = [
+  {
+    "FullName": "Jorge Jonathan Diaz",
+    "LastName": "Diaz",
+    "BirthDate": "02/04/2007",
+    "Gender": "Male",
+    "Email": "vamosclubamerica1@gmail.com",
+    "CurrentLocation": "Chicago Illinois",
+    "IDCampLocation": "II fc",
+    "CurrentTeam": "Daley College Njcaa Chicago Togo gcsl",
+    "PastExperience": "College soccer, semi pro, and pro indoor opportunities",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Preston Meador",
+    "LastName": "Meador",
+    "BirthDate": "05/24/1991",
+    "Gender": "Male",
+    "Email": "Pmeador16@gmail.com",
+    "CurrentLocation": "Freeport, Florida",
+    "IDCampLocation": "Unk",
+    "CurrentTeam": "Trident FC / TST",
+    "PastExperience": "I played in TST the last 2 years with Trident FC and Kingdom FC. I played against premier league winners, Sergio Aguero, atletico Madrid, pro indoor teams, etc.",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Youssef Naciri",
+    "LastName": "Naciri",
+    "BirthDate": "12/10/1993",
+    "Gender": "Male",
+    "Email": "youssef.naciri9@gmail.com",
+    "CurrentLocation": "Washington DC",
+    "IDCampLocation": "District of Columbia",
+    "CurrentTeam": "MISL Pro",
+    "PastExperience": "Current 7+ year indoor pro player (MASL and MISL). Won titles including 100k Golden Goal Tournament in Toronto. USL: Harrisburg City Islanders 2016-2017. Icelandic first division 2017-2018. Botola Top league in Morocco 2019-2020. Under 16 Moroccan National Team.",
+    "CanTravel": "Yes"
+  },
+  {
+    "FullName": "Matthew Albury",
+    "LastName": "Albury",
+    "BirthDate": "09/01/1997",
+    "Gender": "Male",
+    "Email": "matthew.james.albury@gmail.com",
+    "CurrentLocation": "Fort Worth, Texas",
+    "IDCampLocation": "PIT Frisco, Texas",
+    "CurrentTeam": "Tenfifteen UPSL / Denton Diablos USL2",
+    "PastExperience": "Played in Barcelona Spain through youth and senior teams. NAIA Sterling College 2020-2022. University of Houston-Victoria 2022-2023. Played under Michel Garbini at Foro until he was promoted to FC Dallas.",
+    "CanTravel": "Yes"
+  }
+];
+
+const msal_ = new msal.PublicClientApplication({
+  auth: { clientId: CLIENT_ID, authority: `https://login.microsoftonline.com/${TENANT_ID}`, redirectUri: window.location.href.split('?')[0] },
+  cache: { cacheLocation: 'sessionStorage' }
+});
+const loginReq = { scopes: ['Sites.ReadWrite.All', 'User.Read'] };
+
+async function init() { await msal_.initialize(); const a = msal_.getAllAccounts(); if(a.length) enable(); }
+async function signIn() {
+  await msal_.initialize();
+  const r = await msal_.loginPopup(loginReq);
+  document.getElementById('signin-btn').style.display='none';
+  enable();
+}
+function enable() { document.getElementById('upload-btn').disabled=false; document.getElementById('status').textContent='Ready'; }
+async function getToken() { const a=msal_.getAllAccounts(); const r=await msal_.acquireTokenSilent({...loginReq,account:a[0]}); return r.accessToken; }
+
+async function startUpload() {
+  document.getElementById('upload-btn').disabled=true;
+  const token = await getToken();
+  const h = { Authorization:`Bearer ${token}`, 'Content-Type':'application/json' };
+  const siteRes = await fetch('https://graph.microsoft.com/v1.0/sites/legiofc.sharepoint.com', {headers:h});
+  const site = await siteRes.json();
+  const listRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists?$filter=displayName eq 'IDCampRoster'&$select=id`, {headers:h});
+  const listData = await listRes.json();
+  const listId = listData.value[0].id;
+
+  for(const p of RECORDS) {
+    try {
+      const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${site.id}/lists/${listId}/items`, {
+        method:'POST', headers:h,
+        body: JSON.stringify({ fields: {
+          Title: p.FullName, LastName: p.LastName, BirthDate: p.BirthDate,
+          Gender: p.Gender, Email: p.Email, CurrentLocation: p.CurrentLocation,
+          IDCampLocation: p.IDCampLocation, CurrentTeam: p.CurrentTeam,
+          PastExperience: p.PastExperience, CanTravel: p.CanTravel
+        } })
+      });
+      const d = await res.json();
+      if(res.ok) addLog(`✓ ${p.FullName}`, 'ok');
+      else addLog(`✗ ${p.FullName}: ${d.error?.message}`, 'err');
+    } catch(e) { addLog(`✗ ${p.FullName}: ${e.message}`, 'err'); }
+  }
+  document.getElementById('status').textContent = 'Done';
+}
+function addLog(m,c) { const d=document.createElement('div'); d.className=c; d.textContent=m; document.getElementById('log').appendChild(d); }
+init();
+</script>
+</body>
+</html>
