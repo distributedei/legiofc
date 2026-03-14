@@ -325,7 +325,17 @@ async function pollForLiveMatch() {
     const h = {Authorization:`Bearer ${token}`};
     const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${liveSiteId}/lists/${liveListId}/items?$expand=fields($select=Title,Opponent,Tournament,LegioScore,OpponentScore,YouTubeURL,Notes,IsLive,Status)&$top=50`,{headers:h});
     const data = await res.json();
-    const live = (data.value||[]).find(i => i.fields.IsLive === true);
+    const now = new Date();
+    // Auto-trigger: match has YouTubeURL and MatchDate within 3 hours of now
+    const autoLive = (data.value||[]).find(i => {
+      const f = i.fields;
+      if (!f.YouTubeURL || !f.MatchDate) return false;
+      if (f.Status === 'Final') return false;
+      const matchTime = new Date(f.MatchDate);
+      const diffHours = (now - matchTime) / (1000 * 60 * 60);
+      return diffHours >= -0.5 && diffHours <= 3; // 30min before to 3hrs after
+    });
+    const live = autoLive || (data.value||[]).find(i => i.fields.IsLive === true);
     if (live) {
       const f = live.fields;
       if (currentLiveId !== live.id) {
