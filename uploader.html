@@ -939,7 +939,10 @@ async function uploadAll(){
         CurrentTeam:p.CurrentTeam,PastExperience:p.PastExperience,
         CanTravel:p.CanTravel
       };
-      if(p.SubmittedDate)fields.SubmittedDate=p.SubmittedDate;
+      if(p.SubmittedDate){
+        // SharePoint date fields need ISO format without milliseconds
+        try{fields.SubmittedDate=new Date(p.SubmittedDate).toISOString();}catch(e){}
+      }
       const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items`,{method:'POST',headers:h,body:JSON.stringify({fields})});
       if(res.ok){done++;document.getElementById('s-done').textContent=done;log(`${p.FullName} | ${p.Phone||'—'} | ${p.SubmittedDate?.split('T')[0]||'—'}`,'ok');}
       else{const d=await res.json();errs++;document.getElementById('s-err').textContent=errs;log(`${p.FullName}: ${d.error?.message}`,'err');}
