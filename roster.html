@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Legio FC | Staff Roster</title>
+  <title>Legio FC | Staff Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -17,13 +17,15 @@
       --cream:#f8f6f1;
       --text:rgba(248,246,241,0.85);--text-dim:rgba(248,246,241,0.45);--text-faint:rgba(248,246,241,0.20);
       --cream-dim:rgba(248,246,241,0.05);--cream-faint:rgba(248,246,241,0.03);
-      --red:#9c1829;
+      --red:#9c1829;--green:#4caf50;
     }
     html{height:100%}
     body{font-family:'Inter',sans-serif;background:var(--blue-dark);color:var(--cream);height:100%;overflow:hidden;position:relative}
     .ribbon-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
     .ribbon-bg svg{position:absolute;width:150%;height:150%;top:-25%;left:-25%;opacity:0.05}
     .layout{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+    /* NAV */
     nav{flex-shrink:0;background:rgba(22,61,84,0.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--gold-border);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:200}
     .nav-left{display:flex;align-items:center;gap:12px}
     .nav-logo{display:flex;align-items:center;gap:9px;text-decoration:none}
@@ -39,8 +41,10 @@
     .user-nm{font-size:12px;color:var(--text)}
     .btn-sm{padding:5px 14px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);transition:all .2s}
     .btn-sm:hover{border-color:var(--gold);color:var(--gold)}
+
+    /* AUTH */
     #auth-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;overflow:auto}
-    .auth-logo{width:100px;height:100px;margin:0 auto 24px;animation:fadeUp .8s ease-out}
+    .auth-logo{width:100px;height:100px;margin:0 auto 24px}
     .auth-logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 20px rgba(0,0,0,.4))}
     .auth-eyebrow{font-family:'Cinzel',serif;font-size:10px;letter-spacing:5px;color:var(--gold);text-transform:uppercase;margin-bottom:8px}
     .auth-h1{font-family:'Cinzel',serif;font-size:24px;font-weight:600;color:var(--cream);margin-bottom:8px}
@@ -51,11 +55,25 @@
     .ms-btn:disabled{opacity:.5;cursor:not-allowed}
     .ms-icon{width:16px;height:16px;flex-shrink:0}
     .auth-note{margin-top:14px;font-size:10px;letter-spacing:1px;color:var(--text-faint)}
+
+    /* APP */
     #app-screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+
+    /* TABS */
+    .tab-bar{flex-shrink:0;display:flex;background:rgba(22,61,84,.8);border-bottom:1px solid var(--gold-border)}
+    .tab-btn{padding:14px 28px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-dim);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .2s}
+    .tab-btn:hover{color:var(--gold)}
+    .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+    .tab-panel{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+    .tab-panel.active{display:flex}
+
+    /* STATS BAR */
     .stats-bar{flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--gold-border);border-bottom:1px solid var(--gold-border)}
     .stat{background:rgba(22,61,84,.55);padding:12px 16px;text-align:center}
     .stat-label{font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:4px}
     .stat-val{font-family:'Cinzel',serif;font-size:22px;font-weight:600;color:var(--gold);line-height:1}
+
+    /* TOOLBAR */
     .toolbar{flex-shrink:0;background:rgba(22,61,84,.6);border-bottom:1px solid var(--gold-border);padding:12px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .search-wrap{position:relative;flex:1;min-width:160px}
     .s-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-faint);font-size:12px;pointer-events:none}
@@ -68,22 +86,30 @@
     .ref-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;background:transparent;border:1px solid var(--gold-border);color:var(--gold);font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap}
     .ref-btn:hover{border-color:var(--gold);background:var(--gold-dim)}
     .ref-btn:disabled{opacity:.4;cursor:not-allowed}
+    .add-btn{display:flex;align-items:center;gap:6px;padding:9px 14px;background:var(--gold);border:none;color:var(--blue-dark);font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;font-weight:700}
+    .add-btn:hover{background:var(--gold-bright)}
     @keyframes spin{to{transform:rotate(360deg)}}
     .spinning{animation:spin .8s linear infinite;display:inline-block}
+
+    /* TABLE */
     .table-area{flex:1;overflow:auto;min-height:0}
     table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
     thead tr{background:rgba(22,61,84,.98);position:sticky;top:0;z-index:10;border-bottom:1px solid var(--gold-border)}
-    th{padding:10px 14px;text-align:left;font-family:'Cinzel',serif;font-size:8px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);cursor:pointer;user-select:none;white-space:nowrap;transition:color .15s}
+    th{padding:10px 14px;text-align:left;font-family:'Cinzel',serif;font-size:8px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);cursor:pointer;user-select:none;white-space:nowrap}
     th:hover{color:var(--gold-bright)}
     .sa{opacity:.3;margin-left:3px;font-size:8px}
     tbody tr{border-bottom:1px solid rgba(218,183,81,.06);transition:background .1s}
-    tbody tr:hover{background:var(--cream-dim)}
+    tbody tr:hover{background:var(--cream-dim);cursor:pointer}
     td{padding:10px 14px;color:var(--text);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
     .td-num{color:var(--text-faint);font-size:11px;width:32px;text-align:right;padding-right:8px}
     .td-name{font-weight:600;color:var(--cream);letter-spacing:.3px;cursor:pointer}
     .td-name:hover{color:var(--gold);text-decoration:underline;text-underline-offset:3px}
     .tag{display:inline-block;padding:2px 8px;font-size:9px;font-weight:500;letter-spacing:1.5px;border:1px solid var(--gold-border);color:var(--gold);text-transform:uppercase}
     .tag-no{border-color:rgba(156,24,41,.35);color:#d07080}
+    .tag-live{border-color:rgba(76,175,80,.5);color:#4caf50;animation:blink 1.5s ease-in-out infinite}
+    .tag-upcoming{border-color:rgba(218,183,81,.35);color:var(--gold)}
+    .tag-final{border-color:rgba(248,246,241,.15);color:var(--text-dim)}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
     .email-link{color:var(--text-dim);font-size:12px;text-decoration:none;transition:color .15s}
     .email-link:hover{color:var(--gold)}
     .table-foot{flex-shrink:0;padding:9px 18px;border-top:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;background:rgba(22,61,84,.4)}
@@ -97,6 +123,8 @@
     .dots span:nth-child(2){animation-delay:.2s}
     .dots span:nth-child(3){animation-delay:.4s}
     @keyframes pls{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:1;transform:scale(1.1)}}
+
+    /* MODAL */
     .m-overlay{display:none;position:fixed;inset:0;background:rgba(8,24,36,.82);backdrop-filter:blur(5px);z-index:600;align-items:center;justify-content:center;padding:20px}
     .m-overlay.open{display:flex}
     .modal{background:var(--blue-dark);border:1px solid var(--gold-border);width:100%;max-width:620px;max-height:90vh;display:flex;flex-direction:column;animation:mIn .2s ease-out}
@@ -122,20 +150,42 @@
     .m-field .val{font-size:14px;color:var(--cream);font-weight:400;line-height:1.5}
     .m-field.full{grid-column:1/-1}
     .exp-box{background:var(--cream-faint);border:1px solid var(--gold-border);padding:14px;font-size:13px;color:var(--text);line-height:1.8;font-weight:300;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow-y:auto}
+
+    /* MATCH FORM */
+    .match-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:24px}
+    .mf-field{display:flex;flex-direction:column;gap:6px}
+    .mf-field.full{grid-column:1/-1}
+    .mf-field label{font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint)}
+    .mf-field input,.mf-field select{padding:9px 12px;background:rgba(248,246,241,.05);border:1px solid var(--gold-border);color:var(--cream);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+    .mf-field input:focus,.mf-field select:focus{border-color:var(--gold)}
+    .mf-field select option{background:var(--blue-dark)}
+    .mf-actions{grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end;padding-top:8px}
+    .save-btn{padding:10px 28px;background:var(--gold);color:var(--blue-dark);font-family:'Cinzel',serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border:none;cursor:pointer;transition:background .2s}
+    .save-btn:hover{background:var(--gold-bright)}
+    .save-btn:disabled{opacity:.4;cursor:not-allowed}
+    .cancel-btn{padding:10px 20px;background:transparent;color:var(--text-dim);font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;border:1px solid var(--gold-border);cursor:pointer;transition:all .2s}
+    .cancel-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+    /* SCORE DISPLAY */
+    .score-cell{font-family:'Cinzel',serif;font-size:15px;font-weight:700;letter-spacing:2px}
+    .score-w{color:#4caf50}
+    .score-l{color:#e57373}
+    .score-d{color:var(--gold)}
+    .score-tbd{color:var(--text-faint);font-size:11px}
+
+    /* TOAST */
     .toast{position:fixed;bottom:24px;right:24px;background:rgba(22,61,84,.97);border:1px solid var(--gold-border);color:var(--cream);padding:10px 18px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;z-index:1000;transform:translateY(16px);opacity:0;transition:all .3s}
     .toast.show{transform:translateY(0);opacity:1}
     .toast.success{border-color:var(--gold)}
     .toast.error{border-color:var(--red);color:#d07080}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
     @media(max-width:768px){nav{padding:0 14px}.nav-sub,.nav-div,.nav-label{display:none}.stats-bar{grid-template-columns:repeat(3,1fr)}.toolbar{padding:10px 12px;gap:8px}.sel{min-width:90px}body{overflow:auto}.layout{height:auto;overflow:visible}#app-screen{overflow:visible}.table-area{overflow:auto;max-height:60vh}}
   </style>
 </head>
 <body>
 <div class="ribbon-bg" aria-hidden="true">
   <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
-    <defs>
-      <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#dab751;stop-opacity:.1"/><stop offset="50%" style="stop-color:#e3ba24;stop-opacity:.6"/><stop offset="100%" style="stop-color:#dab751;stop-opacity:.1"/></linearGradient>
-    </defs>
+    <defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#dab751;stop-opacity:.1"/><stop offset="50%" style="stop-color:#e3ba24;stop-opacity:.6"/><stop offset="100%" style="stop-color:#dab751;stop-opacity:.1"/></linearGradient></defs>
     <g opacity=".8"><path stroke="url(#g1)" stroke-width="1" fill="none" stroke-linecap="round"><animate attributeName="d" values="M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700;M-30,80 Q120,180 270,250 T520,400 T720,520 T870,680;M-70,30 Q80,120 230,180 T480,320 T680,480 T830,720;M-50,50 Q100,150 250,200 T500,350 T700,500 T850,700" dur="20s" repeatCount="indefinite"/></path></g>
     <g opacity=".35"><path stroke="url(#g1)" stroke-width="1.5" fill="none" stroke-linecap="round"><animate attributeName="d" values="M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500;M1050,180 Q880,300 730,380 T480,420 T280,450 T80,520;M1050,220 Q920,230 770,320 T520,480 T320,380 T120,480;M1050,200 Q900,250 750,350 T500,450 T300,400 T100,500" dur="18s" repeatCount="indefinite"/></path></g>
   </svg>
@@ -149,94 +199,217 @@
         <div><span class="nav-main">LEGIO FC</span><span class="nav-sub">Est. MMXXV</span></div>
       </a>
       <div class="nav-div"></div>
-      <span class="nav-label">Staff Roster</span>
+      <span class="nav-label">Staff Portal</span>
     </div>
     <div class="nav-right" id="nav-right"></div>
   </nav>
 
+  <!-- AUTH -->
   <div id="auth-screen">
     <div class="auth-logo"><img src="logo.png" alt="Legio FC" onerror="this.style.display='none'"></div>
     <p class="auth-eyebrow">Staff Access</p>
-    <h1 class="auth-h1">ID Camp Roster</h1>
+    <h1 class="auth-h1" style="font-family:'Cinzel',serif;font-size:24px;font-weight:600;color:var(--cream);margin-bottom:8px;">Staff Portal</h1>
     <div class="gold-rule"></div>
-    <p class="auth-sub">Sign in with your Legio FC Microsoft account to access the live registration database.</p>
+    <p class="auth-sub">Sign in with your Legio FC Microsoft account.</p>
     <button class="ms-btn" id="signin-btn" onclick="signIn()">
       <svg class="ms-icon" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
       Sign In with Microsoft
     </button>
-    <p class="auth-note">legiofc.com accounts only &nbsp;·&nbsp; Staff only</p>
+    <p class="auth-note">legiofc.com accounts only · Staff only</p>
   </div>
 
+  <!-- APP -->
   <div id="app-screen">
-    <div class="stats-bar">
-      <div class="stat"><div class="stat-label">Registered</div><div class="stat-val" id="s-total">—</div></div>
-      <div class="stat"><div class="stat-label">Showing</div><div class="stat-val" id="s-show">—</div></div>
-      <div class="stat"><div class="stat-label">Locations</div><div class="stat-val" id="s-loc">—</div></div>
-      <div class="stat"><div class="stat-label">Can Travel</div><div class="stat-val" id="s-travel">—</div></div>
-      <div class="stat"><div class="stat-label">Camp Sites</div><div class="stat-val" id="s-camps">—</div></div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('roster')">⚔ ID Camp Roster</button>
+      <button class="tab-btn" onclick="switchTab('matches')">🏆 Matches</button>
     </div>
-    <div class="toolbar">
-      <div class="search-wrap">
-        <span class="s-ic">⚔</span>
-        <input class="search-input" id="q" placeholder="Search name, location, team, email…" oninput="applyFilters()">
+
+    <!-- ══ ROSTER TAB ══ -->
+    <div class="tab-panel active" id="tab-roster">
+      <div class="stats-bar">
+        <div class="stat"><div class="stat-label">Registered</div><div class="stat-val" id="s-total">—</div></div>
+        <div class="stat"><div class="stat-label">Showing</div><div class="stat-val" id="s-show">—</div></div>
+        <div class="stat"><div class="stat-label">Locations</div><div class="stat-val" id="s-loc">—</div></div>
+        <div class="stat"><div class="stat-label">Can Travel</div><div class="stat-val" id="s-travel">—</div></div>
+        <div class="stat"><div class="stat-label">Camp Sites</div><div class="stat-val" id="s-camps">—</div></div>
       </div>
-      <select class="sel" id="f-gender" onchange="applyFilters()"><option value="">All Genders</option></select>
-      <select class="sel" id="f-camp" onchange="applyFilters()"><option value="">All Camp Sites</option></select>
-      <select class="sel" id="f-travel" onchange="applyFilters()">
-        <option value="">Can Travel?</option><option value="Yes">Yes</option><option value="No">No</option>
-      </select>
-      <button class="ref-btn" id="ref-btn" onclick="loadRoster()">
-        <span id="ref-icon" style="font-size:13px">↻</span> Refresh
-      </button>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="s-ic">⚔</span>
+          <input class="search-input" id="q" placeholder="Search name, location, team, email…" oninput="applyFilters()">
+        </div>
+        <select class="sel" id="f-gender" onchange="applyFilters()"><option value="">All Genders</option></select>
+        <select class="sel" id="f-camp" onchange="applyFilters()"><option value="">All Camp Sites</option></select>
+        <select class="sel" id="f-travel" onchange="applyFilters()">
+          <option value="">Can Travel?</option><option value="Yes">Yes</option><option value="No">No</option>
+        </select>
+        <button class="ref-btn" id="ref-btn" onclick="loadRoster()">
+          <span id="ref-icon" style="font-size:13px">↻</span> Refresh
+        </button>
+      </div>
+      <div class="table-area">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32px;cursor:default"></th>
+              <th onclick="sortBy('FullName')">Name <span class="sa">↕</span></th>
+              <th onclick="sortBy('BirthDate')">DOB <span class="sa">↕</span></th>
+              <th onclick="sortBy('Gender')">Gender <span class="sa">↕</span></th>
+              <th onclick="sortBy('CurrentLocation')">Location <span class="sa">↕</span></th>
+              <th onclick="sortBy('Country')">Country <span class="sa">↕</span></th>
+              <th onclick="sortBy('IDCampLocation')">Camp Site <span class="sa">↕</span></th>
+              <th onclick="sortBy('CurrentTeam')">Current Team <span class="sa">↕</span></th>
+              <th onclick="sortBy('CanTravel')">Travel <span class="sa">↕</span></th>
+              <th>Phone</th>
+              <th onclick="sortBy('SubmittedDate')">Submitted <span class="sa">↕</span></th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="12"><div class="state-box">
+              <div class="state-icon">⚔</div>
+              <div class="state-title">Summoning The Legion</div>
+              <div class="dots"><span></span><span></span><span></span></div>
+            </div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-foot">
+        <span class="foot-txt" id="foot-label"></span>
+        <span class="foot-txt" id="foot-time"></span>
+      </div>
     </div>
-    <div class="table-area">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:32px;cursor:default"></th>
-            <th onclick="sortBy('FullName')">Name <span class="sa">↕</span></th>
-            <th onclick="sortBy('BirthDate')">DOB <span class="sa">↕</span></th>
-            <th onclick="sortBy('Gender')">Gender <span class="sa">↕</span></th>
-            <th onclick="sortBy('CurrentLocation')">Location <span class="sa">↕</span></th>
-            <th onclick="sortBy('Country')">Country <span class="sa">↕</span></th>
-            <th onclick="sortBy('IDCampLocation')">Camp Site <span class="sa">↕</span></th>
-            <th onclick="sortBy('CurrentTeam')">Current Team <span class="sa">↕</span></th>
-            <th onclick="sortBy('CanTravel')">Travel <span class="sa">↕</span></th>
-            <th>Phone</th>
-            <th onclick="sortBy('SubmittedDate')">Submitted <span class="sa">↕</span></th>
-            <th>Email</th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td colspan="12"><div class="state-box">
-            <div class="state-icon">⚔</div>
-            <div class="state-title">Summoning The Legion</div>
-            <div class="dots"><span></span><span></span><span></span></div>
-          </div></td></tr>
-        </tbody>
-      </table>
+
+    <!-- ══ MATCHES TAB ══ -->
+    <div class="tab-panel" id="tab-matches">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="s-ic">🏆</span>
+          <input class="search-input" id="mq" placeholder="Search opponent, tournament, venue…" oninput="filterMatches()">
+        </div>
+        <select class="sel" id="mf-status" onchange="filterMatches()">
+          <option value="">All Statuses</option>
+          <option value="Upcoming">Upcoming</option>
+          <option value="Live">Live</option>
+          <option value="Final">Final</option>
+        </select>
+        <button class="ref-btn" id="mref-btn" onclick="loadMatches()">
+          <span id="mref-icon" style="font-size:13px">↻</span> Refresh
+        </button>
+        <button class="add-btn" onclick="openMatchModal()">+ Add Match</button>
+      </div>
+      <div class="table-area">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32px;cursor:default"></th>
+              <th>Match</th>
+              <th>Tournament</th>
+              <th>Date</th>
+              <th>Venue</th>
+              <th>Score</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="mtbody">
+            <tr><td colspan="8"><div class="state-box">
+              <div class="state-icon">🏆</div>
+              <div class="state-title">Loading Matches</div>
+              <div class="dots"><span></span><span></span><span></span></div>
+            </div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-foot">
+        <span class="foot-txt" id="mfoot-label"></span>
+        <span class="foot-txt" id="mfoot-time"></span>
+      </div>
     </div>
-    <div class="table-foot">
-      <span class="foot-txt" id="foot-label"></span>
-      <span class="foot-txt" id="foot-time"></span>
-    </div>
+
   </div>
 </div>
 
+<!-- PLAYER MODAL -->
 <div class="m-overlay" id="m-ov" onclick="closeModal(event)">
   <div class="modal">
     <div class="m-head">
       <div class="m-head-left">
         <div class="m-avatar" id="m-av"></div>
-        <div>
-          <div class="m-title" id="m-name"></div>
-          <div class="m-badges" id="m-badges"></div>
-        </div>
+        <div><div class="m-title" id="m-name"></div><div class="m-badges" id="m-badges"></div></div>
       </div>
       <button class="m-close" onclick="closeModal()">✕</button>
     </div>
     <div class="m-actions" id="m-actions"></div>
     <div class="m-body" id="m-body"></div>
+  </div>
+</div>
+
+<!-- MATCH MODAL -->
+<div class="m-overlay" id="match-ov" onclick="closeMatchModal(event)">
+  <div class="modal" style="max-width:580px;">
+    <div class="m-head">
+      <div class="m-head-left">
+        <div class="m-avatar" style="background:var(--blue);">🏆</div>
+        <div><div class="m-title" id="mm-title">Add Match</div></div>
+      </div>
+      <button class="m-close" onclick="closeMatchModal()">✕</button>
+    </div>
+    <div class="m-body" style="padding:0;overflow-y:auto;">
+      <div class="match-form" id="match-form">
+        <div class="mf-field full">
+          <label>Match Title (e.g. Legio FC vs Chivas Alabama)</label>
+          <input type="text" id="mf-title" placeholder="Legio FC vs Opponent">
+        </div>
+        <div class="mf-field">
+          <label>Opponent</label>
+          <input type="text" id="mf-opponent" placeholder="Opponent name">
+        </div>
+        <div class="mf-field">
+          <label>Tournament</label>
+          <input type="text" id="mf-tournament" placeholder="e.g. Copa Lobos, TST">
+        </div>
+        <div class="mf-field">
+          <label>Match Date & Time</label>
+          <input type="datetime-local" id="mf-date">
+        </div>
+        <div class="mf-field">
+          <label>Venue</label>
+          <input type="text" id="mf-venue" placeholder="e.g. Silverbacks Park, Atlanta">
+        </div>
+        <div class="mf-field">
+          <label>Legio Score</label>
+          <input type="number" id="mf-legio" placeholder="0" min="0">
+        </div>
+        <div class="mf-field">
+          <label>Opponent Score</label>
+          <input type="number" id="mf-opp" placeholder="0" min="0">
+        </div>
+        <div class="mf-field">
+          <label>Status</label>
+          <select id="mf-status">
+            <option value="Upcoming">Upcoming</option>
+            <option value="Live">Live</option>
+            <option value="Final">Final</option>
+          </select>
+        </div>
+        <div class="mf-field full">
+          <label>YouTube Stream URL (for Live games)</label>
+          <input type="url" id="mf-youtube" placeholder="https://youtube.com/watch?v=...">
+        </div>
+        <div class="mf-field full">
+          <label>Notes (e.g. L PKs 4-5)</label>
+          <input type="text" id="mf-notes" placeholder="Optional notes">
+        </div>
+        <div class="mf-actions">
+          <button class="cancel-btn" onclick="closeMatchModal()">Cancel</button>
+          <button class="save-btn" id="mm-save-btn" onclick="saveMatch()">Save Match</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -246,26 +419,23 @@
 const CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
 const TENANT_ID = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
 const SITE_HOST = 'legiofc.sharepoint.com';
-const LIST_NAME = 'IDCampRoster';
 
 const msalConfig = {
   auth:{clientId:CLIENT_ID,authority:`https://login.microsoftonline.com/${TENANT_ID}`,redirectUri:window.location.href.split('?')[0].split('#')[0]},
   cache:{cacheLocation:'sessionStorage'}
 };
-const loginReq = {scopes:['Sites.Read.All','User.Read']};
+const loginReq = {scopes:['Sites.ReadWrite.All','User.Read']};
 const msal_ = new msal.PublicClientApplication(msalConfig);
+
 let all=[],filtered=[],sortCol='FullName',sortAsc=true;
+let allMatches=[],filteredMatches=[];
+let siteId=null,rosterListId=null,matchListId=null;
+let editingMatchId=null;
 
-async function init(){await msal_.initialize();await msal_.handleRedirectPromise();const a=msal_.getAllAccounts();if(a.length){showApp(a[0]);loadRoster();}}
-
-async function signIn(){
-  const btn=document.getElementById('signin-btn');btn.textContent='Signing in…';btn.disabled=true;
-  try{const r=await msal_.loginPopup(loginReq);showApp(r.account);loadRoster();}
-  catch(e){btn.innerHTML=`<svg class="ms-icon" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign In with Microsoft`;btn.disabled=false;toast('Sign-in failed','error');}
-}
-
+// ── AUTH ──
+async function init(){await msal_.initialize();await msal_.handleRedirectPromise();const a=msal_.getAllAccounts();if(a.length){showApp(a[0]);loadRoster();loadMatches();}}
+async function signIn(){const btn=document.getElementById('signin-btn');btn.textContent='Signing in…';btn.disabled=true;try{const r=await msal_.loginPopup(loginReq);showApp(r.account);loadRoster();loadMatches();}catch(e){btn.innerHTML=`<svg class="ms-icon" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Sign In with Microsoft`;btn.disabled=false;toast('Sign-in failed','error');}}
 async function signOut(){await msal_.logoutPopup();document.getElementById('auth-screen').style.display='flex';document.getElementById('app-screen').style.display='none';document.getElementById('nav-right').innerHTML='';}
-
 function showApp(a){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-screen').style.display='flex';
@@ -273,36 +443,49 @@ function showApp(a){
   const ini=name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
   document.getElementById('nav-right').innerHTML=`<div class="user-pill"><div class="user-av">${ini}</div><span class="user-nm">${name}</span></div><button class="btn-sm" onclick="signOut()">Sign Out</button>`;
 }
-
 async function getToken(){const a=msal_.getAllAccounts();if(!a.length)throw new Error('Not authenticated');const r=await msal_.acquireTokenSilent({...loginReq,account:a[0]});return r.accessToken;}
 
+// ── TABS ──
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+// ── GRAPH IDs ──
+async function getSiteAndLists(){
+  if(siteId)return;
+  const t=await getToken();const h={Authorization:`Bearer ${t}`};
+  const s=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${SITE_HOST}`,{headers:h})).json();
+  siteId=s.id;
+  const ls=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$select=id,displayName`,{headers:h})).json();
+  for(const l of ls.value){
+    if(l.displayName==='IDCampRoster')rosterListId=l.id;
+    if(l.displayName==='LegioMatches')matchListId=l.id;
+  }
+}
+
+// ── ROSTER ──
 async function loadRoster(){
-  spinning(true);
+  spinning(true,'ref-btn','ref-icon');
   try{
-    const token=await getToken();const h={Authorization:`Bearer ${token}`};
-    const siteRes=await fetch(`https://graph.microsoft.com/v1.0/sites/${SITE_HOST}`,{headers:h});
-    if(!siteRes.ok)throw new Error(`Site lookup failed: ${siteRes.status}`);
-    const{id:siteId}=await siteRes.json();
-    const listRes=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$filter=displayName eq '${LIST_NAME}'&$select=id`,{headers:h});
-    const{value:lists}=await listRes.json();
-    if(!lists?.length)throw new Error(`List "${LIST_NAME}" not found`);
-    const listId=lists[0].id;
+    await getSiteAndLists();
+    const t=await getToken();const h={Authorization:`Bearer ${t}`};
     const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate';
-    let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=${fields})&$top=999`;
+    let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
       const res=await fetch(url,{headers:h});
       if(!res.ok)throw new Error(`Items fetch failed: ${res.status}`);
       const data=await res.json();
       rows=rows.concat(data.value.map(item=>({
-        _id:item.id,
-        FullName:item.fields.Title||'',LastName:item.fields.LastName||'',
+        _id:item.id,FullName:item.fields.Title||'',LastName:item.fields.LastName||'',
         BirthDate:item.fields.BirthDate||'',Gender:item.fields.Gender||'',
-        Email:item.fields.Email||'',CurrentLocation:item.fields.CurrentLocation||'',
+        Email:item.fields.Email||'',Phone:item.fields.Phone||'',
+        CurrentLocation:item.fields.CurrentLocation||'',Country:item.fields.Country||'',
         IDCampLocation:item.fields.IDCampLocation||'',CurrentTeam:item.fields.CurrentTeam||'',
         PastExperience:item.fields.PastExperience||'',CanTravel:item.fields.CanTravel||'',
-Country:item.fields.Country||'',
-        Phone:item.fields.Phone||'',
         SubmittedDate:item.fields.SubmittedDate||'',
       })));
       url=data['@odata.nextLink']||null;
@@ -312,10 +495,9 @@ Country:item.fields.Country||'',
     document.getElementById('foot-time').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
     toast(`${all.length} registrations loaded`,'success');
   }catch(e){
-    console.error(e);
     document.getElementById('tbody').innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
     toast(e.message,'error');
-  }finally{spinning(false);}
+  }finally{spinning(false,'ref-btn','ref-icon');}
 }
 
 function buildFilters(){
@@ -331,18 +513,14 @@ function applyFilters(){
   const c=document.getElementById('f-camp').value;
   const tr=document.getElementById('f-travel').value;
   filtered=all.filter(p=>{
-    const mq=!q||[p.FullName,p.CurrentLocation,p.CurrentTeam,p.IDCampLocation,p.Email,p.PastExperience].some(v=>v&&String(v).toLowerCase().includes(q));
+    const mq=!q||[p.FullName,p.CurrentLocation,p.Country,p.CurrentTeam,p.IDCampLocation,p.Email,p.PastExperience].some(v=>v&&String(v).toLowerCase().includes(q));
     return mq&&(!g||p.Gender===g)&&(!c||p.IDCampLocation===c)&&(!tr||p.CanTravel===tr);
   });
   doSort();
 }
 
 function sortBy(col){sortAsc=sortCol===col?!sortAsc:true;sortCol=col;doSort();}
-
-function doSort(){
-  filtered.sort((a,b)=>{const va=String(a[sortCol]||'').toLowerCase();const vb=String(b[sortCol]||'').toLowerCase();return sortAsc?va.localeCompare(vb):vb.localeCompare(va);});
-  render();
-}
+function doSort(){filtered.sort((a,b)=>{const va=String(a[sortCol]||'').toLowerCase();const vb=String(b[sortCol]||'').toLowerCase();return sortAsc?va.localeCompare(vb):vb.localeCompare(va);});render();}
 
 function render(){
   document.getElementById('s-total').textContent=all.length;
@@ -351,10 +529,7 @@ function render(){
   document.getElementById('s-travel').textContent=all.filter(p=>p.CanTravel==='Yes').length;
   document.getElementById('s-camps').textContent=new Set(all.map(p=>p.IDCampLocation).filter(Boolean)).size;
   const tbody=document.getElementById('tbody');
-  if(!filtered.length){
-    tbody.innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;
-    document.getElementById('foot-label').textContent='';return;
-  }
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;document.getElementById('foot-label').textContent='';return;}
   tbody.innerHTML=filtered.map((p,i)=>`
     <tr>
       <td class="td-num">${i+1}</td>
@@ -383,65 +558,205 @@ function openModal(id){
     p.IDCampLocation?`<span class="m-badge">${esc(p.IDCampLocation)}</span>`:'',
     p.CanTravel?`<span class="m-badge ${p.CanTravel==='No'?'m-badge-red':''}">Travel: ${esc(p.CanTravel)}</span>`:'',
   ].join('');
+  const wa=p.Phone?p.Phone.replace(/[^0-9]/g,''):'';
   document.getElementById('m-actions').innerHTML=(() => {
-    const wa = p.Phone ? p.Phone.replace(/[^0-9]/g,'') : '';
-    let html = '';
-    if (p.Email) html += `<a class="m-email-btn" href="#" onclick="event.preventDefault();window.open('mailto:${esc(p.Email)}','_self');">✉ Email</a>`;
-    if (wa)     html += `<a class="m-email-btn" href="https://wa.me/${wa}" target="_blank" style="background:#25D366;margin-left:0">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      WhatsApp</a>`;
-    if (!p.Email && !wa) html = `<span class="m-email-addr" style="color:var(--text-faint)">No contact info on file</span>`;
-    if (p.Email && !wa) html += `<span class="m-email-addr">${esc(p.Email)}</span>`;
+    let html='';
+    if(p.Email)html+=`<a class="m-email-btn" href="#" onclick="event.preventDefault();window.open('mailto:${esc(p.Email)}','_self')">✉ Email</a>`;
+    if(wa)html+=`<a class="m-email-btn" href="https://wa.me/${wa}" target="_blank" style="background:#25D366"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp</a>`;
+    if(!p.Email&&!wa)html=`<span class="m-email-addr" style="color:var(--text-faint)">No contact info on file</span>`;
+    if(p.Email&&!wa)html+=`<span class="m-email-addr">${esc(p.Email)}</span>`;
     return html;
   })();
   document.getElementById('m-body').innerHTML=`
-    <div class="m-section">
-      <div class="m-sec-title">Player Info</div>
-      <div class="m-grid">
-        <div class="m-field"><label>Full Name</label><div class="val">${esc(p.FullName||'—')}</div></div>
-        <div class="m-field"><label>Date of Birth</label><div class="val">${esc(p.BirthDate||'—')}</div></div>
-        <div class="m-field"><label>Gender</label><div class="val">${esc(p.Gender||'—')}</div></div>
-        <div class="m-field"><label>Can Travel</label><div class="val">${esc(p.CanTravel||'—')}</div></div>
-        <div class="m-field"><label>Current Location</label><div class="val">${esc(p.CurrentLocation||'—')}</div></div>
-        <div class="m-field"><label>Submitted</label><div class="val">${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'—'}</div></div>
-      </div>
+    <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
+      <div class="m-field"><label>Full Name</label><div class="val">${esc(p.FullName||'—')}</div></div>
+      <div class="m-field"><label>Date of Birth</label><div class="val">${esc(p.BirthDate||'—')}</div></div>
+      <div class="m-field"><label>Gender</label><div class="val">${esc(p.Gender||'—')}</div></div>
+      <div class="m-field"><label>Can Travel</label><div class="val">${esc(p.CanTravel||'—')}</div></div>
+      <div class="m-field"><label>Current Location</label><div class="val">${esc(p.CurrentLocation||'—')}</div></div>
+      <div class="m-field"><label>Country</label><div class="val">${esc(p.Country||'—')}</div></div>
+      <div class="m-field"><label>Submitted</label><div class="val">${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'—'}</div></div>
+    </div></div>
+    <div class="m-section"><div class="m-sec-title">ID Camp</div><div class="m-grid">
+      <div class="m-field full"><label>Camp Site</label><div class="val">${esc(p.IDCampLocation||'—')}</div></div>
+    </div></div>
+    <div class="m-section"><div class="m-sec-title">Playing History</div><div class="m-grid">
+      <div class="m-field full"><label>Current Team & League</label><div class="val">${esc(p.CurrentTeam||'—')}</div></div>
     </div>
-    <div class="m-section">
-      <div class="m-sec-title">ID Camp</div>
-      <div class="m-grid">
-        <div class="m-field full"><label>Camp Site</label><div class="val">${esc(p.IDCampLocation||'—')}</div></div>
-      </div>
-    </div>
-    <div class="m-section">
-      <div class="m-sec-title">Playing History</div>
-      <div class="m-grid">
-        <div class="m-field full"><label>Current Team & League</label><div class="val">${esc(p.CurrentTeam||'—')}</div></div>
-      </div>
-      <div style="margin-top:12px">
-        <label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
-        <div class="exp-box">${esc(p.PastExperience||'No experience provided')}</div>
-      </div>
-    </div>
-    <div class="m-section">
-      <div class="m-sec-title">Contact</div>
-      <div class="m-grid">
-        <div class="m-field"><label>Email</label>
-          <div class="val">${p.Email?`<a href="mailto:${esc(p.Email)}" style="color:var(--gold);text-decoration:none">${esc(p.Email)}</a>`:'—'}</div>
-        </div>
-        <div class="m-field"><label>Phone</label>
-          <div class="val">${p.Phone?`<a href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;gap:6px">📱 WhatsApp ${esc(p.Phone)}</a>`:'—'}</div>
-        </div>
-      </div>
-    </div>`;
+    <div style="margin-top:12px"><label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
+    <div class="exp-box">${esc(p.PastExperience||'No experience provided')}</div></div></div>
+    <div class="m-section"><div class="m-sec-title">Contact</div><div class="m-grid">
+      <div class="m-field"><label>Email</label><div class="val">${p.Email?`<a href="#" onclick="event.preventDefault();window.open('mailto:${esc(p.Email)}','_self')" style="color:var(--gold);text-decoration:none">${esc(p.Email)}</a>`:'—'}</div></div>
+      <div class="m-field"><label>Phone</label><div class="val">${p.Phone?`<a href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none">${esc(p.Phone)}</a>`:'—'}</div></div>
+    </div></div>`;
   document.getElementById('m-ov').classList.add('open');
 }
 
 function closeModal(e){if(!e||e.target===document.getElementById('m-ov'))document.getElementById('m-ov').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ── MATCHES ──
+async function loadMatches(){
+  spinning(true,'mref-btn','mref-icon');
+  try{
+    await getSiteAndLists();
+    if(!matchListId)throw new Error('LegioMatches list not found');
+    const t=await getToken();const h={Authorization:`Bearer ${t}`};
+    const fields='Title,Opponent,Tournament,MatchDate,Venue,LegioScore,OpponentScore,Status,YouTubeURL,Notes';
+    let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items?$expand=fields($select=${fields})&$top=999&$orderby=fields/MatchDate desc`;
+    let rows=[];
+    while(url){
+      const res=await fetch(url,{headers:h});
+      if(!res.ok)throw new Error(`Matches fetch failed: ${res.status}`);
+      const data=await res.json();
+      rows=rows.concat(data.value.map(item=>({
+        _id:item.id,
+        Title:item.fields.Title||'',Opponent:item.fields.Opponent||'',
+        Tournament:item.fields.Tournament||'',MatchDate:item.fields.MatchDate||'',
+        Venue:item.fields.Venue||'',LegioScore:item.fields.LegioScore,
+        OpponentScore:item.fields.OpponentScore,Status:item.fields.Status||'Upcoming',
+        YouTubeURL:item.fields.YouTubeURL||'',Notes:item.fields.Notes||'',
+      })));
+      url=data['@odata.nextLink']||null;
+    }
+    allMatches=rows;
+    filterMatches();
+    document.getElementById('mfoot-time').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
+  }catch(e){
+    document.getElementById('mtbody').innerHTML=`<tr><td colspan="8"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Matches</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
+    toast(e.message,'error');
+  }finally{spinning(false,'mref-btn','mref-icon');}
+}
+
+function filterMatches(){
+  const q=document.getElementById('mq').value.toLowerCase();
+  const s=document.getElementById('mf-status').value;
+  filteredMatches=allMatches.filter(m=>{
+    const mq=!q||[m.Title,m.Opponent,m.Tournament,m.Venue].some(v=>v&&v.toLowerCase().includes(q));
+    return mq&&(!s||m.Status===s);
+  });
+  renderMatches();
+}
+
+function renderMatches(){
+  const tbody=document.getElementById('mtbody');
+  if(!filteredMatches.length){
+    tbody.innerHTML=`<tr><td colspan="8"><div class="state-box"><div class="state-icon">🏆</div><div class="state-title">No Matches Found</div><div class="state-text">Add a match using the button above.</div></div></td></tr>`;
+    document.getElementById('mfoot-label').textContent='';return;
+  }
+  tbody.innerHTML=filteredMatches.map((m,i)=>{
+    const dateStr=m.MatchDate?new Date(m.MatchDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}):'TBD';
+    const ls=m.LegioScore!=null?m.LegioScore:'—';
+    const os=m.OpponentScore!=null?m.OpponentScore:'—';
+    let scoreHtml='<span class="score-tbd">TBD</span>';
+    if(m.LegioScore!=null&&m.OpponentScore!=null){
+      const cls=m.LegioScore>m.OpponentScore?'score-w':m.LegioScore<m.OpponentScore?'score-l':'score-d';
+      scoreHtml=`<span class="score-cell ${cls}">${ls} – ${os}</span>${m.Notes?`<span style="font-size:9px;color:var(--text-faint);margin-left:6px;">${esc(m.Notes)}</span>`:''}`;
+    }
+    const statusTag=m.Status==='Live'?'tag-live':m.Status==='Final'?'tag-final':'tag-upcoming';
+    return `<tr>
+      <td class="td-num">${i+1}</td>
+      <td class="td-name" style="cursor:default">${esc(m.Title||'—')}</td>
+      <td>${esc(m.Tournament||'—')}</td>
+      <td style="font-size:12px">${dateStr}</td>
+      <td>${esc(m.Venue||'—')}</td>
+      <td>${scoreHtml}</td>
+      <td><span class="tag ${statusTag}">${esc(m.Status)}</span></td>
+      <td style="white-space:nowrap">
+        <button onclick="editMatch('${m._id}')" style="background:transparent;border:1px solid var(--gold-border);color:var(--gold);padding:4px 10px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;cursor:pointer;margin-right:4px" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='transparent'">Edit</button>
+        <button onclick="deleteMatch('${m._id}')" style="background:transparent;border:1px solid rgba(156,24,41,.4);color:#d07080;padding:4px 10px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;cursor:pointer" onmouseover="this.style.background='rgba(156,24,41,.1)'" onmouseout="this.style.background='transparent'">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('mfoot-label').textContent=`${filteredMatches.length} matches · click Edit to update scores`;
+}
+
+function openMatchModal(id){
+  editingMatchId=null;
+  document.getElementById('mm-title').textContent='Add Match';
+  document.getElementById('mf-title').value='';
+  document.getElementById('mf-opponent').value='';
+  document.getElementById('mf-tournament').value='';
+  document.getElementById('mf-date').value='';
+  document.getElementById('mf-venue').value='';
+  document.getElementById('mf-legio').value='';
+  document.getElementById('mf-opp').value='';
+  document.getElementById('mf-status').value='Upcoming';
+  document.getElementById('mf-youtube').value='';
+  document.getElementById('mf-notes').value='';
+  document.getElementById('match-ov').classList.add('open');
+}
+
+function editMatch(id){
+  const m=allMatches.find(x=>x._id===id);if(!m)return;
+  editingMatchId=id;
+  document.getElementById('mm-title').textContent='Edit Match';
+  document.getElementById('mf-title').value=m.Title||'';
+  document.getElementById('mf-opponent').value=m.Opponent||'';
+  document.getElementById('mf-tournament').value=m.Tournament||'';
+  document.getElementById('mf-date').value=m.MatchDate?m.MatchDate.slice(0,16):'';
+  document.getElementById('mf-venue').value=m.Venue||'';
+  document.getElementById('mf-legio').value=m.LegioScore!=null?m.LegioScore:'';
+  document.getElementById('mf-opp').value=m.OpponentScore!=null?m.OpponentScore:'';
+  document.getElementById('mf-status').value=m.Status||'Upcoming';
+  document.getElementById('mf-youtube').value=m.YouTubeURL||'';
+  document.getElementById('mf-notes').value=m.Notes||'';
+  document.getElementById('match-ov').classList.add('open');
+}
+
+async function saveMatch(){
+  const btn=document.getElementById('mm-save-btn');
+  btn.disabled=true;btn.textContent='Saving…';
+  try{
+    await getSiteAndLists();
+    const t=await getToken();const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
+    const ls=document.getElementById('mf-legio').value;
+    const os=document.getElementById('mf-opp').value;
+    const fields={
+      Title:document.getElementById('mf-title').value,
+      Opponent:document.getElementById('mf-opponent').value,
+      Tournament:document.getElementById('mf-tournament').value,
+      Venue:document.getElementById('mf-venue').value,
+      Status:document.getElementById('mf-status').value,
+      YouTubeURL:document.getElementById('mf-youtube').value,
+      Notes:document.getElementById('mf-notes').value,
+    };
+    if(document.getElementById('mf-date').value)fields.MatchDate=new Date(document.getElementById('mf-date').value).toISOString();
+    if(ls!=='')fields.LegioScore=parseInt(ls);
+    if(os!=='')fields.OpponentScore=parseInt(os);
+
+    if(editingMatchId){
+      await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items/${editingMatchId}/fields`,{method:'PATCH',headers:h,body:JSON.stringify(fields)});
+      toast('Match updated','success');
+    }else{
+      await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items`,{method:'POST',headers:h,body:JSON.stringify({fields})});
+      toast('Match added','success');
+    }
+    closeMatchModal();
+    loadMatches();
+  }catch(e){toast(e.message,'error');}
+  finally{btn.disabled=false;btn.textContent='Save Match';}
+}
+
+async function deleteMatch(id){
+  if(!confirm('Delete this match?'))return;
+  try{
+    await getSiteAndLists();
+    const t=await getToken();
+    await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${matchListId}/items/${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${t}`}});
+    toast('Match deleted','success');
+    loadMatches();
+  }catch(e){toast(e.message,'error');}
+}
+
+function closeMatchModal(e){if(!e||e.target===document.getElementById('match-ov'))document.getElementById('match-ov').classList.remove('open');}
+
+// ── HELPERS ──
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function spinning(on){document.getElementById('ref-btn').disabled=on;document.getElementById('ref-icon').className=on?'spinning':'';}
+function spinning(on,btnId,iconId){document.getElementById(btnId).disabled=on;document.getElementById(iconId).className=on?'spinning':'';}
 let _t;
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(_t);_t=setTimeout(()=>el.classList.remove('show'),3800);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();}});
+
 init();
 </script>
 </body>

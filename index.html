@@ -145,6 +145,9 @@
         <p class="motto-english">We Gather The Best Against The World</p>
         <p class="founded">MMXXV</p>
 
+        <!-- LIVE GAMES SECTION -->
+        <div id="live-section" style="margin-bottom:40px;display:none;"></div>
+
         <!-- TST ANNOUNCEMENT -->
         <div class="tst-announcement">
             <div class="tst-card">
@@ -277,5 +280,46 @@
         <a href="mailto:operations@legiofc.com" class="contact-link">Contact Us</a>
         <footer><p>&copy; 2025 Legio Football Club</p></footer>
     </div>
+
+<script>
+async function checkLiveGames() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('live') === '1') {
+    const opponent = params.get('opponent') || 'Opponent';
+    const legio = params.get('legio') || '0';
+    const opp = params.get('opp') || '0';
+    const yt = params.get('yt') || '';
+    const tournament = params.get('tournament') || '';
+    showLiveSection(opponent, legio, opp, yt, tournament);
+  }
+}
+
+function showLiveSection(opponent, legioScore, oppScore, ytUrl, tournament) {
+  const section = document.getElementById('live-section');
+  const ytEmbed = ytUrl ? ytUrl.replace('watch?v=', 'embed/').split('&')[0] : '';
+  section.style.display = 'block';
+  section.innerHTML =
+    '<div style="background:rgba(22,61,84,0.7);border:1px solid rgba(76,175,80,0.5);position:relative;overflow:hidden;">' +
+    '<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
+    '<div style="padding:20px 28px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(76,175,80,0.2);">' +
+    '<span style="width:8px;height:8px;border-radius:50%;background:#4caf50;display:inline-block;animation:livepulse 1s ease-in-out infinite;"></span>' +
+    '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live Now</span>' +
+    (tournament ? '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.4);text-transform:uppercase;">&nbsp;·&nbsp; ' + tournament + '</span>' : '') +
+    '</div>' +
+    '<div style="padding:24px 28px;">' +
+    '<div style="display:flex;align-items:center;justify-content:center;gap:32px;margin-bottom:' + (ytEmbed ? '24px' : '0') + ';">' +
+    '<div style="text-align:center;"><div style="font-family:Cinzel,serif;font-size:11px;letter-spacing:3px;color:rgba(218,183,81,0.7);text-transform:uppercase;margin-bottom:6px;">Legio FC</div><div style="font-family:Cinzel,serif;font-size:52px;font-weight:700;color:#f8f6f1;line-height:1;">' + legioScore + '</div></div>' +
+    '<div style="font-family:Cinzel,serif;font-size:16px;letter-spacing:4px;color:rgba(218,183,81,0.35);">VS</div>' +
+    '<div style="text-align:center;"><div style="font-family:Cinzel,serif;font-size:11px;letter-spacing:3px;color:rgba(218,183,81,0.7);text-transform:uppercase;margin-bottom:6px;">' + opponent + '</div><div style="font-family:Cinzel,serif;font-size:52px;font-weight:700;color:#f8f6f1;line-height:1;">' + oppScore + '</div></div>' +
+    '</div>' +
+    (ytEmbed ? '<div style="position:relative;width:100%;aspect-ratio:16/9;max-width:680px;margin:0 auto;"><iframe src="' + ytEmbed + '?autoplay=1" style="position:absolute;top:0;left:0;width:100%;height:100%;border:1px solid rgba(76,175,80,0.3);" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>' : '') +
+    '</div>' +
+    '<div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
+    '</div>' +
+    '<style>@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}</style>';
+}
+
+checkLiveGames();
+</script>
 </body>
 </html>
