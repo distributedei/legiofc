@@ -175,10 +175,15 @@
   <!-- Form -->
   <div id="form-wrap">
     <!-- Tournament selector -->
-    <div class="tournament-tabs">
-      <button class="tab active" onclick="setTournament('TST',this)">TST — The Soccer Tournament</button>
-      <button class="tab" onclick="setTournament('Cary Cup',this)">The Cary Cup</button>
-      <button class="tab" onclick="setTournament('Regional',this)">Regional Tournaments</button>
+    <div class="field" style="margin-bottom:28px">
+      <label style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;display:block">Select Tournament <span style="color:#9c1829">*</span></label>
+      <select id="tournamentSelect" onchange="setTournamentFromSelect(this)" style="padding:13px 16px;background:rgba(248,246,241,.05);border:1px solid var(--gold-border);color:var(--cream);font-family:'Inter',sans-serif;font-size:14px;outline:none;width:100%;cursor:pointer;transition:border-color .2s" required>
+        <option value="" disabled selected style="color:rgba(248,246,241,.3)">Choose your tournament…</option>
+        <option value="TST Mens">TST — Men's Team</option>
+        <option value="TST Coed">TST — Co-Ed Team</option>
+        <option value="Cary Cup">The Cary Cup</option>
+        <option value="Regional">Regional Tournaments</option>
+      </select>
     </div>
 
     <div class="form-card">
@@ -277,15 +282,14 @@
 // ══════════════════════════════════════════════════════════
 const FLOW_URL = 'YOUR-POWER-AUTOMATE-HTTP-TRIGGER-URL-HERE';
 
-let selectedTournament = 'TST';
+let selectedTournament = '';
 
-function setTournament(name, el) {
-  selectedTournament = name;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+function setTournamentFromSelect(el) {
+  selectedTournament = el.value;
 }
 
 function validate() {
+  if (!selectedTournament) { showError('Please select a tournament.'); document.getElementById('tournamentSelect').focus(); return false; }
   const required = ['firstName','lastName','birthDate','gender','currentLocation','idCampLocation','currentTeam','email','phone'];
   for (const id of required) {
     const el = document.getElementById(id);
@@ -369,17 +373,15 @@ function hideError() {
   const params = new URLSearchParams(window.location.search);
   const t = params.get('t');
   if (t) {
-    const map = {'TST':'TST','CaryCup':'Cary Cup','Regional':'Regional'};
-    const name = map[t];
-    if (name) {
-      const tabs = document.querySelectorAll('.tab');
-      tabs.forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.textContent.includes(name === 'TST' ? 'TST' : name === 'Cary Cup' ? 'Cary' : 'Regional')) {
-          tab.classList.add('active');
-          selectedTournament = name;
-        }
-      });
+    const map = {
+      'TST': 'TST Mens',
+      'CaryCup': 'Cary Cup',
+      'Regional': 'Regional'
+    };
+    const val = map[t];
+    if (val) {
+      const sel = document.getElementById('tournamentSelect');
+      if (sel) { sel.value = val; selectedTournament = val; }
     }
   }
 })();
