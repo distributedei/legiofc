@@ -218,14 +218,7 @@
           </div>
           <div class="field full">
             <label>Country <span>*</span></label>
-            <select id="country" required onchange="toggleOtherCountry(this)">
-              <option value="">Select country</option>
-              <option value="USA">USA</option>
-              <option value="Canada">Canada</option>
-              <option value="Mexico">Mexico</option>
-              <option value="other">Not listed — enter below</option>
-            </select>
-            <input type="text" id="countryOther" placeholder="Enter your country" style="display:none;margin-top:8px;">
+            <input type="text" id="country" placeholder="e.g. USA, Mexico, Brazil" required>
           </div>
           <div class="field full">
             <label>ID Camp Location (City, State) <span>*</span></label>
@@ -293,18 +286,6 @@ const FLOW_URL = 'https://default99b5fc0cbe854531a7debc8da0002e.c2.environment.a
 
 let selectedTournament = '';
 
-function toggleOtherCountry(sel) {
-  const other = document.getElementById('countryOther');
-  if (sel.value === 'Other') {
-    other.style.display = 'block';
-    other.required = true;
-  } else {
-    other.style.display = 'none';
-    other.required = false;
-    other.value = '';
-  }
-}
-
 function setTournamentFromSelect(el) {
   selectedTournament = el.value;
 }
@@ -349,7 +330,7 @@ async function submitForm() {
     Email:           document.getElementById('email').value.trim(),
     Phone:           document.getElementById('phone').value.trim(),
     CurrentLocation: document.getElementById('currentLocation').value.trim(),
-    Country:           document.getElementById('country').value === 'Other' ? document.getElementById('countryOther').value.trim() : document.getElementById('country').value,
+    Country:           document.getElementById('country').value.trim(),
     IDCampLocation:  document.getElementById('idCampLocation').value.trim(),
     CurrentTeam:     document.getElementById('currentTeam').value.trim(),
     PastExperience:  document.getElementById('pastExperience').value.trim(),
