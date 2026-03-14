@@ -368,7 +368,7 @@ function showLiveBanner(homeTeam, opponent, legioScore, oppScore, ytUrl, tournam
     '<div id="live-opp-score" style="font-family:Cinzel,serif;font-size:' + (ytEmbed?'36px':'48px') + ';font-weight:700;color:#f8f6f1;line-height:1;">'+oppScore+'</div>' +
     '</div>' +
     (ytEmbed ?
-    '<div style="flex-shrink:0;width:280px;aspect-ratio:16/9;position:relative;cursor:pointer;" onclick="window.open(\'' + ytUrl + '\',\'_blank\')">' +
+    '<div style="flex-shrink:0;width:280px;aspect-ratio:16/9;position:relative;cursor:pointer;" onclick="openVideoModal(\'' + ytEmbed + '\')">' +
     '<iframe src="'+ytEmbed+'?autoplay=1&mute=1" style="width:100%;height:100%;border:1px solid rgba(76,175,80,0.3);pointer-events:none;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>' +
     '<div style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid rgba(76,175,80,0.5);padding:4px 10px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:#4caf50;">&#9654; Watch Live</div>' +
     '</div>' : '') +
@@ -388,10 +388,11 @@ function hideLiveBanner(permanent) {
 }
 
 function switchLiveGame(item) {
-  dismissedIds.clear(); // allow showing when manually selecting
+  dismissedIds.clear();
   currentLiveId = null;
   showLiveBanner(item.HomeTeam||'Legio FC', item.Opponent||'Opponent', item.LegioScore!=null?item.LegioScore:0, item.OpponentScore!=null?item.OpponentScore:0, item.YouTubeURL||'', item.Tournament||'', item.Notes||'');
   currentLiveId = item.ID;
+  if (item.YouTubeURL) openVideoModal(item.YouTubeURL.replace('watch?v=','embed/').split('&')[0]);
 }
 
 function renderLiveGamesList(matches) {
@@ -470,6 +471,30 @@ function selectLiveGame(idx) {
 // Start polling
 pollForLiveMatch();
 liveInterval = setInterval(pollForLiveMatch, 30000);
+</script>
+
+<!-- VIDEO MODAL -->
+<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;flex-direction:column;" onclick="closeVideoModal(event)">
+  <div style="position:relative;width:90%;max-width:900px;aspect-ratio:16/9;">
+    <iframe id="video-iframe" src="" style="width:100%;height:100%;border:1px solid rgba(76,175,80,0.4);" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <button onclick="closeVideoModal()" style="position:absolute;top:-36px;right:0;background:transparent;border:1px solid rgba(248,246,241,0.3);color:rgba(248,246,241,0.6);padding:4px 14px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;">✕ Close</button>
+  </div>
+</div>
+
+<script>
+function openVideoModal(embedUrl) {
+  const modal = document.getElementById('video-modal');
+  const iframe = document.getElementById('video-iframe');
+  iframe.src = embedUrl + '?autoplay=1';
+  modal.style.display = 'flex';
+}
+function closeVideoModal(e) {
+  if (!e || e.target === document.getElementById('video-modal')) {
+    document.getElementById('video-modal').style.display = 'none';
+    document.getElementById('video-iframe').src = '';
+  }
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeVideoModal(); });
 </script>
 </body>
 </html>
