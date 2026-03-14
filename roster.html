@@ -693,7 +693,7 @@ function editMatch(id){
   document.getElementById('mf-title').value=m.Title||'';
   document.getElementById('mf-opponent').value=m.Opponent||'';
   document.getElementById('mf-tournament').value=m.Tournament||'';
-  document.getElementById('mf-date').value=m.MatchDate?m.MatchDate.slice(0,16):'';
+  if(m.MatchDate){const d=new Date(m.MatchDate);d.setHours(d.getHours()-4);document.getElementById('mf-date').value=d.toISOString().slice(0,16);}else{document.getElementById('mf-date').value='';}
   document.getElementById('mf-venue').value=m.Venue||'';
   document.getElementById('mf-legio').value=m.LegioScore!=null?m.LegioScore:'';
   document.getElementById('mf-opp').value=m.OpponentScore!=null?m.OpponentScore:'';
@@ -720,7 +720,7 @@ async function saveMatch(){
       YouTubeURL:document.getElementById('mf-youtube').value,
       Notes:document.getElementById('mf-notes').value,
     };
-    if(document.getElementById('mf-date').value){fields.MatchDate=document.getElementById('mf-date').value+':00';}
+    if(document.getElementById('mf-date').value){fields.MatchDate=document.getElementById('mf-date').value+':00-04:00';}
     if(ls!=='')fields.LegioScore=parseInt(ls);
     if(os!=='')fields.OpponentScore=parseInt(os);
 
