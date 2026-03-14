@@ -422,7 +422,7 @@ function renderLiveGamesList(matches) {
     '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live &amp; Upcoming</span>' +
     '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.25);text-transform:uppercase;">&nbsp;·&nbsp; ' + matches.length + ' match' + (matches.length>1?'es':'') + '</span>' +
     '</div>' +
-    '<button onclick="document.getElementById('live-games-list').style.transform='translateY(100%)';" style="background:transparent;border:1px solid rgba(248,246,241,0.15);color:rgba(248,246,241,0.35);width:22px;height:22px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;">✕</button>' +
+    '<button onclick="var g=document.getElementById(\'live-games-list\');if(g)g.style.transform=\'translateY(100%)\';" style="background:transparent;border:1px solid rgba(248,246,241,0.15);color:rgba(248,246,241,0.35);width:22px;height:22px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;">X</button>' +
     '</div>' +
     // Table
     '<div style="overflow-x:auto;">' +
