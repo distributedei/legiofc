@@ -325,8 +325,9 @@ function renderScheduleTable(items) {
   const dotEl = document.getElementById('schedule-live-dot');
   if (!tbody) return;
 
-  // Show all non-final matches
   const matches = (items||[]).filter(i => i.Status !== 'Final');
+  window._liveMatches = matches;
+
   if (!matches.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(218,183,81,0.3);text-transform:uppercase;">No upcoming matches scheduled</td></tr>';
     if (countEl) countEl.textContent = '';
@@ -334,9 +335,9 @@ function renderScheduleTable(items) {
   }
 
   const now = new Date();
-  const hasLive = matches.some(m => {
-    const mt = new Date(m.MatchDate);
-    const diff = (now - mt) / (1000*60*60);
+  const hasLive = matches.some(function(m) {
+    var mt = new Date(m.MatchDate);
+    var diff = (now - mt) / (1000*60*60);
     return diff >= -0.5 && diff <= 3;
   });
 
@@ -346,21 +347,26 @@ function renderScheduleTable(items) {
   }
   if (countEl) countEl.textContent = matches.length + ' match' + (matches.length>1?'es':'');
 
-  // Sort: live first, then by date
-  matches.sort((a,b) => new Date(a.MatchDate) - new Date(b.MatchDate));
+  matches.sort(function(a,b){ return new Date(a.MatchDate) - new Date(b.MatchDate); });
 
-  tbody.innerHTML = matches.map((m, idx) => {
-    const mt = new Date(m.MatchDate);
-    const diff = (now - mt) / (1000*60*60);
-    const isLive = diff >= -0.5 && diff <= 3;
-    const dateStr = mt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' · ' + mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-    const statusHtml = isLive
+  var rows = '';
+  for (var idx=0; idx<matches.length; idx++) {
+    var m = matches[idx];
+    var mt = new Date(m.MatchDate);
+    var diff = (now - mt) / (1000*60*60);
+    var isLive = diff >= -0.5 && diff <= 3;
+    var dateStr = mt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) + ' · ' + mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    var statusHtml = isLive
       ? '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#4caf50;animation:livepls 1s ease-in-out infinite;display:inline-block;"></span><span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:#4caf50;text-transform:uppercase;">Live</span></span>'
       : '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(218,183,81,0.45);text-transform:uppercase;">Upcoming</span>';
-    const watchBtn = m.YouTubeURL
-      ? '<button onclick="selectLiveGame(' + idx + ')" style="background:' + (isLive?'#4caf50':'transparent') + ';border:1px solid ' + (isLive?'#4caf50':'rgba(218,183,81,0.3)') + ';color:' + (isLive?'#fff':'#dab751') + ';padding:5px 14px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:all .2s;" onmouseover="this.style.background='rgba(218,183,81,0.1)'" onmouseout="this.style.background='' + (isLive?'#4caf50':'transparent') + ''">&#9654; Watch</button>'
+    var bg = isLive ? 'rgba(76,175,80,0.05)' : 'transparent';
+    var btnBg = isLive ? '#4caf50' : 'transparent';
+    var btnBorder = isLive ? '#4caf50' : 'rgba(218,183,81,0.3)';
+    var btnColor = isLive ? '#fff' : '#dab751';
+    var watchBtn = m.YouTubeURL
+      ? '<button data-idx="' + idx + '" class="sched-watch-btn" style="background:' + btnBg + ';border:1px solid ' + btnBorder + ';color:' + btnColor + ';padding:5px 14px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">&#9654; Watch</button>'
       : '<span style="font-size:11px;color:rgba(218,183,81,0.2);">—</span>';
-    return '<tr style="border-bottom:1px solid rgba(218,183,81,0.06);background:' + (isLive?'rgba(76,175,80,0.05)':'transparent') + ';transition:background .15s;" onmouseover="this.style.background='rgba(248,246,241,0.03)'" onmouseout="this.style.background='' + (isLive?'rgba(76,175,80,0.05)':'transparent') + ''">' +
+    rows += '<tr style="border-bottom:1px solid rgba(218,183,81,0.06);background:' + bg + ';">' +
       '<td style="padding:12px 16px;">' + statusHtml + '</td>' +
       '<td style="padding:12px 16px;font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:.5px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 4px;">vs</span> ' + (m.Opponent||'TBD') + '</td>' +
       '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + (m.Tournament||'—') + '</td>' +
@@ -368,10 +374,15 @@ function renderScheduleTable(items) {
       '<td style="padding:12px 16px;font-size:11px;color:rgba(248,246,241,0.45);">' + (m.Venue||'—') + '</td>' +
       '<td style="padding:12px 16px;text-align:center;">' + watchBtn + '</td>' +
       '</tr>';
-  }).join('');
+  }
+  tbody.innerHTML = rows;
 
-  // Store for selectLiveGame
-  window._liveMatches = matches;
+  // Attach click handlers
+  tbody.querySelectorAll('.sched-watch-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      selectLiveGame(parseInt(this.getAttribute('data-idx')));
+    });
+  });
 }
 
 async function pollForLiveMatch() {
@@ -596,7 +607,7 @@ function selectLiveGame(idx) {
   switchLiveGame(m);
 }
 
-// Start polling
+// Start polling - v2
 pollForLiveMatch();
 liveInterval = setInterval(pollForLiveMatch, 30000);
 </script>
