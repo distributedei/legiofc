@@ -217,6 +217,16 @@
             <input type="text" id="currentLocation" placeholder="e.g. Miami, Florida" required>
           </div>
           <div class="field full">
+            <label>Country <span>*</span></label>
+            <select id="country" required>
+              <option value="">Select country</option>
+              <option value="USA">USA</option>
+              <option value="Canada">Canada</option>
+              <option value="Mexico">Mexico</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field full">
             <label>ID Camp Location (City, State) <span>*</span></label>
             <input type="text" id="idCampLocation" placeholder="Where would you like to attend the ID camp?" required>
           </div>
@@ -326,6 +336,7 @@ async function submitForm() {
     Email:           document.getElementById('email').value.trim(),
     Phone:           document.getElementById('phone').value.trim(),
     CurrentLocation: document.getElementById('currentLocation').value.trim(),
+    Country:           document.getElementById('country').value,
     IDCampLocation:  document.getElementById('idCampLocation').value.trim(),
     CurrentTeam:     document.getElementById('currentTeam').value.trim(),
     PastExperience:  document.getElementById('pastExperience').value.trim(),

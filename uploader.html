@@ -935,7 +935,7 @@ async function uploadAll(){
       const fields={
         Title:p.FullName,LastName:p.LastName,BirthDate:p.BirthDate,
         Gender:p.Gender,Email:p.Email,Phone:p.Phone,
-        CurrentLocation:p.CurrentLocation,IDCampLocation:p.IDCampLocation,
+        CurrentLocation:p.CurrentLocation,Country:p.Country||"USA",IDCampLocation:p.IDCampLocation,
         CurrentTeam:p.CurrentTeam,PastExperience:p.PastExperience,
         CanTravel:p.CanTravel
       };

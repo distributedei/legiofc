@@ -198,6 +198,7 @@
             <th onclick="sortBy('BirthDate')">DOB <span class="sa">↕</span></th>
             <th onclick="sortBy('Gender')">Gender <span class="sa">↕</span></th>
             <th onclick="sortBy('CurrentLocation')">Location <span class="sa">↕</span></th>
+            <th onclick="sortBy('Country')">Country <span class="sa">↕</span></th>
             <th onclick="sortBy('IDCampLocation')">Camp Site <span class="sa">↕</span></th>
             <th onclick="sortBy('CurrentTeam')">Current Team <span class="sa">↕</span></th>
             <th onclick="sortBy('CanTravel')">Travel <span class="sa">↕</span></th>
@@ -207,7 +208,7 @@
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="11"><div class="state-box">
+          <tr><td colspan="12"><div class="state-box">
             <div class="state-icon">⚔</div>
             <div class="state-title">Summoning The Legion</div>
             <div class="dots"><span></span><span></span><span></span></div>
@@ -286,7 +287,7 @@ async function loadRoster(){
     const{value:lists}=await listRes.json();
     if(!lists?.length)throw new Error(`List "${LIST_NAME}" not found`);
     const listId=lists[0].id;
-    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate';
+    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -300,6 +301,7 @@ async function loadRoster(){
         Email:item.fields.Email||'',CurrentLocation:item.fields.CurrentLocation||'',
         IDCampLocation:item.fields.IDCampLocation||'',CurrentTeam:item.fields.CurrentTeam||'',
         PastExperience:item.fields.PastExperience||'',CanTravel:item.fields.CanTravel||'',
+Country:item.fields.Country||'',
         Phone:item.fields.Phone||'',
         SubmittedDate:item.fields.SubmittedDate||'',
       })));
@@ -311,7 +313,7 @@ async function loadRoster(){
     toast(`${all.length} registrations loaded`,'success');
   }catch(e){
     console.error(e);
-    document.getElementById('tbody').innerHTML=`<tr><td colspan="11"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
     toast(e.message,'error');
   }finally{spinning(false);}
 }
@@ -350,7 +352,7 @@ function render(){
   document.getElementById('s-camps').textContent=new Set(all.map(p=>p.IDCampLocation).filter(Boolean)).size;
   const tbody=document.getElementById('tbody');
   if(!filtered.length){
-    tbody.innerHTML=`<tr><td colspan="11"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;
     document.getElementById('foot-label').textContent='';return;
   }
   tbody.innerHTML=filtered.map((p,i)=>`
@@ -360,6 +362,7 @@ function render(){
       <td>${esc(p.BirthDate||'—')}</td>
       <td>${esc(p.Gender||'—')}</td>
       <td>${esc(p.CurrentLocation||'—')}</td>
+      <td>${esc(p.Country||'—')}</td>
       <td>${esc(p.IDCampLocation||'—')}</td>
       <td>${esc(p.CurrentTeam||'—')}</td>
       <td><span class="tag ${p.CanTravel==='No'?'tag-no':''}">${esc(p.CanTravel||'—')}</span></td>
