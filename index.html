@@ -395,38 +395,69 @@ function switchLiveGame(item) {
 }
 
 function renderLiveGamesList(matches) {
+  // Bottom fixed table
   let section = document.getElementById('live-games-list');
   if (!section) {
     section = document.createElement('div');
     section.id = 'live-games-list';
-    // Insert before the TST announcement
-    const tst = document.querySelector('.tst-announcement');
-    if (tst) tst.parentNode.insertBefore(section, tst);
+    section.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:998;transform:translateY(100%);transition:transform 0.4s ease;';
+    document.body.appendChild(section);
   }
-  if (!matches || matches.length === 0) { section.innerHTML = ''; return; }
-  section.style.cssText = 'margin-bottom:40px;';
+  if (!matches || matches.length === 0) {
+    section.style.transform = 'translateY(100%)';
+    return;
+  }
+  // Don't show if live banner is covering it — offset if banner is visible
+  const banner = document.getElementById('live-banner');
+  const bannerVisible = banner && banner.style.transform !== 'translateY(100%)';
+  section.style.bottom = bannerVisible ? '0' : '0';
+  section.style.transform = 'translateY(0)';
+
   section.innerHTML =
-    '<div style="background:rgba(22,61,84,0.5);border:1px solid rgba(76,175,80,0.3);padding:16px 24px;position:relative;">' +
-    '<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">' +
+    '<div style="background:#163d54;border-top:1px solid rgba(218,183,81,0.25);box-shadow:0 -4px 20px rgba(0,0,0,0.4);">' +
+    // Header
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:rgba(22,61,84,0.98);border-bottom:1px solid rgba(218,183,81,0.15);">' +
+    '<div style="display:flex;align-items:center;gap:10px;">' +
     '<span style="width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;animation:livepls 1s ease-in-out infinite;"></span>' +
-    '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live & Upcoming</span>' +
+    '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:#4caf50;text-transform:uppercase;">Live &amp; Upcoming</span>' +
+    '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:rgba(248,246,241,0.25);text-transform:uppercase;">&nbsp;·&nbsp; ' + matches.length + ' match' + (matches.length>1?'es':'') + '</span>' +
     '</div>' +
-    '<div style="display:flex;gap:12px;flex-wrap:wrap;">' +
+    '<button onclick="document.getElementById('live-games-list').style.transform='translateY(100%)';" style="background:transparent;border:1px solid rgba(248,246,241,0.15);color:rgba(248,246,241,0.35);width:22px;height:22px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;">✕</button>' +
+    '</div>' +
+    // Table
+    '<div style="overflow-x:auto;">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px;">' +
+    '<thead><tr style="background:rgba(22,61,84,0.6);border-bottom:1px solid rgba(218,183,81,0.15);">' +
+    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Status</th>' +
+    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Match</th>' +
+    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Tournament</th>' +
+    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Time</th>' +
+    '<th style="padding:8px 16px;text-align:left;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Venue</th>' +
+    '<th style="padding:8px 16px;text-align:center;font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Watch</th>' +
+    '</tr></thead>' +
+    '<tbody>' +
     matches.map(m => {
       const mt = new Date(m.MatchDate);
       const diff = (new Date() - mt) / (1000*60*60);
-      const isLive = diff >= -0.5;
-      const timeStr = isLive ? 'Live Now' : mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      const isLive = diff >= -0.5 && diff <= 3;
+      const timeStr = mt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + ' · ' + mt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
       const isActive = currentLiveId === m.ID;
-      return '<div onclick="switchLiveGame(' + JSON.stringify(m).replace(/'/g,"\'") + ')" style="cursor:pointer;border:1px solid ' + (isActive?'#4caf50':'rgba(218,183,81,0.25)') + ';background:' + (isActive?'rgba(76,175,80,0.1)':'rgba(22,61,84,0.4)') + ';padding:10px 16px;transition:all .2s;min-width:200px;" onmouseover="this.style.borderColor='#4caf50'" onmouseout="this.style.borderColor='' + (isActive?'#4caf50':'rgba(218,183,81,0.25)') + ''">' +
-        '<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:' + (isLive?'#4caf50':'rgba(218,183,81,0.7)') + ';text-transform:uppercase;margin-bottom:4px;">' + timeStr + (m.Tournament?' · '+m.Tournament:'') + '</div>' +
-        '<div style="font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:1px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.4);font-size:9px;">vs</span> ' + (m.Opponent||'TBD') + '</div>' +
-        '</div>';
+      const statusHtml = isLive
+        ? '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#4caf50;animation:livepls 1s ease-in-out infinite;"></span><span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:#4caf50;text-transform:uppercase;">Live</span></span>'
+        : '<span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;color:rgba(218,183,81,0.5);text-transform:uppercase;">Upcoming</span>';
+      const safeM = JSON.stringify(m).replace(/\/g,'\\').replace(/'/g,"\'");
+      return '<tr style="border-bottom:1px solid rgba(218,183,81,0.06);background:' + (isActive?'rgba(76,175,80,0.07)':'transparent') + ';cursor:pointer;transition:background .15s;" onclick="switchLiveGame(JSON.parse(decodeURIComponent('' + encodeURIComponent(JSON.stringify(m)) + '')))" onmouseover="this.style.background='rgba(248,246,241,0.04)'" onmouseout="this.style.background='' + (isActive?'rgba(76,175,80,0.07)':'transparent') + ''">' +
+        '<td style="padding:10px 16px;">' + statusHtml + '</td>' +
+        '<td style="padding:10px 16px;font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:.5px;">' + (m.HomeTeam||'Legio FC') + ' <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 4px;">vs</span> ' + (m.Opponent||'TBD') + '</td>' +
+        '<td style="padding:10px 16px;font-size:11px;color:rgba(248,246,241,0.5);">' + (m.Tournament||'—') + '</td>' +
+        '<td style="padding:10px 16px;font-size:11px;color:rgba(248,246,241,0.5);">' + timeStr + '</td>' +
+        '<td style="padding:10px 16px;font-size:11px;color:rgba(248,246,241,0.5);">' + (m.Venue||'—') + '</td>' +
+        '<td style="padding:10px 16px;text-align:center;">' +
+        (m.YouTubeURL ? '<button onclick="event.stopPropagation();switchLiveGame(JSON.parse(decodeURIComponent('' + encodeURIComponent(JSON.stringify(m)) + '')))" style="background:' + (isLive?'#4caf50':'rgba(218,183,81,0.15)') + ';border:1px solid ' + (isLive?'#4caf50':'rgba(218,183,81,0.3)') + ';color:' + (isLive?'#fff':'#dab751') + ';padding:4px 12px;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;">&#9654; Watch</button>' : '—') +
+        '</td>' +
+        '</tr>';
     }).join('') +
-    '</div>' +
-    '<div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#4caf50,transparent);"></div>' +
-    '</div>';
+    '</tbody></table></div></div>';
 }
 
 // Start polling
