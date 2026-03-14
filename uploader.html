@@ -40,27 +40,22 @@
 <div class="card">
   <h1>LEGIO FC — DATA UPLOADER</h1>
   <p class="sub">One-time import of 58 existing ID Camp registrations into SharePoint IDCampRoster list. Sign in with your legiofc.com account then click Upload.</p>
-
   <div class="stats">
     <div class="stat"><div class="stat-val">58</div><div class="stat-label">Records</div></div>
     <div class="stat"><div class="stat-val" id="s-done">0</div><div class="stat-label">Uploaded</div></div>
     <div class="stat"><div class="stat-val" id="s-err">0</div><div class="stat-label">Errors</div></div>
   </div>
-
   <div class="user-info" id="user-info">
     <div class="avatar" id="avatar"></div>
     <span id="user-name"></span>
   </div>
-
   <button class="ms-btn" id="signin-btn" onclick="signIn()">
     <svg class="ms-icon" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
     Sign In with Microsoft
   </button>
-
   <button class="upload-btn" id="upload-btn" onclick="startUpload()" disabled>
     ⚔ Upload 58 Records to SharePoint
   </button>
-
   <div class="progress-wrap" id="progress-wrap">
     <div class="progress-bar" id="progress-bar"></div>
   </div>
@@ -68,13 +63,11 @@
   <div class="done-msg" id="done-msg">✓ ALL RECORDS UPLOADED SUCCESSFULLY</div>
   <div class="log" id="log"></div>
 </div>
-
 <script>
 const CLIENT_ID  = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
 const TENANT_ID  = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
 const SITE_URL   = 'legiofc.sharepoint.com';
 const LIST_NAME  = 'IDCampRoster';
-
 const RECORDS = [
   {
     "FullName": "Sean Harrington",
@@ -889,7 +882,6 @@ const RECORDS = [
     "CanTravel": "Yes"
   }
 ];
-
 const msalConfig = {
   auth: {
     clientId: CLIENT_ID,
@@ -900,13 +892,11 @@ const msalConfig = {
 };
 const loginReq = { scopes: ['Sites.ReadWrite.All', 'User.Read'] };
 const msal_ = new msal.PublicClientApplication(msalConfig);
-
 async function init() {
   await msal_.initialize();
   const accts = msal_.getAllAccounts();
   if (accts.length) showUser(accts[0]);
 }
-
 async function signIn() {
   const btn = document.getElementById('signin-btn');
   btn.disabled = true; btn.textContent = 'Signing in…';
@@ -919,7 +909,6 @@ async function signIn() {
     setStatus('Sign-in failed: ' + e.message);
   }
 }
-
 function showUser(a) {
   const name = a.name || a.username;
   const ini = name.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
@@ -930,45 +919,37 @@ function showUser(a) {
   document.getElementById('upload-btn').disabled = false;
   setStatus('Ready to upload 58 records');
 }
-
 async function getToken() {
   const accts = msal_.getAllAccounts();
   const r = await msal_.acquireTokenSilent({ ...loginReq, account: accts[0] });
   return r.accessToken;
 }
-
 async function startUpload() {
   const btn = document.getElementById('upload-btn');
   btn.disabled = true;
   btn.textContent = 'Uploading…';
   document.getElementById('progress-wrap').style.display = 'block';
   document.getElementById('log').style.display = 'block';
-
   const token = await getToken();
   const h = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-
   // Get site ID
   setStatus('Connecting to SharePoint…');
   const siteRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${SITE_URL}`, {headers:h});
   const site = await siteRes.json();
   const siteId = site.id;
-
   // Get list ID
   const listRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$filter=displayName eq '${LIST_NAME}'&$select=id`, {headers:h});
   const listData = await listRes.json();
   const listId = listData.value[0].id;
-
   let done = 0, errors = 0;
   const total = RECORDS.length;
-
   for (let i = 0; i < total; i++) {
     const p = RECORDS[i];
     try {
       const body = {
         fields: {
           Title:           p.FullName,
-
-
+          LastName:        p.LastName,
           BirthDate:       p.BirthDate,
           Gender:          p.Gender,
           Email:           p.Email,
@@ -998,19 +979,16 @@ async function startUpload() {
       document.getElementById('s-err').textContent = errors;
       addLog(`✗ ${p.FirstName} ${p.LastName}: ${e.message}`, 'err');
     }
-
     // Update progress
     const pct = Math.round((i+1)/total*100);
     document.getElementById('progress-bar').style.width = pct + '%';
     setStatus(`Uploading ${i+1} of ${total}…`);
     await new Promise(r => setTimeout(r, 200)); // small delay to avoid throttling
   }
-
   setStatus(`Complete — ${done} uploaded, ${errors} errors`);
   if (errors === 0) document.getElementById('done-msg').style.display = 'block';
   btn.textContent = '✓ Upload Complete';
 }
-
 function setStatus(msg) { document.getElementById('status').textContent = msg; }
 function addLog(msg, cls) {
   const log = document.getElementById('log');
@@ -1019,7 +997,6 @@ function addLog(msg, cls) {
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
 }
-
 init();
 </script>
 </body>
