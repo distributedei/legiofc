@@ -12,7 +12,7 @@
     :root{
       --blue:#1c5575;--blue-dark:#163d54;--blue-mid:#1e6085;
       --gold:#dab751;--gold-bright:#e3ba24;--gold-dim:rgba(218,183,81,0.12);--gold-border:rgba(218,183,81,0.30);
-      --cream:#f8f6f1;--text:rgba(248,246,241,0.85);--text-dim:rgba(248,246,241,0.5);--text-faint:rgba(248,246,241,0.22);
+      --cream:#f8f6f1;--text:rgba(248,246,241,0.95);--text-dim:rgba(248,246,241,0.75);--text-faint:rgba(248,246,241,0.55);
       --cream-dim:rgba(248,246,241,0.05);--red:#9c1829;
     }
     html{scroll-behavior:smooth}
@@ -63,7 +63,7 @@
 
     /* Field */
     .field{display:flex;flex-direction:column;gap:6px}
-    .field label{font-size:9px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint)}
+    .field label{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim)}
     .field label span{color:var(--red)}
     .field input,.field select,.field textarea{
       padding:11px 14px;
@@ -294,6 +294,11 @@
             <label>Highlight Reel — Link 3</label>
             <input type="url" id="highlight3" placeholder="https://youtube.com/watch?v=… or Vimeo link">
           </div>
+          <div class="field full">
+            <label>Full Game Film Link</label>
+            <input type="url" id="fullGame" placeholder="https://youtube.com/watch?v=… full match footage">
+            <span class="hint">Optional but strongly preferred — link to a full game where you can be clearly identified</span>
+          </div>
         </div>
       </div>
 
@@ -434,6 +439,7 @@ async function submitForm() {
     HighlightReel1:       document.getElementById('highlight1').value.trim(),
     HighlightReel2:       document.getElementById('highlight2').value.trim(),
     HighlightReel3:       document.getElementById('highlight3').value.trim(),
+    FullGameLink:         document.getElementById('fullGame').value.trim(),
     HeadshotPhoto:        headshotB64,
     PassportPhoto:        passportB64,
     Tournament:           selectedTournament,
