@@ -454,7 +454,15 @@
           <!-- Bench / Available Players -->
           <div>
             <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:12px;">Available Players</div>
-            <input id="ts-search" type="text" placeholder="Search players…" oninput="filterBench()" style="width:100%;background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);color:var(--cream);font-family:Inter,sans-serif;font-size:12px;padding:8px 10px;outline:none;margin-bottom:10px;">
+            <input id="ts-search" type="text" placeholder="Search players…" oninput="filterBench()" style="width:100%;background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);color:var(--cream);font-family:Inter,sans-serif;font-size:12px;padding:8px 10px;outline:none;margin-bottom:8px;">
+            <!-- Position filter -->
+            <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;">
+              <button onclick="setBenchPos(null)" id="bpos-all" class="bpos-btn bpos-active" style="padding:3px 8px;font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold);background:var(--gold);color:var(--blue-dark);font-weight:700;">All</button>
+              <button onclick="setBenchPos('GK')" id="bpos-GK" class="bpos-btn" style="padding:3px 8px;font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">GK</button>
+              <button onclick="setBenchPos('DEF')" id="bpos-DEF" class="bpos-btn" style="padding:3px 8px;font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">DEF</button>
+              <button onclick="setBenchPos('MID')" id="bpos-MID" class="bpos-btn" style="padding:3px 8px;font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">MID</button>
+              <button onclick="setBenchPos('FWD')" id="bpos-FWD" class="bpos-btn" style="padding:3px 8px;font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">FWD</button>
+            </div>
             <div id="ts-bench" style="max-height:600px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
           </div>
 
@@ -1471,7 +1479,14 @@ function renderBench(){
   var bench=document.getElementById('ts-bench');
   var ln=tsCurrentLineup();
   var inLineup=new Set(Object.values(ln));
-  var players=all.filter(function(p){ return !inLineup.has(p._id)&&(!q||p.FullName.toLowerCase().includes(q)||(p.PrimaryPosition||'').toLowerCase().includes(q)); });
+  var players=all.filter(function(p){
+    if(inLineup.has(p._id)) return false;
+    if(q && !p.FullName.toLowerCase().includes(q) && !(p.PrimaryPosition||'').toLowerCase().includes(q)) return false;
+    if(benchPosFilter && POS_GROUPS[benchPosFilter]){
+      if(!POS_GROUPS[benchPosFilter].includes(p.PrimaryPosition||'')) return false;
+    }
+    return true;
+  });
   bench.innerHTML=players.map(function(p){
     var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
     var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" onerror="this.outerHTML=\''+ini+'\'">' :ini;
@@ -1555,7 +1570,31 @@ function refreshPitch(){
   renderLineupCards();
 }
 
-function filterBench(){renderBench();}
+let benchPosFilter = null;
+
+const POS_GROUPS = {
+  'GK':  ['Goalkeeper'],
+  'DEF': ['Center Back','Right Back','Left Back'],
+  'MID': ['Defensive Midfielder','Central Midfielder','Attacking Midfielder','Right Midfielder / Winger','Left Midfielder / Winger'],
+  'FWD': ['Striker / Center Forward','Second Striker']
+};
+
+function setBenchPos(group){
+  benchPosFilter = group;
+  // Update button styles
+  ['all','GK','DEF','MID','FWD'].forEach(function(k){
+    var btn = document.getElementById('bpos-'+(k==='all'?'all':k));
+    if(!btn) return;
+    var active = (group===null && k==='all') || group===k;
+    btn.style.background = active ? 'var(--gold)' : 'transparent';
+    btn.style.color = active ? 'var(--blue-dark)' : 'var(--text-dim)';
+    btn.style.borderColor = active ? 'var(--gold)' : 'var(--gold-border)';
+    btn.style.fontWeight = active ? '700' : '400';
+  });
+  renderBench();
+}
+
+function filterBench(){ renderBench(); }
 
 function clearLineup(){
   if(tsData[currentTournament]&&tsData[currentTournament][currentLine])tsData[currentTournament][currentLine].lineup={};
