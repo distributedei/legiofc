@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Legio FC | ID Camp Registration</title>
+  <title>Legio FC | Player Profile Submission</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -150,7 +150,7 @@
       <div class="nav-sub">Est. MMXXV</div>
     </div>
   </a>
-  <div class="nav-right">ID Camp Registration</div>
+  <div class="nav-right">Player Profile Submission</div>
 </nav>
 
 <div class="page">
@@ -159,16 +159,16 @@
   <div class="form-header">
     <div class="form-logo"><img src="logo.png" alt="Legio FC" onerror="this.style.display='none'"></div>
     <p class="form-eyebrow">Player Registration</p>
-    <h1 class="form-title">ID Camp 2025</h1>
+    <h1 class="form-title">Player Profile</h1>
     <div class="gold-rule"></div>
-    <p class="form-sub">Register for a Legio FC ID Camp. Select your tournament below and complete all required fields. We will contact you with camp details.</p>
+    <p class="form-sub">Submit your player profile for consideration. Select your tournament below and complete all required fields. Our staff will be in touch with next steps.</p>
   </div>
 
   <!-- Success screen -->
   <div id="success-screen">
     <div class="success-icon">⚔</div>
-    <div class="success-title">Registration Complete</div>
-    <p class="success-sub">You have been added to the Legio FC ID Camp roster. Our staff will be in touch with camp details and next steps.</p>
+    <div class="success-title">Profile Submitted</div>
+    <p class="success-sub">Your player profile has been submitted. Our staff will review your profile and be in touch with next steps.</p>
     <a href="index.html" class="back-link">Return to Legio FC</a>
   </div>
 
@@ -221,8 +221,8 @@
             <input type="text" id="country" placeholder="e.g. USA, Mexico, Brazil" required>
           </div>
           <div class="field full">
-            <label>ID Camp Location (City, State) <span>*</span></label>
-            <input type="text" id="idCampLocation" placeholder="Where would you like to attend the ID camp?" required>
+            <label>Preferred Tournament Location (City, State) <span>*</span></label>
+            <input type="text" id="idCampLocation" placeholder="e.g. Cary, North Carolina" required>
           </div>
         </div>
       </div>
@@ -371,7 +371,7 @@
 
       <div class="submit-wrap">
         <button class="submit-btn" id="submit-btn" onclick="submitForm()">
-          <span id="submit-text">Submit Registration</span>
+          <span id="submit-text">Submit Player Profile</span>
         </button>
         <div class="submit-progress" id="submit-progress"><div class="submit-progress-bar"></div></div>
         <div class="error-msg" id="error-msg"></div>
@@ -507,7 +507,7 @@ async function submitForm() {
   } catch (e) {
     showError('Submission failed. Please try again or contact operations@legiofc.com');
     btn.disabled = false;
-    document.getElementById('submit-text').textContent = 'Submit Registration';
+    document.getElementById('submit-text').textContent = 'Submit Player Profile';
     progress.style.display = 'none';
   }
 }
