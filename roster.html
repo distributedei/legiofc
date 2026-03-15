@@ -788,6 +788,16 @@ function openModal(id){
 }
 
 function renderPlayerView(p){
+  const videoLinks=[
+    {url:p.HighlightReel1,label:'Clip 1'},
+    {url:p.HighlightReel2,label:'Clip 2'},
+    {url:p.HighlightReel3,label:'Clip 3'},
+    {url:p.FullGameLink,label:'Full Game'},
+  ].filter(v=>v.url);
+  const videoHtml=videoLinks.length
+    ? videoLinks.map(v=>`<a href="${esc(v.url)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(218,183,81,0.08);border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;margin-right:6px;margin-bottom:6px;" onmouseover="this.style.background='rgba(218,183,81,0.2)'" onmouseout="this.style.background='rgba(218,183,81,0.08)'"><svg width="8" height="8" viewBox="0 0 10 10" fill="var(--gold)"><polygon points="0,0 10,5 0,10"/></svg>${v.label}</a>`).join('')
+    : '<span style="font-size:12px;color:var(--text-faint);font-style:italic;">No video links on file</span>';
+
   document.getElementById('m-body').innerHTML=`
     <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
       <div class="m-field"><label>Full Name</label><div class="val">${esc(p.FullName||'—')}</div></div>
@@ -798,6 +808,12 @@ function renderPlayerView(p){
       <div class="m-field"><label>Country</label><div class="val">${esc(p.Country||'—')}</div></div>
       <div class="m-field"><label>Submitted</label><div class="val">${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'—'}</div></div>
     </div></div>
+    <div class="m-section"><div class="m-sec-title">Passport & Travel</div><div class="m-grid">
+      <div class="m-field"><label>Passport Country</label><div class="val">${esc(p.PassportCountry||'—')}</div></div>
+      <div class="m-field"><label>Passport Expiry</label><div class="val">${esc(p.PassportExpiry||'—')}</div></div>
+      <div class="m-field full"><label>Visa Status</label><div class="val">${esc(p.VisaStatus||'—')}</div></div>
+      ${p.TravelRestrictions?`<div class="m-field full"><label>Travel Restrictions</label><div class="val" style="font-size:12px;line-height:1.6;">${esc(p.TravelRestrictions)}</div></div>`:''}
+    </div></div>
     <div class="m-section"><div class="m-sec-title">ID Camp</div><div class="m-grid">
       <div class="m-field full"><label>Camp Site</label><div class="val">${esc(p.IDCampLocation||'—')}</div></div>
     </div></div>
@@ -806,6 +822,9 @@ function renderPlayerView(p){
     </div>
     <div style="margin-top:12px"><label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
     <div class="exp-box">${esc(p.PastExperience||'No experience provided')}</div></div></div>
+    <div class="m-section"><div class="m-sec-title">Video Links</div>
+      <div style="display:flex;flex-wrap:wrap;margin-top:4px;">${videoHtml}</div>
+    </div>
     <div class="m-section"><div class="m-sec-title">Contact</div><div class="m-grid">
       <div class="m-field"><label>Email</label><div class="val">${p.Email?`<a href="#" onclick="event.preventDefault();window.open('mailto:${esc(p.Email)}','_self')" style="color:var(--gold);text-decoration:none">${esc(p.Email)}</a>`:'—'}</div></div>
       <div class="m-field"><label>Phone</label><div class="val">${p.Phone?`<a href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--gold);text-decoration:none">${esc(p.Phone)}</a>`:'—'}</div></div>
