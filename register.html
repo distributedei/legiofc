@@ -312,9 +312,9 @@
             <span class="hint">Clear photo of your face, recent. JPG or PNG, max 5MB.</span>
           </div>
           <div class="field">
-            <label>Passport-Style Photo <span>*</span></label>
+            <label>Player Photo <span>*</span></label>
             <input type="file" id="passportPhoto" accept="image/*" required>
-            <span class="hint">Front-facing, plain background, full face visible. JPG or PNG, max 5MB.</span>
+            <span class="hint">Action shot or full-body photo in kit. JPG or PNG, max 5MB.</span>
           </div>
         </div>
       </div>
@@ -393,7 +393,7 @@ function validate() {
   const headshot = document.getElementById('headshot');
   if (!headshot.files || !headshot.files[0]) { showError('Please upload a headshot photo.'); return false; }
   const passport = document.getElementById('passportPhoto');
-  if (!passport.files || !passport.files[0]) { showError('Please upload a passport-style photo.'); return false; }
+  if (!passport.files || !passport.files[0]) { showError('Please upload a player photo.'); return false; }
   // File size check (5MB each)
   if (headshot.files[0].size > 5 * 1024 * 1024) { showError('Headshot must be under 5MB.'); return false; }
   if (passport.files[0].size > 5 * 1024 * 1024) { showError('Passport photo must be under 5MB.'); return false; }
@@ -441,7 +441,7 @@ async function submitForm() {
     HighlightReel3:       document.getElementById('highlight3').value.trim(),
     FullGameLink:         document.getElementById('fullGame').value.trim(),
     HeadshotPhoto:        headshotB64,
-    PassportPhoto:        passportB64,
+    PlayerPhoto:          passportB64,
     Tournament:           selectedTournament,
     SubmittedDate:        new Date().toISOString(),
   };
