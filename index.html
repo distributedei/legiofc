@@ -324,10 +324,10 @@ function switchTournament(id) {
     <div class="videos-grid" style="margin-bottom:0;">
       ${t.videos.map(v => {
         if (v.includes('instagram.com')) {
-          // Instagram reel — use blockquote embed
+          // Instagram reel — clip the white caption footer by setting fixed height + overflow hidden
           const reelId = v.replace('https://www.instagram.com/p/','').replace('/embed/','').replace(/\/$/,'');
-          return `<div class="video-container" style="position:relative;padding-bottom:120%;height:0;overflow:hidden;">
-            <iframe src="https://www.instagram.com/p/${reelId}/embed/" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowtransparency="true" allowfullscreen scrolling="no"></iframe>
+          return `<div style="position:relative;width:100%;max-width:380px;margin:0 auto;height:560px;overflow:hidden;">
+            <iframe src="https://www.instagram.com/p/${reelId}/embed/" style="position:absolute;top:0;left:0;width:100%;height:780px;border:none;" allowtransparency="true" allowfullscreen scrolling="no"></iframe>
           </div>`;
         }
         return `<div class="video-container">
