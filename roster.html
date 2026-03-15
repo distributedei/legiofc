@@ -1380,20 +1380,28 @@ function guessPosition(p){
 
 async function autoAssignPositions(){
   const btn=document.getElementById('autopos-btn');
-  const toUpdate=all.filter(p=>!p.PrimaryPosition&&guessPosition(p));
-  const cantGuess=all.filter(p=>!p.PrimaryPosition&&!guessPosition(p));
-  const alreadySet=all.filter(p=>p.PrimaryPosition).length;
+  const toUpdate=all.filter(p=>!p.PrimaryPosition);
 
-  if(!toUpdate.length){
-    toast(`Nothing to assign — ${alreadySet} already set, ${cantGuess.length} undetermined`,'');
-    return;
-  }
+  if(!toUpdate.length){ toast('All players already have positions set',''); return; }
 
-  // Show preview and confirm
-  const preview = toUpdate.slice(0,5).map(p=>`${p.FullName} → ${guessPosition(p)}`).join('\n');
-  const more = toUpdate.length > 5 ? `\n...and ${toUpdate.length-5} more` : '';
-  const cant = cantGuess.length ? `\n\n${cantGuess.length} players could not be determined and will be skipped.` : '';
-  const confirmed = confirm(`Auto-assign positions for ${toUpdate.length} players?\n\n${preview}${more}${cant}\n\nClick OK to save to SharePoint.`);
+  // First pass — guess from text
+  const assignments = toUpdate.map(p=>({ p, pos: guessPosition(p) }));
+
+  // Second pass — distribute unguessed evenly across a 7v7 positional spread
+  const fallbackRotation = [
+    'Central Midfielder','Striker / Center Forward','Center Back',
+    'Attacking Midfielder','Right Midfielder / Winger','Left Midfielder / Winger',
+    'Defensive Midfielder','Right Back','Left Back','Second Striker'
+  ];
+  let fallbackIdx = 0;
+  assignments.forEach(a => {
+    if(!a.pos){ a.pos = fallbackRotation[fallbackIdx % fallbackRotation.length]; fallbackIdx++; }
+  });
+
+  // Preview
+  const preview = assignments.slice(0,6).map(a=>`${a.p.FullName} → ${a.pos}`).join('\n');
+  const more = assignments.length > 6 ? `\n...and ${assignments.length-6} more` : '';
+  const confirmed = confirm(`Assign positions for ${assignments.length} players?\n\n${preview}${more}\n\nClick OK to save to SharePoint.`);
   if(!confirmed) return;
 
   btn.disabled=true; btn.textContent='Saving…';
@@ -1402,19 +1410,17 @@ async function autoAssignPositions(){
     const t=await getToken();
     const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
     let saved=0;
-    for(const p of toUpdate){
-      const pos=guessPosition(p);
+    for(const {p,pos} of assignments){
       const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items/${p._id}/fields`,
         {method:'PATCH',headers:h,body:JSON.stringify({PrimaryPosition:pos})});
       if(r.ok){p.PrimaryPosition=pos;saved++;}
     }
-    render();
-    renderDashboard();
-    toast(`✓ ${saved} players assigned positions — ${cantGuess.length} skipped`,'success');
+    render(); renderDashboard();
+    toast(`✓ ${saved} of ${assignments.length} players assigned positions`,'success');
   }catch(e){
     toast('Error: '+e.message,'error');
   }finally{
-    btn.disabled=false;btn.textContent='⚡ Auto-Assign Positions';
+    btn.disabled=false; btn.textContent='⚡ Auto-Assign Positions';
   }
 }
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(_t);_t=setTimeout(()=>el.classList.remove('show'),3800);}
