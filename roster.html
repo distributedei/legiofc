@@ -538,7 +538,7 @@ async function loadRoster(){
   try{
     await getSiteAndLists();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry,PrimaryPosition,SecondaryPosition';
+    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry,PrimaryPosition,SecondaryPosition,HeadshotURL,PlayerPhotoURL';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -558,7 +558,8 @@ async function loadRoster(){
         HighlightReel1:item.fields.HighlightReel1||'',HighlightReel2:item.fields.HighlightReel2||'',
         HighlightReel3:item.fields.HighlightReel3||'',FullGameLink:item.fields.FullGameLink||'',
         PrimaryPosition:item.fields.PrimaryPosition||'',SecondaryPosition:item.fields.SecondaryPosition||'',
-        _headshotUrl:'', // populated separately if needed
+        HeadshotURL:item.fields.HeadshotURL||'',PlayerPhotoURL:item.fields.PlayerPhotoURL||'',
+        _headshotUrl:item.fields.HeadshotURL||'', // populated separately if needed
       })));
       url=data['@odata.nextLink']||null;
     }
@@ -690,7 +691,10 @@ function renderDashboardMetrics(){
   renderMetricList('metric-age', ageBuckets, 'age');
 }
 
-async function fetchHeadshotUrl(playerName){
+async function fetchHeadshotUrl(playerName, storedUrl){
+  // Use stored URL from SharePoint list if available
+  if(storedUrl) return storedUrl;
+  // Fallback: search folder by player name
   try{
     const t=await getToken();
     const encodedPath=encodeURIComponent(`/Shared Documents/PlayerPhotos/${playerName}`);
@@ -699,7 +703,6 @@ async function fetchHeadshotUrl(playerName){
     if(!res.ok)return null;
     const data=await res.json();
     const files=data.value||[];
-    // prefer headshot file
     const headshot=files.find(f=>f.name.toLowerCase().includes('headshot'));
     const player=files.find(f=>f.name.toLowerCase().includes('player')||f.name.toLowerCase().includes('action'));
     const file=headshot||player||files[0];
@@ -773,7 +776,7 @@ async function renderPlayerCards(filterType, filterValue){
   for(let idx=0;idx<players.length;idx++){
     const p=players[idx];
     if(!p.FullName)continue;
-    fetchHeadshotUrl(p.FullName).then(url=>{
+    fetchHeadshotUrl(p.FullName, p.HeadshotURL).then(url=>{
       if(!url)return;
       const photoDiv=document.getElementById(`pcard-photo-${idx}`);
       if(photoDiv){
@@ -845,7 +848,7 @@ function render(){
   // Async load headshots into table rows for players not yet cached
   filtered.forEach(p=>{
     if(p._headshotUrl) return; // already cached
-    fetchHeadshotUrl(p.FullName).then(url=>{
+    fetchHeadshotUrl(p.FullName, p.HeadshotURL).then(url=>{
       if(!url) return;
       p._headshotUrl = url; // cache on player object
       const el = document.getElementById(`trow-av-${p._id}`);
@@ -866,7 +869,7 @@ function openModal(id){
   if(p._headshotUrl){
     av.innerHTML=`<img src="${p._headshotUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentElement.textContent='${ini}'">`;
   } else {
-    fetchHeadshotUrl(p.FullName).then(url=>{
+    fetchHeadshotUrl(p.FullName, p.HeadshotURL).then(url=>{
       if(!url) return;
       p._headshotUrl=url;
       if(document.getElementById('m-av')===av){
@@ -931,6 +934,10 @@ function renderPlayerView(p){
     </div>
     <div style="margin-top:12px"><label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
     <div class="exp-box">${esc(p.PastExperience||'No experience provided')}</div></div></div>
+    <div class="m-section"><div class="m-sec-title">Photos</div><div class="m-grid">
+      <div class="m-field">${p.HeadshotURL?`<label>Headshot</label><a href="${esc(p.HeadshotURL)}" target="_blank"><img src="${esc(p.HeadshotURL)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Headshot</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
+      <div class="m-field">${p.PlayerPhotoURL?`<label>Player Photo</label><a href="${esc(p.PlayerPhotoURL)}" target="_blank"><img src="${esc(p.PlayerPhotoURL)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Player Photo</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
+    </div></div>
     <div class="m-section"><div class="m-sec-title">Video Links</div>
       <div style="display:flex;flex-wrap:wrap;margin-top:4px;">${videoHtml}</div>
     </div>
