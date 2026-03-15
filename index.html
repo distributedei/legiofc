@@ -265,48 +265,15 @@
 <script>
 const TOURNAMENTS = [
   {
-    id: 'crossbar-25k',
-    name: 'Crossbar 25K 2025',
-    eyebrow: '2025 · Dallas, TX · Crossbar Soccer + Beer',
-    teamPhoto: '',
-    teamPhotoAlt: '',
-    matches: [
-      { opponent:'Tenfifteen',   score:'5 – 2', result:'W' },
-      { opponent:'El Pueblo',    score:'3 – 2', result:'W' },
-      { opponent:'Leon Dallas',  score:'2 – 4', result:'L' },
-    ],
-    videos: [
-      'https://www.instagram.com/p/DO6abVskT7l/embed/',
-    ]
-  },
-  {
-    id: 'gallos-cup',
-    name: 'Gallos Cup',
-    eyebrow: '2025 · Florida',
-    teamPhoto: '',
-    teamPhotoAlt: '',
-    matches: [
-      { opponent:'Galaticos',            score:'2 – 2', result:'D' },
-      { opponent:'Fort Myers',           score:'0 – 3', result:'L' },
-      { opponent:'Sporting',             score:'5 – 1', result:'W' },
-      { opponent:'Celebration Top Team', score:'QF Loss', result:'L' },
-    ],
-    videos: [
-      'https://www.youtube.com/embed/7PYHf3hah6M',
-      'https://www.youtube.com/embed/rvZujf97i-c',
-      'https://www.youtube.com/embed/-9ZegswY7-8',
-    ]
-  },
-  {
     id: 'copa-lobos-2026',
     name: 'Copa Lobos 2026',
     eyebrow: 'March 2026 · Silverbacks Park, Atlanta',
     teamPhoto: 'copa-lobos-team.jpg',
     teamPhotoAlt: 'Legio FC at Copa Lobos 2026',
     matches: [
-      { opponent:'Chalate',        score:'2 – 0',      result:'W' },
-      { opponent:'Horizon',        score:'1 – 2',      result:'L' },
-      { opponent:'Tallahassee',    score:'5 – 2',      result:'W' },
+      { opponent:'Chalate',        score:'2 – 0',       result:'W' },
+      { opponent:'Horizon',        score:'1 – 2',       result:'L' },
+      { opponent:'Tallahassee',    score:'5 – 2',       result:'W' },
       { opponent:'Chivas Alabama', score:'4(4) – 4(5)', result:'L PKs' },
     ],
     videos: [
@@ -332,8 +299,41 @@ const TOURNAMENTS = [
       'https://www.instagram.com/p/DSBxNssDTHn/embed/',
       'https://www.youtube.com/embed/vASAFuKIAlU',
     ]
+  },
+  {
+    id: 'gallos-cup',
+    name: 'Gallos Cup 2025',
+    eyebrow: '2025 · Florida',
+    teamPhoto: '',
+    teamPhotoAlt: '',
+    matches: [
+      { opponent:'Galaticos',            score:'2 – 2',   result:'D' },
+      { opponent:'Fort Myers',           score:'0 – 3',   result:'L' },
+      { opponent:'Sporting',             score:'5 – 1',   result:'W' },
+      { opponent:'Celebration Top Team', score:'QF Loss', result:'L' },
+    ],
+    videos: [
+      'https://www.youtube.com/embed/7PYHf3hah6M',
+      'https://www.youtube.com/embed/rvZujf97i-c',
+      'https://www.youtube.com/embed/-9ZegswY7-8',
+    ]
+  },
+  {
+    id: 'crossbar-25k',
+    name: 'Crossbar 25K 2025',
+    eyebrow: '2025 · Dallas, TX · Crossbar Soccer + Beer',
+    teamPhoto: '',
+    teamPhotoAlt: '',
+    matches: [
+      { opponent:'Tenfifteen',  score:'5 – 2', result:'W' },
+      { opponent:'El Pueblo',   score:'3 – 2', result:'W' },
+      { opponent:'Leon Dallas', score:'2 – 4', result:'L' },
+    ],
+    videos: [
+      'https://www.instagram.com/p/DO6abVskT7l/embed/',
+    ]
   }
-  // Add future tournaments here — same structure
+  // Add future tournaments here — newest first
 ];
 
 function switchTournament(id) {
