@@ -1490,7 +1490,7 @@ async function saveTeamSheet(){
         Tournament: currentTournament,
         Line: line,
         Formation: lineData.formation || '2-3-1',
-        Players: JSON.stringify({ids: lineup, names: playerNames})
+        Players: JSON.stringify(lineup)
       };
       const key = `${currentTournament}|${line}`;
       if(tsItemIds[key]){
@@ -1523,7 +1523,7 @@ async function loadTeamSheet(){
       if(!f.Tournament||!f.Line) return;
       if(!tsData[f.Tournament]) tsData[f.Tournament]=makeBlankTournament();
       let lineup={};
-      try{ const p=JSON.parse(f.Players||'{}'); lineup=p.ids||{}; }catch(e){}
+      try{ lineup=JSON.parse(f.Players||'{}'); }catch(e){}
       tsData[f.Tournament][f.Line]={lineup, formation: f.Formation||'2-3-1'};
       tsItemIds[`${f.Tournament}|${f.Line}`]=item.id;
     });
