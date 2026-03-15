@@ -559,7 +559,7 @@ async function loadRoster(){
         HighlightReel3:item.fields.HighlightReel3||'',FullGameLink:item.fields.FullGameLink||'',
         PrimaryPosition:item.fields.PrimaryPosition||'',SecondaryPosition:item.fields.SecondaryPosition||'',
         HeadshotURL:item.fields.HeadshotURL||'',PlayerPhotoURL:item.fields.PlayerPhotoURL||'',
-        _headshotUrl:item.fields.HeadshotURL||'', // populated separately if needed
+        _headshotUrl:(item.fields.HeadshotURL||'').startsWith('http')?item.fields.HeadshotURL:(item.fields.HeadshotURL?'https://legiofc.sharepoint.com'+item.fields.HeadshotURL:''), // populated separately if needed
       })));
       url=data['@odata.nextLink']||null;
     }
@@ -908,6 +908,10 @@ function renderPlayerView(p){
     ? videoLinks.map(v=>`<a href="${esc(v.url)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(218,183,81,0.08);border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;margin-right:6px;margin-bottom:6px;" onmouseover="this.style.background='rgba(218,183,81,0.2)'" onmouseout="this.style.background='rgba(218,183,81,0.08)'"><svg width="8" height="8" viewBox="0 0 10 10" fill="var(--gold)"><polygon points="0,0 10,5 0,10"/></svg>${v.label}</a>`).join('')
     : '<span style="font-size:12px;color:var(--text-faint);font-style:italic;">No video links on file</span>';
 
+  const fixUrl = u => !u ? '' : u.startsWith('http') ? u : 'https://legiofc.sharepoint.com'+u;
+  const headshotUrl = fixUrl(p.HeadshotURL);
+  const playerPhotoUrl = fixUrl(p.PlayerPhotoURL);
+
   document.getElementById('m-body').innerHTML=`
     <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
       <div class="m-field"><label>Full Name</label><div class="val">${esc(p.FullName||'—')}</div></div>
@@ -935,8 +939,8 @@ function renderPlayerView(p){
     <div style="margin-top:12px"><label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
     <div class="exp-box">${esc(p.PastExperience||'No experience provided')}</div></div></div>
     <div class="m-section"><div class="m-sec-title">Photos</div><div class="m-grid">
-      <div class="m-field">${p.HeadshotURL?`<label>Headshot</label><a href="${esc(p.HeadshotURL)}" target="_blank"><img src="${esc(p.HeadshotURL)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Headshot</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
-      <div class="m-field">${p.PlayerPhotoURL?`<label>Player Photo</label><a href="${esc(p.PlayerPhotoURL)}" target="_blank"><img src="${esc(p.PlayerPhotoURL)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Player Photo</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
+      <div class="m-field">${headshotUrl?`<label>Headshot</label><a href="${esc(headshotUrl)}" target="_blank"><img src="${esc(headshotUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Headshot</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
+      <div class="m-field">${playerPhotoUrl?`<label>Player Photo</label><a href="${esc(playerPhotoUrl)}" target="_blank"><img src="${esc(playerPhotoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Player Photo</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
     </div></div>
     <div class="m-section"><div class="m-sec-title">Video Links</div>
       <div style="display:flex;flex-wrap:wrap;margin-top:4px;">${videoHtml}</div>
