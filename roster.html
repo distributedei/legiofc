@@ -1428,7 +1428,7 @@ function toast(msg,type=''){const el=document.getElementById('toast');el.textCon
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();}});
 
 let teamSheetListId = null;
-let teamSheetItemId = null;
+let tsItemIds = {}; // key: "Tournament|Line" → SharePoint item ID
 let tsSaving = false;
 
 async function getTeamSheetList(){
@@ -1438,10 +1438,19 @@ async function getTeamSheetList(){
   const ls=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$select=id,displayName`,{headers:h})).json();
   const found = ls.value.find(l=>l.displayName==='TeamSheets');
   if(found){ teamSheetListId=found.id; return; }
-  // Create the list if it doesn't exist
+  // Create list with explicit columns
   const create=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`,{
     method:'POST',headers:{...h,'Content-Type':'application/json'},
-    body:JSON.stringify({displayName:'TeamSheets',list:{template:'genericList'},columns:[{name:'SheetData',text:{allowMultipleValues:false,maxLength:0}}]})
+    body:JSON.stringify({
+      displayName:'TeamSheets',
+      list:{template:'genericList'},
+      columns:[
+        {name:'Tournament',text:{}},
+        {name:'Line',text:{}},
+        {name:'Formation',text:{}},
+        {name:'Players',text:{allowMultipleValues:false,maxLength:0}}
+      ]
+    })
   });
   const newList=await create.json();
   teamSheetListId=newList.id;
@@ -1455,14 +1464,37 @@ async function saveTeamSheet(){
   try{
     await getTeamSheetList();
     const t=await getToken();const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
-    const payload={fields:{Title:'TeamSheet',SheetData:JSON.stringify(tsData)}};
-    if(teamSheetItemId){
-      await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items/${teamSheetItemId}`,{method:'PATCH',headers:h,body:JSON.stringify(payload)});
-    } else {
-      const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items`,{method:'POST',headers:h,body:JSON.stringify(payload)})).json();
-      teamSheetItemId=res.id;
+
+    // Save every line for current tournament
+    const lines = ['A','B','C','D','E'];
+    for(const line of lines){
+      if(!tsData[currentTournament] || !tsData[currentTournament][line]) continue;
+      const lineData = tsData[currentTournament][line];
+      // Resolve player names for storage
+      const lineup = lineData.lineup || {};
+      const playerNames = {};
+      Object.entries(lineup).forEach(([slot, pid]) => {
+        const p = all.find(x=>x._id===pid);
+        playerNames[slot] = p ? p.FullName : pid;
+      });
+      const fields = {
+        Title: `${currentTournament} — Line ${line}`,
+        Tournament: currentTournament,
+        Line: line,
+        Formation: lineData.formation || '2-3-1',
+        Players: JSON.stringify({ids: lineup, names: playerNames})
+      };
+      const key = `${currentTournament}|${line}`;
+      if(tsItemIds[key]){
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items/${tsItemIds[key]}/fields`,
+          {method:'PATCH',headers:h,body:JSON.stringify(fields)});
+      } else {
+        const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items`,
+          {method:'POST',headers:h,body:JSON.stringify({fields})})).json();
+        tsItemIds[key]=res.id;
+      }
     }
-    toast('Team sheet saved ✓','success');
+    toast(`${currentTournament} — all lines saved ✓`,'success');
   }catch(e){toast('Save failed: '+e.message,'error');}
   finally{
     tsSaving=false;
@@ -1474,17 +1506,27 @@ async function loadTeamSheet(){
   try{
     await getTeamSheetList();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items?$expand=fields($select=Title,SheetData)&$top=1`,{headers:h})).json();
-    if(res.value&&res.value.length&&res.value[0].fields.SheetData){
-      teamSheetItemId=res.value[0].id;
-      tsData=JSON.parse(res.value[0].fields.SheetData);
-      currentTournament=Object.keys(tsData)[0]||'TST 2026';
+    const fields='Title,Tournament,Line,Formation,Players';
+    const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items?$expand=fields($select=${fields})&$top=999`,{headers:h})).json();
+    if(!res.value||!res.value.length) return;
+    tsData={};
+    res.value.forEach(item=>{
+      const f=item.fields;
+      if(!f.Tournament||!f.Line) return;
+      if(!tsData[f.Tournament]) tsData[f.Tournament]=makeBlankTournament();
+      let lineup={};
+      try{ const p=JSON.parse(f.Players||'{}'); lineup=p.ids||{}; }catch(e){}
+      tsData[f.Tournament][f.Line]={lineup, formation: f.Formation||'2-3-1'};
+      tsItemIds[`${f.Tournament}|${f.Line}`]=item.id;
+    });
+    if(Object.keys(tsData).length){
+      currentTournament=Object.keys(tsData)[0];
       currentLine='A';
       renderTournamentSelect();
       buildFormation();
-      toast('Team sheet loaded ✓','success');
+      toast('Team sheets loaded ✓','success');
     }
-  }catch(e){console.warn('No saved team sheet found, starting fresh.');}
+  }catch(e){console.warn('No saved team sheets:',e.message);}
 }
 
 // ── TEAM SHEET ──────────────────────────────────────────
