@@ -630,30 +630,81 @@ function renderDashboard(){
   });
   renderBar('chart-age',ageBuckets,'#64b5f6');
 
-  // Player cards
+  // Player cards — fetch headshots then render
+  renderPlayerCards();
+}
+
+async function fetchHeadshotUrl(playerName){
+  try{
+    const t=await getToken();
+    const encodedPath=encodeURIComponent(`/Shared Documents/PlayerPhotos/${playerName}`);
+    const url=`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:${encodedPath}:/children`;
+    const res=await fetch(url,{headers:{Authorization:`Bearer ${t}`}});
+    if(!res.ok)return null;
+    const data=await res.json();
+    const files=data.value||[];
+    // prefer headshot file
+    const headshot=files.find(f=>f.name.toLowerCase().includes('headshot'));
+    const player=files.find(f=>f.name.toLowerCase().includes('player')||f.name.toLowerCase().includes('action'));
+    const file=headshot||player||files[0];
+    return file?file['@microsoft.graph.downloadUrl']:null;
+  }catch(e){return null;}
+}
+
+async function renderPlayerCards(){
   const cards=document.getElementById('player-cards');
-  cards.innerHTML=all.map(p=>{
+  // Render immediately with initials, then swap in photos async
+  cards.innerHTML=all.map((p,idx)=>{
     const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const age=calcAge(p.BirthDate);
-    const hasVideos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
-    const videoLinks=hasVideos.map((url,i)=>`<a href="${esc(url)}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='rgba(218,183,81,0.1)'" onmouseout="this.style.background='transparent'">▶ ${i===3?'Full Game':'Clip '+(i+1)}</a>`).join('');
-    return `<div onclick="openModal('${esc(p._id)}')" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:16px;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)'">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <div style="width:44px;height:44px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:15px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>
-        <div style="min-width:0;">
-          <div style="font-family:Cinzel,serif;font-size:13px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.FullName)}</div>
-          <div style="font-size:11px;color:var(--text-faint);">${esc(p.CurrentTeam||'—')}</div>
+    const videos=[
+      {url:p.HighlightReel1,label:'Clip 1'},
+      {url:p.HighlightReel2,label:'Clip 2'},
+      {url:p.HighlightReel3,label:'Clip 3'},
+      {url:p.FullGameLink,label:'Full Game'},
+    ].filter(v=>v.url);
+    const videoButtons=videos.map(v=>`
+      <a href="${esc(v.url)}" target="_blank" onclick="event.stopPropagation()"
+        style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(218,183,81,0.08);border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;"
+        onmouseover="this.style.background='rgba(218,183,81,0.2)'" onmouseout="this.style.background='rgba(218,183,81,0.08)'">
+        <svg width="8" height="8" viewBox="0 0 10 10" fill="var(--gold)"><polygon points="0,0 10,5 0,10"/></svg>
+        ${v.label}
+      </a>`).join('');
+    return `
+    <div id="pcard-${idx}" onclick="openModal('${esc(p._id)}')"
+      style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);cursor:pointer;transition:border-color .2s;overflow:hidden;"
+      onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)'">
+      <!-- Photo area -->
+      <div id="pcard-photo-${idx}" style="width:100%;height:180px;background:rgba(22,61,84,0.8);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-bottom:1px solid var(--gold-border);">
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);">${ini}</div>
+      </div>
+      <!-- Info -->
+      <div style="padding:14px;">
+        <div style="font-family:Cinzel,serif;font-size:13px;font-weight:600;color:var(--cream);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.FullName)}</div>
+        <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.CurrentTeam||'—')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;margin-bottom:12px;">
+          <div><span style="color:var(--text-faint);">Age</span><br><span style="color:var(--cream);font-weight:500;">${age||'—'}</span></div>
+          <div><span style="color:var(--text-faint);">Country</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.Country||'—')}</span></div>
+          <div><span style="color:var(--text-faint);">Location</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.CurrentLocation||'—')}</span></div>
+          <div><span style="color:var(--text-faint);">Travel</span><br><span style="color:${p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373'};font-weight:500;">${p.CanTravel&&p.CanTravel.startsWith('Yes')?'✓ Yes':'✗ No'}</span></div>
         </div>
+        ${videos.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;">${videoButtons}</div>`:`<div style="font-size:10px;color:var(--text-faint);font-style:italic;">No video links</div>`}
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:11px;">
-        <div><span style="color:var(--text-faint);">Age:</span> <span style="color:var(--text);">${age||'—'}</span></div>
-        <div><span style="color:var(--text-faint);">Country:</span> <span style="color:var(--text);">${esc(p.Country||'—')}</span></div>
-        <div><span style="color:var(--text-faint);">Location:</span> <span style="color:var(--text);">${esc(p.CurrentLocation||'—')}</span></div>
-        <div><span style="color:var(--text-faint);">Travel:</span> <span style="color:${p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373'}">${p.CanTravel?p.CanTravel.split('—')[0].trim():'—'}</span></div>
-      </div>
-      ${hasVideos.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;" onclick="event.stopPropagation()">${videoLinks}</div>`:'<div style="font-size:10px;color:var(--text-faint);font-style:italic;">No video links</div>'}
     </div>`;
   }).join('');
+
+  // Async load headshots
+  for(let idx=0;idx<all.length;idx++){
+    const p=all[idx];
+    if(!p.FullName)continue;
+    fetchHeadshotUrl(p.FullName).then(url=>{
+      if(!url)return;
+      const photoDiv=document.getElementById(`pcard-photo-${idx}`);
+      if(photoDiv){
+        photoDiv.innerHTML=`<img src="${url}" alt="${esc(p.FullName)}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentElement.innerHTML='<div style=\\'width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);\\'>'+${JSON.stringify(p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase())}+'</div>'">`;
+      }
+    });
+  }
 }
 
 function buildFilters(){
