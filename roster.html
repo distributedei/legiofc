@@ -323,6 +323,9 @@
         <button class="ref-btn" id="ref-btn" onclick="loadRoster()">
           <span id="ref-icon" style="font-size:13px">↻</span> Refresh
         </button>
+        <button class="ref-btn" id="autopos-btn" onclick="autoAssignPositions()" style="border-color:rgba(218,183,81,0.5);">
+          ⚡ Auto-Assign Positions
+        </button>
       </div>
       <div class="table-area">
         <table>
@@ -1356,7 +1359,64 @@ function closeMatchModal(e){if(!e||e.target===document.getElementById('match-ov'
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function spinning(on,btnId,iconId){document.getElementById(btnId).disabled=on;document.getElementById(iconId).className=on?'spinning':'';}
 let _t;
-function closeModal(e){if(!e||e.target===document.getElementById('m-ov'))document.getElementById('m-ov').classList.remove('open');}
+function guessPosition(p){
+  var text=((p.PastExperience||'')+' '+(p.CurrentTeam||'')).toLowerCase();
+  if(/goalkeeper|keeper|\bgk\b/.test(text))return 'Goalkeeper';
+  if(/striker|center forward|centre forward|\bst\b|winger|wing forward/.test(text))return 'Striker / Center Forward';
+  if(/second striker|support striker/.test(text))return 'Second Striker';
+  if(/attacking mid|am\b|trequartista|number 10|\b10\b/.test(text))return 'Attacking Midfielder';
+  if(/right mid|right wing|\brm\b|\brw\b/.test(text))return 'Right Midfielder / Winger';
+  if(/left mid|left wing|\blm\b|\blw\b/.test(text))return 'Left Midfielder / Winger';
+  if(/defensive mid|\bdm\b|\bcdm\b|holding mid|pivot/.test(text))return 'Defensive Midfielder';
+  if(/central mid|\bcm\b|box.to.box|midfielder/.test(text))return 'Central Midfielder';
+  if(/center back|centre back|\bcb\b|central def/.test(text))return 'Center Back';
+  if(/right back|\brb\b/.test(text))return 'Right Back';
+  if(/left back|\blb\b/.test(text))return 'Left Back';
+  if(/defense|defender|back|stopper/.test(text))return 'Center Back';
+  if(/midfield/.test(text))return 'Central Midfielder';
+  if(/forward|attack/.test(text))return 'Striker / Center Forward';
+  return null;
+}
+
+async function autoAssignPositions(){
+  const btn=document.getElementById('autopos-btn');
+  const toUpdate=all.filter(p=>!p.PrimaryPosition&&guessPosition(p));
+  const cantGuess=all.filter(p=>!p.PrimaryPosition&&!guessPosition(p));
+  const alreadySet=all.filter(p=>p.PrimaryPosition).length;
+
+  if(!toUpdate.length){
+    toast(`Nothing to assign — ${alreadySet} already set, ${cantGuess.length} undetermined`,'');
+    return;
+  }
+
+  // Show preview and confirm
+  const preview = toUpdate.slice(0,5).map(p=>`${p.FullName} → ${guessPosition(p)}`).join('\n');
+  const more = toUpdate.length > 5 ? `\n...and ${toUpdate.length-5} more` : '';
+  const cant = cantGuess.length ? `\n\n${cantGuess.length} players could not be determined and will be skipped.` : '';
+  const confirmed = confirm(`Auto-assign positions for ${toUpdate.length} players?\n\n${preview}${more}${cant}\n\nClick OK to save to SharePoint.`);
+  if(!confirmed) return;
+
+  btn.disabled=true; btn.textContent='Saving…';
+  try{
+    await getSiteAndLists();
+    const t=await getToken();
+    const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
+    let saved=0;
+    for(const p of toUpdate){
+      const pos=guessPosition(p);
+      const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items/${p._id}/fields`,
+        {method:'PATCH',headers:h,body:JSON.stringify({PrimaryPosition:pos})});
+      if(r.ok){p.PrimaryPosition=pos;saved++;}
+    }
+    render();
+    renderDashboard();
+    toast(`✓ ${saved} players assigned positions — ${cantGuess.length} skipped`,'success');
+  }catch(e){
+    toast('Error: '+e.message,'error');
+  }finally{
+    btn.disabled=false;btn.textContent='⚡ Auto-Assign Positions';
+  }
+}
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(_t);_t=setTimeout(()=>el.classList.remove('show'),3800);}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();}});
 
