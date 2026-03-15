@@ -217,12 +217,55 @@
             <input type="text" id="currentLocation" placeholder="e.g. Miami, Florida" required>
           </div>
           <div class="field full">
-            <label>Country <span>*</span></label>
+            <label>Country of Current Residence <span>*</span></label>
             <input type="text" id="country" placeholder="e.g. USA, Mexico, Brazil" required>
           </div>
           <div class="field full">
             <label>ID Camp Location (City, State) <span>*</span></label>
             <input type="text" id="idCampLocation" placeholder="Where would you like to attend the ID camp?" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Passport & Travel -->
+      <div class="form-section">
+        <div class="section-title">Passport & Travel Status</div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Passport Issuing Country <span>*</span></label>
+            <input type="text" id="passportCountry" placeholder="e.g. USA, Mexico, Colombia" required>
+          </div>
+          <div class="field">
+            <label>Passport Expiry Date</label>
+            <input type="text" id="passportExpiry" placeholder="MM/YYYY">
+            <span class="hint">Must be valid through tournament date</span>
+          </div>
+          <div class="field full">
+            <label>Immigration / Visa Status <span>*</span></label>
+            <select id="visaStatus" required>
+              <option value="">Select your status…</option>
+              <option value="US Citizen">US Citizen</option>
+              <option value="Permanent Resident (Green Card)">Permanent Resident (Green Card)</option>
+              <option value="Work Visa (H-1B / O-1 / P-1)">Work Visa (H-1B / O-1 / P-1)</option>
+              <option value="Student Visa (F-1 / J-1)">Student Visa (F-1 / J-1)</option>
+              <option value="Tourist / B-2 Visa">Tourist / B-2 Visa</option>
+              <option value="DACA">DACA</option>
+              <option value="Asylum / Refugee Status">Asylum / Refugee Status</option>
+              <option value="Citizen of Another Country (No US Visa)">Citizen of Another Country (No US Visa)</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>International Travel Eligibility <span>*</span></label>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="canTravel" value="Yes — no restrictions" required><span>Yes — I can travel internationally without restriction</span></label>
+              <label class="radio-option"><input type="radio" name="canTravel" value="Limited — visa restrictions apply"><span>Limited — my visa/status restricts international travel</span></label>
+              <label class="radio-option"><input type="radio" name="canTravel" value="No"><span>No — I cannot travel internationally</span></label>
+            </div>
+          </div>
+          <div class="field full" id="travel-restriction-wrap" style="display:none;">
+            <label>Describe Travel Restrictions</label>
+            <textarea id="travelRestrictions" placeholder="e.g. My F-1 visa requires advance parole to re-enter the US. I cannot travel during semester without I-20 travel signature…"></textarea>
           </div>
         </div>
       </div>
@@ -240,11 +283,33 @@
             <textarea id="pastExperience" placeholder="Describe your playing background — clubs, leagues, levels, achievements…" required></textarea>
           </div>
           <div class="field full">
-            <label>Can You Travel? <span>*</span></label>
-            <div class="radio-group">
-              <label class="radio-option"><input type="radio" name="canTravel" value="Yes" required><span>Yes — I have a valid passport / can travel</span></label>
-              <label class="radio-option"><input type="radio" name="canTravel" value="No"><span>No — local only</span></label>
-            </div>
+            <label>Highlight Reel — Link 1</label>
+            <input type="url" id="highlight1" placeholder="https://youtube.com/watch?v=… or Vimeo link">
+          </div>
+          <div class="field full">
+            <label>Highlight Reel — Link 2</label>
+            <input type="url" id="highlight2" placeholder="https://youtube.com/watch?v=… or Vimeo link">
+          </div>
+          <div class="field full">
+            <label>Highlight Reel — Link 3</label>
+            <input type="url" id="highlight3" placeholder="https://youtube.com/watch?v=… or Vimeo link">
+          </div>
+        </div>
+      </div>
+
+      <!-- Photos -->
+      <div class="form-section">
+        <div class="section-title">Photos</div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Headshot Photo <span>*</span></label>
+            <input type="file" id="headshot" accept="image/*" required>
+            <span class="hint">Clear photo of your face, recent. JPG or PNG, max 5MB.</span>
+          </div>
+          <div class="field">
+            <label>Passport-Style Photo <span>*</span></label>
+            <input type="file" id="passportPhoto" accept="image/*" required>
+            <span class="hint">Front-facing, plain background, full face visible. JPG or PNG, max 5MB.</span>
           </div>
         </div>
       </div>
@@ -285,27 +350,48 @@
 const FLOW_URL = 'https://default99b5fc0cbe854531a7debc8da0002e.c2.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/53d01453efad4d20896d2ef0e9aadeea/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=oejSafoDVKC85ghVFojG3vBJ-u7jrTELnGXyK9xUwgw';
 
 let selectedTournament = '';
+function setTournamentFromSelect(el) { selectedTournament = el.value; }
 
-function setTournamentFromSelect(el) {
-  selectedTournament = el.value;
+// Show/hide travel restriction textarea
+document.addEventListener('change', function(e) {
+  if (e.target.name === 'canTravel') {
+    const wrap = document.getElementById('travel-restriction-wrap');
+    wrap.style.display = e.target.value === 'Limited — visa restrictions apply' ? 'block' : 'none';
+  }
+});
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) { resolve(''); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function validate() {
   if (!selectedTournament) { showError('Please select a tournament.'); document.getElementById('tournamentSelect').focus(); return false; }
-  const required = ['firstName','lastName','birthDate','gender','currentLocation','idCampLocation','currentTeam','email','phone'];
+  const required = ['firstName','lastName','birthDate','gender','currentLocation','country','idCampLocation','passportCountry','visaStatus','currentTeam','email','phone'];
   for (const id of required) {
     const el = document.getElementById(id);
-    if (!el.value.trim()) {
-      el.focus();
-      el.style.borderColor = 'rgba(156,24,41,0.8)';
-      setTimeout(() => el.style.borderColor = '', 2000);
+    if (!el || !el.value.trim()) {
+      if (el) { el.focus(); el.style.borderColor = 'rgba(156,24,41,0.8)'; setTimeout(() => el.style.borderColor = '', 2000); }
+      showError('Please fill in all required fields.');
       return false;
     }
   }
   const travel = document.querySelector('input[name="canTravel"]:checked');
-  if (!travel) { showError('Please select whether you can travel.'); return false; }
+  if (!travel) { showError('Please select your international travel eligibility.'); return false; }
   const exp = document.getElementById('pastExperience');
   if (!exp.value.trim()) { exp.focus(); exp.style.borderColor = 'rgba(156,24,41,0.8)'; setTimeout(() => exp.style.borderColor = '', 2000); return false; }
+  const headshot = document.getElementById('headshot');
+  if (!headshot.files || !headshot.files[0]) { showError('Please upload a headshot photo.'); return false; }
+  const passport = document.getElementById('passportPhoto');
+  if (!passport.files || !passport.files[0]) { showError('Please upload a passport-style photo.'); return false; }
+  // File size check (5MB each)
+  if (headshot.files[0].size > 5 * 1024 * 1024) { showError('Headshot must be under 5MB.'); return false; }
+  if (passport.files[0].size > 5 * 1024 * 1024) { showError('Passport photo must be under 5MB.'); return false; }
   return true;
 }
 
@@ -315,28 +401,43 @@ async function submitForm() {
   const btn = document.getElementById('submit-btn');
   const progress = document.getElementById('submit-progress');
   btn.disabled = true;
-  document.getElementById('submit-text').textContent = 'Submitting…';
+  document.getElementById('submit-text').textContent = 'Uploading photos…';
   progress.style.display = 'block';
   hideError();
 
   const firstName = document.getElementById('firstName').value.trim();
   const lastName  = document.getElementById('lastName').value.trim();
 
+  // Convert photos to base64
+  const headshotB64 = await fileToBase64(document.getElementById('headshot').files[0]);
+  const passportB64 = await fileToBase64(document.getElementById('passportPhoto').files[0]);
+
+  document.getElementById('submit-text').textContent = 'Submitting…';
+
   const payload = {
-    FullName:        `${firstName} ${lastName}`,
-    LastName:        lastName,
-    BirthDate:       document.getElementById('birthDate').value.trim(),
-    Gender:          document.getElementById('gender').value,
-    Email:           document.getElementById('email').value.trim(),
-    Phone:           document.getElementById('phone').value.trim(),
-    CurrentLocation: document.getElementById('currentLocation').value.trim(),
-    Country:           document.getElementById('country').value.trim(),
-    IDCampLocation:  document.getElementById('idCampLocation').value.trim(),
-    CurrentTeam:     document.getElementById('currentTeam').value.trim(),
-    PastExperience:  document.getElementById('pastExperience').value.trim(),
-    CanTravel:       document.querySelector('input[name="canTravel"]:checked').value,
-    Tournament:      selectedTournament,
-    SubmittedDate:   new Date().toISOString(),
+    FullName:             `${firstName} ${lastName}`,
+    LastName:             lastName,
+    BirthDate:            document.getElementById('birthDate').value.trim(),
+    Gender:               document.getElementById('gender').value,
+    Email:                document.getElementById('email').value.trim(),
+    Phone:                document.getElementById('phone').value.trim(),
+    CurrentLocation:      document.getElementById('currentLocation').value.trim(),
+    Country:              document.getElementById('country').value.trim(),
+    IDCampLocation:       document.getElementById('idCampLocation').value.trim(),
+    PassportCountry:      document.getElementById('passportCountry').value.trim(),
+    PassportExpiry:       document.getElementById('passportExpiry').value.trim(),
+    VisaStatus:           document.getElementById('visaStatus').value,
+    CanTravel:            document.querySelector('input[name="canTravel"]:checked').value,
+    TravelRestrictions:   document.getElementById('travelRestrictions').value.trim(),
+    CurrentTeam:          document.getElementById('currentTeam').value.trim(),
+    PastExperience:       document.getElementById('pastExperience').value.trim(),
+    HighlightReel1:       document.getElementById('highlight1').value.trim(),
+    HighlightReel2:       document.getElementById('highlight2').value.trim(),
+    HighlightReel3:       document.getElementById('highlight3').value.trim(),
+    HeadshotPhoto:        headshotB64,
+    PassportPhoto:        passportB64,
+    Tournament:           selectedTournament,
+    SubmittedDate:        new Date().toISOString(),
   };
 
   try {
