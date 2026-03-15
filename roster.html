@@ -414,6 +414,7 @@
           <!-- Actions -->
           <div style="margin-left:auto;display:flex;gap:8px;">
             <button onclick="clearLineup()" style="padding:7px 14px;background:transparent;border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)';this.style.color='var(--text-dim)'">✕ Clear Line</button>
+            <button id="ts-save-btn" onclick="saveTeamSheet()" style="padding:7px 14px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='var(--gold-dim)'" onmouseout="this.style.background='transparent'">💾 Save</button>
             <button onclick="printLineup()" style="padding:7px 14px;background:var(--gold);border:none;color:var(--blue-dark);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;">⎙ Print</button>
           </div>
         </div>
@@ -1426,6 +1427,66 @@ async function autoAssignPositions(){
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(_t);_t=setTimeout(()=>el.classList.remove('show'),3800);}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();}});
 
+let teamSheetListId = null;
+let teamSheetItemId = null;
+let tsSaving = false;
+
+async function getTeamSheetList(){
+  await getSiteAndLists();
+  if(teamSheetListId) return;
+  const t=await getToken();const h={Authorization:`Bearer ${t}`};
+  const ls=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$select=id,displayName`,{headers:h})).json();
+  const found = ls.value.find(l=>l.displayName==='TeamSheets');
+  if(found){ teamSheetListId=found.id; return; }
+  // Create the list if it doesn't exist
+  const create=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`,{
+    method:'POST',headers:{...h,'Content-Type':'application/json'},
+    body:JSON.stringify({displayName:'TeamSheets',list:{template:'genericList'},columns:[{name:'SheetData',text:{allowMultipleValues:false,maxLength:0}}]})
+  });
+  const newList=await create.json();
+  teamSheetListId=newList.id;
+}
+
+async function saveTeamSheet(){
+  if(tsSaving) return;
+  tsSaving=true;
+  const saveBtn=document.getElementById('ts-save-btn');
+  if(saveBtn){saveBtn.textContent='Saving…';saveBtn.disabled=true;}
+  try{
+    await getTeamSheetList();
+    const t=await getToken();const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
+    const payload={fields:{Title:'TeamSheet',SheetData:JSON.stringify(tsData)}};
+    if(teamSheetItemId){
+      await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items/${teamSheetItemId}`,{method:'PATCH',headers:h,body:JSON.stringify(payload)});
+    } else {
+      const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items`,{method:'POST',headers:h,body:JSON.stringify(payload)})).json();
+      teamSheetItemId=res.id;
+    }
+    toast('Team sheet saved ✓','success');
+  }catch(e){toast('Save failed: '+e.message,'error');}
+  finally{
+    tsSaving=false;
+    if(saveBtn){saveBtn.textContent='💾 Save';saveBtn.disabled=false;}
+  }
+}
+
+async function loadTeamSheet(){
+  try{
+    await getTeamSheetList();
+    const t=await getToken();const h={Authorization:`Bearer ${t}`};
+    const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items?$expand=fields($select=Title,SheetData)&$top=1`,{headers:h})).json();
+    if(res.value&&res.value.length&&res.value[0].fields.SheetData){
+      teamSheetItemId=res.value[0].id;
+      tsData=JSON.parse(res.value[0].fields.SheetData);
+      currentTournament=Object.keys(tsData)[0]||'TST 2026';
+      currentLine='A';
+      renderTournamentSelect();
+      buildFormation();
+      toast('Team sheet loaded ✓','success');
+    }
+  }catch(e){console.warn('No saved team sheet found, starting fresh.');}
+}
+
 // ── TEAM SHEET ──────────────────────────────────────────
 const FORMATIONS = {
   '2-3-1':{slots:[{pos:'GK',x:50,y:88},{pos:'CB',x:30,y:72},{pos:'CB',x:70,y:72},{pos:'LM',x:15,y:52},{pos:'CM',x:50,y:50},{pos:'RM',x:85,y:52},{pos:'ST',x:50,y:28}]},
@@ -1451,6 +1512,7 @@ function initTeamSheet(){
   currentLine = 'A';
   renderTournamentSelect();
   buildFormation();
+  loadTeamSheet(); // load from SharePoint
 }
 
 function makeBlankTournament(){
@@ -1627,6 +1689,7 @@ function assignPlayer(slotIdx,playerId){
   Object.keys(ln).forEach(function(k){if(ln[k]===playerId)delete ln[k];});
   ln[slotIdx]=playerId;
   refreshPitch();
+  saveTeamSheet(); // autosave on every assignment
 }
 
 function refreshPitch(){
