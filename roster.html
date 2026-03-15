@@ -570,6 +570,37 @@ async function loadRoster(){
   }finally{spinning(false,'ref-btn','ref-icon');}
 }
 
+function classifyRegion(p){
+  const loc = (p.CurrentLocation||'').toLowerCase();
+  const country = (p.Country||'').toLowerCase();
+
+  // Canada
+  if(country.includes('canada')||loc.includes('canada')||loc.includes('ontario')||loc.includes('quebec')||loc.includes('toronto')||loc.includes('vancouver')||loc.includes('montreal')||loc.includes('calgary')||loc.includes('alberta')||loc.includes('british columbia')) return 'Canada';
+
+  // International (non-US, non-Canada)
+  if(country&&!country.includes('usa')&&!country.includes('united states')&&!country.includes('us')&&!country.includes('america')&&!country.includes('canada')) return 'International';
+
+  // Florida
+  if(loc.includes('florida')||loc.includes(' fl')||loc.includes(',fl')||loc.includes('miami')||loc.includes('orlando')||loc.includes('tampa')||loc.includes('jacksonville')||loc.includes('fort lauderdale')||loc.includes('ft lauderdale')||loc.includes('fort myers')||loc.includes('ft myers')||loc.includes('boca raton')||loc.includes('west palm')||loc.includes('stuart')||loc.includes('naples')||loc.includes('gainesville')||loc.includes('tallahassee')||loc.includes('pensacola')||loc.includes('sarasota')||loc.includes('clearwater')||loc.includes('st pete')||loc.includes('saint pete')||loc.includes('lake worth')||loc.includes('lakeworthflorida')||loc.includes('hollywood, fl')||loc.includes('hollywood florida')||loc.includes('copa pelada')||loc.includes('copa lobos')) return 'Florida';
+
+  // Texas
+  if(loc.includes('texas')||loc.includes(' tx')||loc.includes(',tx')||loc.includes('dallas')||loc.includes('houston')||loc.includes('austin')||loc.includes('san antonio')||loc.includes('fort worth')||loc.includes('el paso')||loc.includes('arlington')||loc.includes('frisco')||loc.includes('plano')||loc.includes('irving')||loc.includes('denton')||loc.includes('mckinney')||loc.includes('addison')||loc.includes('terrell')||loc.includes('garland')||loc.includes('mesquite')||loc.includes('grand prairie')||loc.includes('lewisville')) return 'Texas';
+
+  // Northeast
+  if(loc.includes('new york')||loc.includes(' ny')||loc.includes(',ny')||loc.includes('new jersey')||loc.includes(' nj')||loc.includes('connecticut')||loc.includes(' ct')||loc.includes('massachusetts')||loc.includes(' ma')||loc.includes('pennsylvania')||loc.includes(' pa')||loc.includes('boston')||loc.includes('philadelphia')||loc.includes('newark')||loc.includes('buffalo')||loc.includes('hartford')||loc.includes('west haven')||loc.includes('rhode island')||loc.includes('vermont')||loc.includes('new hampshire')||loc.includes('maine')||loc.includes('maryland')||loc.includes(' md')||loc.includes('dc')||loc.includes('washington d')||loc.includes('delaware')||loc.includes('baltimore')) return 'Northeast';
+
+  // Southeast
+  if(loc.includes('georgia')||loc.includes(' ga')||loc.includes('atlanta')||loc.includes('north carolina')||loc.includes(' nc')||loc.includes('south carolina')||loc.includes(' sc')||loc.includes('virginia')||loc.includes(' va')||loc.includes('tennessee')||loc.includes(' tn')||loc.includes('alabama')||loc.includes(' al')||loc.includes('mississippi')||loc.includes(' ms')||loc.includes('louisiana')||loc.includes(' la')||loc.includes('arkansas')||loc.includes(' ar')||loc.includes('nashville')||loc.includes('charlotte')||loc.includes('raleigh')||loc.includes('richmond')||loc.includes('birmingham')||loc.includes('memphis')||loc.includes('new orleans')||loc.includes('cary')||loc.includes('copa pelada')) return 'Southeast';
+
+  // Midwest
+  if(loc.includes('illinois')||loc.includes(' il')||loc.includes('ohio')||loc.includes(' oh')||loc.includes('michigan')||loc.includes(' mi')||loc.includes('indiana')||loc.includes(' in')||loc.includes('wisconsin')||loc.includes(' wi')||loc.includes('minnesota')||loc.includes(' mn')||loc.includes('missouri')||loc.includes(' mo')||loc.includes('kansas')||loc.includes(' ks')||loc.includes('nebraska')||loc.includes(' ne')||loc.includes('iowa')||loc.includes(' ia')||loc.includes('chicago')||loc.includes('detroit')||loc.includes('cleveland')||loc.includes('columbus')||loc.includes('indianapolis')||loc.includes('milwaukee')||loc.includes('minneapolis')||loc.includes('st louis')||loc.includes('kansas city')) return 'Midwest';
+
+  // West
+  if(loc.includes('california')||loc.includes(' ca')||loc.includes(',ca')||loc.includes('los angeles')||loc.includes('san francisco')||loc.includes('san diego')||loc.includes('las vegas')||loc.includes('nevada')||loc.includes(' nv')||loc.includes('arizona')||loc.includes(' az')||loc.includes('colorado')||loc.includes(' co')||loc.includes('washington')||loc.includes(' wa')||loc.includes('oregon')||loc.includes(' or')||loc.includes('utah')||loc.includes(' ut')||loc.includes('phoenix')||loc.includes('denver')||loc.includes('seattle')||loc.includes('portland')||loc.includes('tucson')||loc.includes('albuquerque')) return 'West';
+
+  return 'International';
+}
+
 let dashActiveFilter = {type:'all', value:null};
 
 function calcAge(dob){
@@ -632,13 +663,11 @@ function renderDashboardMetrics(){
   const ages=all.map(p=>calcAge(p.BirthDate)).filter(a=>a!==null&&a>0&&a<60);
   document.getElementById('d-avgage').textContent=ages.length?(ages.reduce((a,b)=>a+b,0)/ages.length).toFixed(1):'—';
 
-  // By Region
-  const regions={};
-  all.forEach(p=>{
-    const loc=p.CurrentLocation||'Unknown';
-    const region=loc.includes(',')?loc.split(',').pop().trim():loc;
-    regions[region]=(regions[region]||0)+1;
-  });
+  // By Region — simplified buckets
+  const regions={'Florida':0,'Texas':0,'Northeast':0,'Southeast':0,'Midwest':0,'West':0,'Canada':0,'International':0};
+  all.forEach(p=>{regions[classifyRegion(p)]=(regions[classifyRegion(p)]||0)+1;});
+  // Remove empty buckets
+  Object.keys(regions).forEach(k=>{if(!regions[k])delete regions[k];});
   renderMetricList('metric-region', regions, 'region');
 
   // By Country
@@ -683,11 +712,7 @@ async function renderPlayerCards(filterType, filterValue){
   let players = all;
   if(filterType && filterType !== 'all' && filterValue) {
     players = all.filter(p => {
-      if(filterType === 'region') {
-        const loc = p.CurrentLocation || 'Unknown';
-        const region = loc.includes(',') ? loc.split(',').pop().trim() : loc;
-        return region === filterValue;
-      }
+      if(filterType === 'region') return classifyRegion(p) === filterValue;
       if(filterType === 'country') return (p.Country||'Unknown') === filterValue;
       if(filterType === 'travel') return p.CanTravel && p.CanTravel.startsWith('Yes');
       if(filterType === 'age') {
