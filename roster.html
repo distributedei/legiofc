@@ -1354,6 +1354,7 @@ async function deleteMatch(id){
   }catch(e){toast(e.message,'error');}
 }
 
+function closeModal(e){if(!e||e.target===document.getElementById('m-ov'))document.getElementById('m-ov').classList.remove('open');}
 function closeMatchModal(e){if(!e||e.target===document.getElementById('match-ov'))document.getElementById('match-ov').classList.remove('open');}
 
 // ── HELPERS ──
