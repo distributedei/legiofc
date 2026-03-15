@@ -223,12 +223,66 @@
 
     <!-- TAB BAR -->
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('roster')">⚔ ID Camp Roster</button>
+      <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('roster')">⚔ Player Roster</button>
       <button class="tab-btn" onclick="switchTab('matches')">🏆 Matches</button>
     </div>
 
+    <!-- ══ DASHBOARD TAB ══ -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="table-area" style="padding:24px;display:block;">
+        <div id="dash-empty" class="state-box" style="display:none;">
+          <div class="state-icon">📊</div>
+          <div class="state-title">No Data Yet</div>
+          <div class="state-text">Load the roster first to see dashboard stats.</div>
+        </div>
+        <div id="dash-content" style="display:none;">
+          <!-- Summary stats -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
+            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;">
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px;">Total Players</div>
+              <div id="d-total" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:var(--gold);">—</div>
+            </div>
+            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;">
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px;">Countries</div>
+              <div id="d-countries" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:var(--gold);">—</div>
+            </div>
+            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;">
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px;">Can Travel</div>
+              <div id="d-travel" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:#4caf50;">—</div>
+            </div>
+            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;">
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px;">Avg Age</div>
+              <div id="d-avgage" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:var(--gold);">—</div>
+            </div>
+          </div>
+          <!-- Charts row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
+            <!-- By Region -->
+            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;">
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Players by Region</div>
+              <div id="chart-region"></div>
+            </div>
+            <!-- By Country -->
+            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;">
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Players by Country</div>
+              <div id="chart-country"></div>
+            </div>
+            <!-- By Age -->
+            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;">
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Players by Age</div>
+              <div id="chart-age"></div>
+            </div>
+          </div>
+          <!-- Player cards grid -->
+          <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Player Cards</div>
+          <div id="player-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ ROSTER TAB ══ -->
-    <div class="tab-panel active" id="tab-roster">
+    <div class="tab-panel" id="tab-roster">
       <div class="stats-bar">
         <div class="stat"><div class="stat-label">Registered</div><div class="stat-val" id="s-total">—</div></div>
         <div class="stat"><div class="stat-label">Showing</div><div class="stat-val" id="s-show">—</div></div>
@@ -266,6 +320,7 @@
               <th>Phone</th>
               <th onclick="sortBy('SubmittedDate')">Submitted <span class="sa">↕</span></th>
               <th>Email</th>
+              <th>Video</th>
             </tr>
           </thead>
           <tbody id="tbody">
@@ -455,6 +510,7 @@ function switchTab(tab){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
   document.getElementById(`tab-${tab}`).classList.add('active');
+  if(tab==='dashboard'&&all.length)renderDashboard();
 }
 
 // ── GRAPH IDs ──
@@ -476,7 +532,7 @@ async function loadRoster(){
   try{
     await getSiteAndLists();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate';
+    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -491,17 +547,113 @@ async function loadRoster(){
         IDCampLocation:item.fields.IDCampLocation||'',CurrentTeam:item.fields.CurrentTeam||'',
         PastExperience:item.fields.PastExperience||'',CanTravel:item.fields.CanTravel||'',
         SubmittedDate:item.fields.SubmittedDate||'',
+        PassportCountry:item.fields.PassportCountry||'',VisaStatus:item.fields.VisaStatus||'',
+        PassportExpiry:item.fields.PassportExpiry||'',TravelRestrictions:item.fields.TravelRestrictions||'',
+        HighlightReel1:item.fields.HighlightReel1||'',HighlightReel2:item.fields.HighlightReel2||'',
+        HighlightReel3:item.fields.HighlightReel3||'',FullGameLink:item.fields.FullGameLink||'',
+        _headshotUrl:'', // populated separately if needed
       })));
       url=data['@odata.nextLink']||null;
     }
     all=rows.filter(r=>r.FullName).sort((a,b)=>a.FullName.localeCompare(b.FullName));
-    buildFilters();applyFilters();
+    buildFilters();applyFilters();renderDashboard();
     document.getElementById('foot-time').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
     toast(`${all.length} registrations loaded`,'success');
   }catch(e){
     document.getElementById('tbody').innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
     toast(e.message,'error');
   }finally{spinning(false,'ref-btn','ref-icon');}
+}
+
+function calcAge(dob){
+  if(!dob)return null;
+  const d=new Date(dob);if(isNaN(d))return null;
+  const now=new Date();let age=now.getFullYear()-d.getFullYear();
+  if(now<new Date(now.getFullYear(),d.getMonth(),d.getDate()))age--;
+  return age;
+}
+
+function renderBar(containerId,data,maxColor){
+  const el=document.getElementById(containerId);if(!el)return;
+  const max=Math.max(...Object.values(data),1);
+  el.innerHTML=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;">${esc(k)}</span>
+        <span style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--gold);">${v}</span>
+      </div>
+      <div style="background:rgba(248,246,241,0.06);height:6px;border-radius:2px;">
+        <div style="height:100%;width:${(v/max*100).toFixed(1)}%;background:${maxColor||'var(--gold)'};border-radius:2px;transition:width .4s;"></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderDashboard(){
+  if(!all.length){
+    document.getElementById('dash-empty').style.display='block';
+    document.getElementById('dash-content').style.display='none';
+    return;
+  }
+  document.getElementById('dash-empty').style.display='none';
+  document.getElementById('dash-content').style.display='block';
+
+  // Summary stats
+  document.getElementById('d-total').textContent=all.length;
+  document.getElementById('d-countries').textContent=new Set(all.map(p=>p.Country).filter(Boolean)).size;
+  document.getElementById('d-travel').textContent=all.filter(p=>p.CanTravel&&p.CanTravel.startsWith('Yes')).length;
+  const ages=all.map(p=>calcAge(p.BirthDate)).filter(a=>a!==null&&a>0&&a<60);
+  document.getElementById('d-avgage').textContent=ages.length?(ages.reduce((a,b)=>a+b,0)/ages.length).toFixed(1):'—';
+
+  // By Region (use CurrentLocation state/city)
+  const regions={};
+  all.forEach(p=>{
+    const loc=p.CurrentLocation||'Unknown';
+    const region=loc.includes(',')?loc.split(',').pop().trim():loc;
+    regions[region]=(regions[region]||0)+1;
+  });
+  renderBar('chart-region',regions,'#dab751');
+
+  // By Country
+  const countries={};
+  all.forEach(p=>{const c=p.Country||'Unknown';countries[c]=(countries[c]||0)+1;});
+  renderBar('chart-country',countries,'#4caf50');
+
+  // By Age bracket
+  const ageBuckets={'Under 18':0,'18-21':0,'22-25':0,'26-29':0,'30+':0};
+  all.forEach(p=>{
+    const a=calcAge(p.BirthDate);if(!a)return;
+    if(a<18)ageBuckets['Under 18']++;
+    else if(a<=21)ageBuckets['18-21']++;
+    else if(a<=25)ageBuckets['22-25']++;
+    else if(a<=29)ageBuckets['26-29']++;
+    else ageBuckets['30+']++;
+  });
+  renderBar('chart-age',ageBuckets,'#64b5f6');
+
+  // Player cards
+  const cards=document.getElementById('player-cards');
+  cards.innerHTML=all.map(p=>{
+    const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const age=calcAge(p.BirthDate);
+    const hasVideos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
+    const videoLinks=hasVideos.map((url,i)=>`<a href="${esc(url)}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;" onmouseover="this.style.background='rgba(218,183,81,0.1)'" onmouseout="this.style.background='transparent'">▶ ${i===3?'Full Game':'Clip '+(i+1)}</a>`).join('');
+    return `<div onclick="openModal('${esc(p._id)}')" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:16px;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)'">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:15px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>
+        <div style="min-width:0;">
+          <div style="font-family:Cinzel,serif;font-size:13px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.FullName)}</div>
+          <div style="font-size:11px;color:var(--text-faint);">${esc(p.CurrentTeam||'—')}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:11px;">
+        <div><span style="color:var(--text-faint);">Age:</span> <span style="color:var(--text);">${age||'—'}</span></div>
+        <div><span style="color:var(--text-faint);">Country:</span> <span style="color:var(--text);">${esc(p.Country||'—')}</span></div>
+        <div><span style="color:var(--text-faint);">Location:</span> <span style="color:var(--text);">${esc(p.CurrentLocation||'—')}</span></div>
+        <div><span style="color:var(--text-faint);">Travel:</span> <span style="color:${p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373'}">${p.CanTravel?p.CanTravel.split('—')[0].trim():'—'}</span></div>
+      </div>
+      ${hasVideos.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;" onclick="event.stopPropagation()">${videoLinks}</div>`:'<div style="font-size:10px;color:var(--text-faint);font-style:italic;">No video links</div>'}
+    </div>`;
+  }).join('');
 }
 
 function buildFilters(){
@@ -534,10 +686,16 @@ function render(){
   document.getElementById('s-camps').textContent=new Set(all.map(p=>p.IDCampLocation).filter(Boolean)).size;
   const tbody=document.getElementById('tbody');
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;document.getElementById('foot-label').textContent='';return;}
-  tbody.innerHTML=filtered.map((p,i)=>`
-    <tr>
+  tbody.innerHTML=filtered.map((p,i)=>{
+    const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const hasVideos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
+    const videoIcons=hasVideos.map((url,vi)=>`<a href="${esc(url)}" target="_blank" onclick="event.stopPropagation()" title="${vi===3?'Full Game':'Clip '+(vi+1)}" style="color:var(--gold);text-decoration:none;font-size:13px;margin-right:4px;">▶</a>`).join('');
+    return `<tr>
       <td class="td-num">${i+1}</td>
-      <td class="td-name" onclick="openModal('${esc(p._id)}')">${esc(p.FullName||'—')}</td>
+      <td class="td-name" onclick="openModal('${esc(p._id)}')" style="display:flex;align-items:center;gap:8px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>
+        ${esc(p.FullName||'—')}
+      </td>
       <td>${esc(p.BirthDate||'—')}</td>
       <td>${esc(p.Gender||'—')}</td>
       <td>${esc(p.CurrentLocation||'—')}</td>
@@ -547,8 +705,10 @@ function render(){
       <td><span class="tag ${p.CanTravel==='No'?'tag-no':''}">${esc(p.CanTravel||'—')}</span></td>
       <td>${p.Phone?`<a class="email-link" href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()">📱 ${esc(p.Phone)}</a>`:'—'}</td>
       <td>${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
-      <td>${p.Email?`<a class="email-link" href="#" onclick="event.preventDefault();event.stopPropagation();setTimeout(function(){window.open('mailto:'+p.Email,'_self');},50)">✉ ${esc(p.Email)}</a>`:'—'}</td>
-    </tr>`).join('');
+      <td>${p.Email?`<a class="email-link" href="#" onclick="event.preventDefault();event.stopPropagation();setTimeout(function(){window.open('mailto:${esc(p.Email)}','_self');},50)">✉ ${esc(p.Email)}</a>`:'—'}</td>
+      <td>${hasVideos.length?videoIcons:'<span style="color:var(--text-faint);font-size:10px;">—</span>'}</td>
+    </tr>`;
+  }).join('');
   document.getElementById('foot-label').textContent=`${filtered.length} of ${all.length} registrants · click name to view profile`;
 }
 
