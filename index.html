@@ -246,66 +246,99 @@
 
         <div class="divider-line"></div>
 
-        <!-- COPA LOBOS SECTION -->
+        <!-- TOURNAMENT RESULTS SECTION -->
         <div class="tst-announcement" style="margin-bottom:50px;">
             <div class="tst-card">
                 <div class="tst-inner">
-                    <p class="tst-eyebrow">Recent Tournament</p>
-                    <h2 class="tst-headline">Copa Lobos <span>2026</span></h2>
-                    <p style="font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:rgba(218,183,81,0.45);text-transform:uppercase;margin-bottom:28px;">March 2026 &nbsp;·&nbsp; Silverbacks Park, Atlanta</p>
-                    <!-- Score Summary -->
-                    <div style="margin:0 auto 20px;max-width:575px;">
-                        <img src="copa-lobos-team.jpg" alt="Legio FC at Copa Lobos 2026" style="width:100%;display:block;border:1px solid rgba(218,183,81,0.2);">
+                    <p class="tst-eyebrow">Tournament Results</p>
+                    <!-- Selector -->
+                    <div style="margin-bottom:28px;">
+                        <select id="tourn-select" onchange="switchTournament(this.value)" style="background:rgba(22,61,84,0.8);border:1px solid rgba(218,183,81,0.4);color:#f8f6f1;font-family:Cinzel,serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:10px 16px;width:100%;max-width:420px;outline:none;cursor:pointer;">
+                        </select>
                     </div>
-                    <div style="margin:0 auto 32px;max-width:575px;">
-                        <div style="display:grid;grid-template-columns:1fr auto;gap:0;border:1px solid rgba(218,183,81,0.2);text-align:left;">
-                            <!-- Header -->
-                            <div style="grid-column:1/-1;background:rgba(0,0,0,0.2);padding:8px 20px;border-bottom:1px solid rgba(218,183,81,0.2);">
-                                <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:rgba(218,183,81,0.6);text-transform:uppercase;">Match Results</span>
-                            </div>
-                            <!-- Row 1 -->
-                            <div style="padding:14px 20px;border-bottom:1px solid rgba(218,183,81,0.08);font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:1px;">Legio FC <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 6px;">VS</span> Chalate</div>
-                            <div style="padding:14px 20px;border-bottom:1px solid rgba(218,183,81,0.08);border-left:1px solid rgba(218,183,81,0.08);text-align:left;white-space:nowrap;">
-                                <span style="font-family:Cinzel,serif;font-size:15px;font-weight:700;color:#4caf50;letter-spacing:3px;">2 &ndash; 0</span>
-                                <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:#4caf50;margin-left:8px;">W</span>
-                            </div>
-                            <!-- Row 2 -->
-                            <div style="padding:14px 20px;border-bottom:1px solid rgba(218,183,81,0.08);font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:1px;">Legio FC <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 6px;">VS</span> Horizon</div>
-                            <div style="padding:14px 20px;border-bottom:1px solid rgba(218,183,81,0.08);border-left:1px solid rgba(218,183,81,0.08);text-align:left;white-space:nowrap;">
-                                <span style="font-family:Cinzel,serif;font-size:15px;font-weight:700;color:#e57373;letter-spacing:3px;">1 &ndash; 2</span>
-                                <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:#e57373;margin-left:8px;">L</span>
-                            </div>
-                            <!-- Row 3 -->
-                            <div style="padding:14px 20px;border-bottom:1px solid rgba(218,183,81,0.08);font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:1px;">Legio FC <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 6px;">VS</span> Tallahassee</div>
-                            <div style="padding:14px 20px;border-bottom:1px solid rgba(218,183,81,0.08);border-left:1px solid rgba(218,183,81,0.08);text-align:left;white-space:nowrap;">
-                                <span style="font-family:Cinzel,serif;font-size:15px;font-weight:700;color:#4caf50;letter-spacing:3px;">5 &ndash; 2</span>
-                                <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:#4caf50;margin-left:8px;">W</span>
-                            </div>
-                            <!-- Row 4 -->
-                            <div style="padding:14px 20px;font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:1px;">Legio FC <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 6px;">VS</span> Chivas Alabama</div>
-                            <div style="padding:14px 20px;border-left:1px solid rgba(218,183,81,0.08);text-align:left;white-space:nowrap;">
-                                <span style="font-family:Cinzel,serif;font-size:15px;font-weight:700;color:#e57373;letter-spacing:3px;">4(4) &ndash; 4(5)</span>
-                                <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:#e57373;margin-left:8px;">L PKs</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="videos-grid" style="margin-bottom:0;">
-                        <div class="video-container">
-                            <iframe src="https://www.youtube.com/embed/12bBXowZH40" title="Copa Lobos 2026" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                        </div>
-                        <div class="video-container">
-                            <iframe src="https://www.youtube.com/embed/kLOcTtZuVIo" title="Copa Lobos 2026" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                        </div>
-                        <div class="video-container">
-                            <iframe src="https://www.youtube.com/embed/uHJUB4QGmXk" title="Copa Lobos 2026" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                        </div>
-                        <div class="video-container">
-                            <iframe src="https://www.youtube.com/embed/xIwZ5NM5Kpo" title="Copa Lobos 2026" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                        </div>
-                    </div>
+                    <!-- Dynamic content -->
+                    <div id="tourn-content"></div>
                 </div>
             </div>
         </div>
+
+<script>
+const TOURNAMENTS = [
+  {
+    id: 'copa-lobos-2026',
+    name: 'Copa Lobos 2026',
+    eyebrow: 'March 2026 · Silverbacks Park, Atlanta',
+    teamPhoto: 'copa-lobos-team.jpg',
+    teamPhotoAlt: 'Legio FC at Copa Lobos 2026',
+    matches: [
+      { opponent:'Chalate',       score:'2 – 0',      result:'W' },
+      { opponent:'Horizon',       score:'1 – 2',      result:'L' },
+      { opponent:'Tallahassee',   score:'5 – 2',      result:'W' },
+      { opponent:'Chivas Alabama',score:'4(4) – 4(5)',result:'L PKs' },
+    ],
+    videos: [
+      'https://www.youtube.com/embed/12bBXowZH40',
+      'https://www.youtube.com/embed/kLOcTtZuVIo',
+      'https://www.youtube.com/embed/uHJUB4QGmXk',
+      'https://www.youtube.com/embed/xIwZ5NM5Kpo',
+    ]
+  }
+  // Add future tournaments here — same structure
+];
+
+function switchTournament(id) {
+  const t = TOURNAMENTS.find(x => x.id === id);
+  if (!t) return;
+  const winColors = { 'W':'#4caf50', 'L':'#e57373', 'D':'#dab751', 'L PKs':'#e57373', 'W PKs':'#4caf50' };
+
+  let matchRows = t.matches.map((m, i) => {
+    const color = winColors[m.result] || '#f8f6f1';
+    const last = i === t.matches.length - 1;
+    return `
+      <div style="padding:14px 20px;${last?'':'border-bottom:1px solid rgba(218,183,81,0.08);'}font-family:Cinzel,serif;font-size:12px;color:#f8f6f1;letter-spacing:1px;">
+        Legio FC <span style="color:rgba(218,183,81,0.35);font-size:9px;margin:0 6px;">VS</span> ${m.opponent}
+      </div>
+      <div style="padding:14px 20px;${last?'':'border-bottom:1px solid rgba(218,183,81,0.08);'}border-left:1px solid rgba(218,183,81,0.08);white-space:nowrap;">
+        <span style="font-family:Cinzel,serif;font-size:15px;font-weight:700;color:${color};letter-spacing:3px;">${m.score}</span>
+        <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:${color};margin-left:8px;">${m.result}</span>
+      </div>`;
+  }).join('');
+
+  let videoGrid = t.videos.length ? `
+    <div class="videos-grid" style="margin-bottom:0;">
+      ${t.videos.map(v=>`
+        <div class="video-container">
+          <iframe src="${v}" title="${t.name}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('tourn-content').innerHTML = `
+    <h2 class="tst-headline" style="margin-bottom:8px;">${t.name.replace(/(\d{4})/,'<span>$1</span>')}</h2>
+    <p style="font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:rgba(218,183,81,0.45);text-transform:uppercase;margin-bottom:24px;">${t.eyebrow}</p>
+    ${t.teamPhoto ? `<div style="margin:0 auto 20px;max-width:575px;"><img src="${t.teamPhoto}" alt="${t.teamPhotoAlt||''}" style="width:100%;display:block;border:1px solid rgba(218,183,81,0.2);"></div>` : ''}
+    ${t.matches.length ? `
+    <div style="margin:0 auto 32px;max-width:575px;">
+      <div style="display:grid;grid-template-columns:1fr auto;gap:0;border:1px solid rgba(218,183,81,0.2);">
+        <div style="grid-column:1/-1;background:rgba(0,0,0,0.2);padding:8px 20px;border-bottom:1px solid rgba(218,183,81,0.2);">
+          <span style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:rgba(218,183,81,0.6);text-transform:uppercase;">Match Results</span>
+        </div>
+        ${matchRows}
+      </div>
+    </div>` : ''}
+    ${videoGrid}`;
+}
+
+// Populate selector and render first tournament
+(function() {
+  const sel = document.getElementById('tourn-select');
+  TOURNAMENTS.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id; opt.textContent = t.name;
+    sel.appendChild(opt);
+  });
+  if (TOURNAMENTS.length) switchTournament(TOURNAMENTS[0].id);
+})();
+</script>
 
         <div class="divider-line"></div>
 
