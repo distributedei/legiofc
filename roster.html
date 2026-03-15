@@ -813,10 +813,13 @@ function render(){
     const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const hasVideos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
     const videoIcons=hasVideos.map((url,vi)=>`<a href="${esc(url)}" target="_blank" onclick="event.stopPropagation()" title="${vi===3?'Full Game':'Clip '+(vi+1)}" style="color:var(--gold);text-decoration:none;font-size:13px;margin-right:4px;">▶</a>`).join('');
+    const avatarHtml = p._headshotUrl
+      ? `<img src="${p._headshotUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;flex-shrink:0;" onerror="this.outerHTML='<div style=\\'width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;\\'>${ini}</div>'">`
+      : `<div id="trow-av-${esc(p._id)}" style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>`;
     return `<tr>
       <td class="td-num">${i+1}</td>
       <td class="td-name" onclick="openModal('${esc(p._id)}')" style="display:flex;align-items:center;gap:8px;">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>
+        ${avatarHtml}
         ${esc(p.FullName||'—')}
       </td>
       <td>${esc(p.BirthDate||'—')}</td>
@@ -833,12 +836,39 @@ function render(){
     </tr>`;
   }).join('');
   document.getElementById('foot-label').textContent=`${filtered.length} of ${all.length} registrants · click name to view profile`;
+
+  // Async load headshots into table rows for players not yet cached
+  filtered.forEach(p=>{
+    if(p._headshotUrl) return; // already cached
+    fetchHeadshotUrl(p.FullName).then(url=>{
+      if(!url) return;
+      p._headshotUrl = url; // cache on player object
+      const el = document.getElementById(`trow-av-${p._id}`);
+      if(el) el.outerHTML = `<img src="${url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;flex-shrink:0;">`;
+    });
+  });
 }
 
 function openModal(id){
   const p=all.find(x=>x._id===id);if(!p)return;
   const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('m-av').textContent=ini;
+  const av=document.getElementById('m-av');
+  // Show initials first, swap to photo if available
+  av.textContent=ini;
+  av.style.background='var(--gold)';
+  av.style.overflow='hidden';
+  av.style.padding='0';
+  if(p._headshotUrl){
+    av.innerHTML=`<img src="${p._headshotUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentElement.textContent='${ini}'">`;
+  } else {
+    fetchHeadshotUrl(p.FullName).then(url=>{
+      if(!url) return;
+      p._headshotUrl=url;
+      if(document.getElementById('m-av')===av){
+        av.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentElement.textContent='${ini}'">`;
+      }
+    });
+  }
   document.getElementById('m-name').textContent=p.FullName||'—';
   document.getElementById('m-badges').innerHTML=[
     p.Gender?`<span class="m-badge">${esc(p.Gender)}</span>`:'',
