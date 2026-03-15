@@ -239,15 +239,15 @@
         <div id="dash-content" style="display:none;">
           <!-- Summary stats -->
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">
-            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;">
+            <div onclick="dashFilter('all',null)" id="dtile-all" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="if(!this.classList.contains('dtile-active'))this.style.borderColor='var(--gold-border)'">
               <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px;">Total Players</div>
               <div id="d-total" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:var(--gold);">—</div>
             </div>
-            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;">
+            <div onclick="dashFilter('all',null)" id="dtile-countries" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;cursor:default;">
               <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px;">Countries</div>
               <div id="d-countries" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:var(--gold);">—</div>
             </div>
-            <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;">
+            <div onclick="dashFilter('travel','Yes')" id="dtile-travel" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;text-align:center;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#4caf50'" onmouseout="if(!this.classList.contains('dtile-active'))this.style.borderColor='var(--gold-border)'">
               <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:8px;">Can Travel</div>
               <div id="d-travel" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:#4caf50;">—</div>
             </div>
@@ -256,23 +256,28 @@
               <div id="d-avgage" style="font-family:Cinzel,serif;font-size:36px;font-weight:700;color:var(--gold);">—</div>
             </div>
           </div>
-          <!-- Charts row -->
+          <!-- Metric rows -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;">
             <!-- By Region -->
             <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;">
-              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Players by Region</div>
-              <div id="chart-region"></div>
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:12px;">Players by Region</div>
+              <div id="metric-region"></div>
             </div>
             <!-- By Country -->
             <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;">
-              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Players by Country</div>
-              <div id="chart-country"></div>
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:12px;">Players by Country</div>
+              <div id="metric-country"></div>
             </div>
             <!-- By Age -->
             <div style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:20px;">
-              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Players by Age</div>
-              <div id="chart-age"></div>
+              <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:12px;">Players by Age</div>
+              <div id="metric-age"></div>
             </div>
+          </div>
+          <!-- Active filter label -->
+          <div id="dash-filter-label" style="display:none;font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+            <span id="dash-filter-text"></span>
+            <button onclick="dashFilter('all',null)" style="background:transparent;border:1px solid var(--gold-border);color:var(--text-faint);font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;padding:3px 8px;cursor:pointer;text-transform:uppercase;">✕ Clear</button>
           </div>
           <!-- Player cards grid -->
           <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:8px;margin-bottom:16px;">Player Cards</div>
@@ -565,6 +570,8 @@ async function loadRoster(){
   }finally{spinning(false,'ref-btn','ref-icon');}
 }
 
+let dashActiveFilter = {type:'all', value:null};
+
 function calcAge(dob){
   if(!dob)return null;
   const d=new Date(dob);if(isNaN(d))return null;
@@ -573,19 +580,35 @@ function calcAge(dob){
   return age;
 }
 
-function renderBar(containerId,data,maxColor){
-  const el=document.getElementById(containerId);if(!el)return;
-  const max=Math.max(...Object.values(data),1);
-  el.innerHTML=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`
-    <div style="margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70%;">${esc(k)}</span>
-        <span style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--gold);">${v}</span>
-      </div>
-      <div style="background:rgba(248,246,241,0.06);height:6px;border-radius:2px;">
-        <div style="height:100%;width:${(v/max*100).toFixed(1)}%;background:${maxColor||'var(--gold)'};border-radius:2px;transition:width .4s;"></div>
-      </div>
-    </div>`).join('');
+function renderMetricList(containerId, data, filterType) {
+  const el = document.getElementById(containerId); if(!el) return;
+  el.innerHTML = Object.entries(data).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+    const isActive = dashActiveFilter.type===filterType && dashActiveFilter.value===k;
+    return `<div onclick="dashFilter('${filterType}','${k.replace(/'/g,"\\'")}')"
+      style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;margin-bottom:4px;cursor:pointer;border:1px solid ${isActive?'var(--gold)':'transparent'};background:${isActive?'rgba(218,183,81,0.1)':'transparent'};transition:all .15s;"
+      onmouseover="this.style.background='rgba(218,183,81,0.08)';this.style.borderColor='rgba(218,183,81,0.3)'"
+      onmouseout="this.style.background='${isActive?'rgba(218,183,81,0.1)':'transparent'}';this.style.borderColor='${isActive?'var(--gold)':'transparent'}'">
+      <span style="font-size:12px;color:var(--text);">${esc(k)}</span>
+      <span style="font-family:Cinzel,serif;font-size:13px;font-weight:700;color:var(--gold);min-width:24px;text-align:right;">${v}</span>
+    </div>`;
+  }).join('');
+}
+
+function dashFilter(type, value) {
+  dashActiveFilter = {type, value};
+  // Update filter label
+  const label = document.getElementById('dash-filter-label');
+  const text = document.getElementById('dash-filter-text');
+  if(type === 'all' || !value) {
+    label.style.display = 'none';
+  } else {
+    label.style.display = 'flex';
+    text.textContent = `Showing: ${value}`;
+  }
+  // Re-render metrics to update active state
+  renderDashboardMetrics();
+  // Re-render cards with filter
+  renderPlayerCards(type, value);
 }
 
 function renderDashboard(){
@@ -596,7 +619,12 @@ function renderDashboard(){
   }
   document.getElementById('dash-empty').style.display='none';
   document.getElementById('dash-content').style.display='block';
+  dashActiveFilter = {type:'all', value:null};
+  renderDashboardMetrics();
+  renderPlayerCards('all', null);
+}
 
+function renderDashboardMetrics(){
   // Summary stats
   document.getElementById('d-total').textContent=all.length;
   document.getElementById('d-countries').textContent=new Set(all.map(p=>p.Country).filter(Boolean)).size;
@@ -604,19 +632,19 @@ function renderDashboard(){
   const ages=all.map(p=>calcAge(p.BirthDate)).filter(a=>a!==null&&a>0&&a<60);
   document.getElementById('d-avgage').textContent=ages.length?(ages.reduce((a,b)=>a+b,0)/ages.length).toFixed(1):'—';
 
-  // By Region (use CurrentLocation state/city)
+  // By Region
   const regions={};
   all.forEach(p=>{
     const loc=p.CurrentLocation||'Unknown';
     const region=loc.includes(',')?loc.split(',').pop().trim():loc;
     regions[region]=(regions[region]||0)+1;
   });
-  renderBar('chart-region',regions,'#dab751');
+  renderMetricList('metric-region', regions, 'region');
 
   // By Country
   const countries={};
   all.forEach(p=>{const c=p.Country||'Unknown';countries[c]=(countries[c]||0)+1;});
-  renderBar('chart-country',countries,'#4caf50');
+  renderMetricList('metric-country', countries, 'country');
 
   // By Age bracket
   const ageBuckets={'Under 18':0,'18-21':0,'22-25':0,'26-29':0,'30+':0};
@@ -628,10 +656,7 @@ function renderDashboard(){
     else if(a<=29)ageBuckets['26-29']++;
     else ageBuckets['30+']++;
   });
-  renderBar('chart-age',ageBuckets,'#64b5f6');
-
-  // Player cards — fetch headshots then render
-  renderPlayerCards();
+  renderMetricList('metric-age', ageBuckets, 'age');
 }
 
 async function fetchHeadshotUrl(playerName){
@@ -651,10 +676,32 @@ async function fetchHeadshotUrl(playerName){
   }catch(e){return null;}
 }
 
-async function renderPlayerCards(){
+async function renderPlayerCards(filterType, filterValue){
   const cards=document.getElementById('player-cards');
-  // Render immediately with initials, then swap in photos async
-  cards.innerHTML=all.map((p,idx)=>{
+
+  // Apply filter
+  let players = all;
+  if(filterType && filterType !== 'all' && filterValue) {
+    players = all.filter(p => {
+      if(filterType === 'region') {
+        const loc = p.CurrentLocation || 'Unknown';
+        const region = loc.includes(',') ? loc.split(',').pop().trim() : loc;
+        return region === filterValue;
+      }
+      if(filterType === 'country') return (p.Country||'Unknown') === filterValue;
+      if(filterType === 'travel') return p.CanTravel && p.CanTravel.startsWith('Yes');
+      if(filterType === 'age') {
+        const a = calcAge(p.BirthDate); if(!a) return false;
+        if(filterValue==='Under 18') return a<18;
+        if(filterValue==='18-21') return a>=18&&a<=21;
+        if(filterValue==='22-25') return a>=22&&a<=25;
+        if(filterValue==='26-29') return a>=26&&a<=29;
+        if(filterValue==='30+') return a>=30;
+      }
+      return true;
+    });
+  }
+  cards.innerHTML=players.map((p,idx)=>{
     const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const age=calcAge(p.BirthDate);
     const videos=[
@@ -694,8 +741,8 @@ async function renderPlayerCards(){
   }).join('');
 
   // Async load headshots
-  for(let idx=0;idx<all.length;idx++){
-    const p=all[idx];
+  for(let idx=0;idx<players.length;idx++){
+    const p=players[idx];
     if(!p.FullName)continue;
     fetchHeadshotUrl(p.FullName).then(url=>{
       if(!url)return;
