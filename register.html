@@ -413,9 +413,11 @@ async function submitForm() {
   const firstName = document.getElementById('firstName').value.trim();
   const lastName  = document.getElementById('lastName').value.trim();
 
-  // Convert photos to base64
-  const headshotB64 = await fileToBase64(document.getElementById('headshot').files[0]);
-  const passportB64 = await fileToBase64(document.getElementById('passportPhoto').files[0]);
+  // Convert photos to base64 — strip data URI prefix for SharePoint upload
+  const headshotRaw = await fileToBase64(document.getElementById('headshot').files[0]);
+  const playerRaw = await fileToBase64(document.getElementById('passportPhoto').files[0]);
+  const headshotB64 = headshotRaw.split(',')[1];
+  const passportB64 = playerRaw.split(',')[1];
 
   document.getElementById('submit-text').textContent = 'Submitting…';
 
