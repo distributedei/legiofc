@@ -826,8 +826,19 @@ function renderDashboardMetrics(){
 }
 
 async function fetchHeadshotUrl(playerName, storedUrl){
-  // Use stored URL from SharePoint list if available
-  if(storedUrl) return storedUrl;
+  // Convert stored SharePoint path to Graph API download URL
+  if(storedUrl){
+    try{
+      const t=await getToken();
+      const path = storedUrl.startsWith('/') ? storedUrl : storedUrl.replace('https://legiofc.sharepoint.com','');
+      const encodedPath = encodeURIComponent(path);
+      const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:${encodedPath}`,{headers:{Authorization:`Bearer ${t}`}});
+      if(res.ok){
+        const data=await res.json();
+        if(data['@microsoft.graph.downloadUrl']) return data['@microsoft.graph.downloadUrl'];
+      }
+    }catch(e){}
+  }
   // Fallback: search folder by player name
   try{
     const t=await getToken();
@@ -1011,6 +1022,12 @@ function openModal(id){
       }
     });
   }
+  // Also fetch player photo URL for modal body
+  if(p.PlayerPhotoURL && !p._playerPhotoUrl){
+    fetchHeadshotUrl(p.FullName+'_action', p.PlayerPhotoURL).then(url=>{
+      if(url) p._playerPhotoUrl=url;
+    });
+  }
   document.getElementById('m-name').textContent=p.FullName||'—';
   document.getElementById('m-badges').innerHTML=[
     p.Gender?`<span class="m-badge">${esc(p.Gender)}</span>`:'',
@@ -1043,8 +1060,8 @@ function renderPlayerView(p){
     : '<span style="font-size:12px;color:var(--text-faint);font-style:italic;">No video links on file</span>';
 
   const fixUrl = u => !u ? '' : u.startsWith('http') ? u : 'https://legiofc.sharepoint.com'+u;
-  const headshotUrl = fixUrl(p.HeadshotURL);
-  const playerPhotoUrl = fixUrl(p.PlayerPhotoURL);
+  const headshotUrl = p._headshotUrl || fixUrl(p.HeadshotURL);
+  const playerPhotoUrl = p._playerPhotoUrl || fixUrl(p.PlayerPhotoURL);
 
   document.getElementById('m-body').innerHTML=`
     <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
