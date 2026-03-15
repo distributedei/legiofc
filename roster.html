@@ -1438,8 +1438,14 @@ async function getTeamSheetList(){
   const t=await getToken();const h={Authorization:`Bearer ${t}`};
   const ls=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$select=id,displayName`,{headers:h})).json();
   const found = ls.value.find(l=>l.displayName==='TeamSheets');
-  if(found){ teamSheetListId=found.id; return; }
-  // Create list with explicit columns
+  if(found){
+    teamSheetListId=found.id;
+    // Log columns to debug internal names
+    const cols=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/columns`,{headers:h})).json();
+    console.log('TeamSheets columns:',cols.value.map(c=>({name:c.name,displayName:c.displayName})));
+    return;
+  }
+  // Create list
   const create=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`,{
     method:'POST',headers:{...h,'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -1455,6 +1461,7 @@ async function getTeamSheetList(){
   });
   const newList=await create.json();
   teamSheetListId=newList.id;
+  console.log('TeamSheets list created:',newList.id);
 }
 
 async function saveTeamSheet(){
