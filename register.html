@@ -274,6 +274,40 @@
       <div class="form-section">
         <div class="section-title">Playing History</div>
         <div class="field-grid">
+          <div class="field">
+            <label>Primary Position <span>*</span></label>
+            <select id="primaryPosition" required>
+              <option value="">Select position…</option>
+              <option>Goalkeeper</option>
+              <option>Center Back</option>
+              <option>Right Back</option>
+              <option>Left Back</option>
+              <option>Defensive Midfielder</option>
+              <option>Central Midfielder</option>
+              <option>Attacking Midfielder</option>
+              <option>Right Midfielder / Winger</option>
+              <option>Left Midfielder / Winger</option>
+              <option>Striker / Center Forward</option>
+              <option>Second Striker</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Secondary Position</label>
+            <select id="secondaryPosition">
+              <option value="">Select position…</option>
+              <option>Goalkeeper</option>
+              <option>Center Back</option>
+              <option>Right Back</option>
+              <option>Left Back</option>
+              <option>Defensive Midfielder</option>
+              <option>Central Midfielder</option>
+              <option>Attacking Midfielder</option>
+              <option>Right Midfielder / Winger</option>
+              <option>Left Midfielder / Winger</option>
+              <option>Striker / Center Forward</option>
+              <option>Second Striker</option>
+            </select>
+          </div>
           <div class="field full">
             <label>Current Team & League <span>*</span></label>
             <input type="text" id="currentTeam" placeholder="e.g. FC Miami UPSL" required>
@@ -377,7 +411,7 @@ function fileToBase64(file) {
 
 function validate() {
   if (!selectedTournament) { showError('Please select a tournament.'); document.getElementById('tournamentSelect').focus(); return false; }
-  const required = ['firstName','lastName','birthDate','gender','currentLocation','country','idCampLocation','passportCountry','visaStatus','currentTeam','email','phone'];
+  const required = ['firstName','lastName','birthDate','gender','currentLocation','country','idCampLocation','passportCountry','visaStatus','primaryPosition','currentTeam','email','phone'];
   for (const id of required) {
     const el = document.getElementById(id);
     if (!el || !el.value.trim()) {
@@ -441,6 +475,8 @@ async function submitForm() {
     CanTravel:            document.querySelector('input[name="canTravel"]:checked').value,
     TravelRestrictions:   document.getElementById('travelRestrictions').value.trim(),
     CurrentTeam:          document.getElementById('currentTeam').value.trim(),
+    PrimaryPosition:      document.getElementById('primaryPosition').value,
+    SecondaryPosition:    document.getElementById('secondaryPosition').value,
     PastExperience:       document.getElementById('pastExperience').value.trim(),
     HighlightReel1:       document.getElementById('highlight1').value.trim(),
     HighlightReel2:       document.getElementById('highlight2').value.trim(),

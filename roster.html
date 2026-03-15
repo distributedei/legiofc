@@ -224,7 +224,7 @@
     <!-- TAB BAR v2 -->
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-      <button class="tab-btn" onclick="switchTab('roster')">⚔ Player Roster</button>
+      <button class="tab-btn" onclick="switchTab('roster')">⚔ Player Database</button>
       <button class="tab-btn" onclick="switchTab('matches')">🏆 Matches</button>
     </div>
 
@@ -321,6 +321,7 @@
               <th onclick="sortBy('Country')">Country <span class="sa">↕</span></th>
               <th onclick="sortBy('IDCampLocation')">Camp Site <span class="sa">↕</span></th>
               <th onclick="sortBy('CurrentTeam')">Current Team <span class="sa">↕</span></th>
+              <th onclick="sortBy('PrimaryPosition')">Position <span class="sa">↕</span></th>
               <th onclick="sortBy('CanTravel')">Travel <span class="sa">↕</span></th>
               <th>Phone</th>
               <th onclick="sortBy('SubmittedDate')">Submitted <span class="sa">↕</span></th>
@@ -329,7 +330,7 @@
             </tr>
           </thead>
           <tbody id="tbody">
-            <tr><td colspan="12"><div class="state-box">
+            <tr><td colspan="13"><div class="state-box">
               <div class="state-icon">⚔</div>
               <div class="state-title">Summoning The Legion</div>
               <div class="dots"><span></span><span></span><span></span></div>
@@ -537,7 +538,7 @@ async function loadRoster(){
   try{
     await getSiteAndLists();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry';
+    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry,PrimaryPosition,SecondaryPosition';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -556,6 +557,7 @@ async function loadRoster(){
         PassportExpiry:item.fields.PassportExpiry||'',TravelRestrictions:item.fields.TravelRestrictions||'',
         HighlightReel1:item.fields.HighlightReel1||'',HighlightReel2:item.fields.HighlightReel2||'',
         HighlightReel3:item.fields.HighlightReel3||'',FullGameLink:item.fields.FullGameLink||'',
+        PrimaryPosition:item.fields.PrimaryPosition||'',SecondaryPosition:item.fields.SecondaryPosition||'',
         _headshotUrl:'', // populated separately if needed
       })));
       url=data['@odata.nextLink']||null;
@@ -565,7 +567,7 @@ async function loadRoster(){
     document.getElementById('foot-time').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
     toast(`${all.length} registrations loaded`,'success');
   }catch(e){
-    document.getElementById('tbody').innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="13"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
     toast(e.message,'error');
   }finally{spinning(false,'ref-btn','ref-icon');}
 }
@@ -756,6 +758,7 @@ async function renderPlayerCards(filterType, filterValue){
         <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.CurrentTeam||'—')}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;margin-bottom:12px;">
           <div><span style="color:var(--text-faint);">Age</span><br><span style="color:var(--cream);font-weight:500;">${age||'—'}</span></div>
+          <div><span style="color:var(--text-faint);">Position</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.PrimaryPosition||'—')}</span></div>
           <div><span style="color:var(--text-faint);">Country</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.Country||'—')}</span></div>
           <div><span style="color:var(--text-faint);">Location</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.CurrentLocation||'—')}</span></div>
           <div><span style="color:var(--text-faint);">Travel</span><br><span style="color:${p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373'};font-weight:500;">${p.CanTravel&&p.CanTravel.startsWith('Yes')?'✓ Yes':'✗ No'}</span></div>
@@ -808,7 +811,7 @@ function render(){
   document.getElementById('s-travel').textContent=all.filter(p=>p.CanTravel==='Yes').length;
   document.getElementById('s-camps').textContent=new Set(all.map(p=>p.IDCampLocation).filter(Boolean)).size;
   const tbody=document.getElementById('tbody');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="12"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;document.getElementById('foot-label').textContent='';return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="13"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;document.getElementById('foot-label').textContent='';return;}
   tbody.innerHTML=filtered.map((p,i)=>{
     const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const hasVideos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
@@ -828,6 +831,7 @@ function render(){
       <td>${esc(p.Country||'—')}</td>
       <td>${esc(p.IDCampLocation||'—')}</td>
       <td>${esc(p.CurrentTeam||'—')}</td>
+      <td>${esc(p.PrimaryPosition||'—')}</td>
       <td><span class="tag ${p.CanTravel==='No'?'tag-no':''}">${esc(p.CanTravel||'—')}</span></td>
       <td>${p.Phone?`<a class="email-link" href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()">📱 ${esc(p.Phone)}</a>`:'—'}</td>
       <td>${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
@@ -920,6 +924,8 @@ function renderPlayerView(p){
       <div class="m-field full"><label>Camp Site</label><div class="val">${esc(p.IDCampLocation||'—')}</div></div>
     </div></div>
     <div class="m-section"><div class="m-sec-title">Playing History</div><div class="m-grid">
+      <div class="m-field"><label>Primary Position</label><div class="val">${esc(p.PrimaryPosition||'—')}</div></div>
+      <div class="m-field"><label>Secondary Position</label><div class="val">${esc(p.SecondaryPosition||'—')}</div></div>
       <div class="m-field full"><label>Current Team & League</label><div class="val">${esc(p.CurrentTeam||'—')}</div></div>
     </div>
     <div style="margin-top:12px"><label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
@@ -959,6 +965,38 @@ function editPlayer(id){
       <div class="mf-field"><label>Country</label><input type="text" id="pf-country" value="${esc(p.Country||'')}"></div>
       <div class="mf-field"><label>ID Camp Location</label><input type="text" id="pf-camp" value="${esc(p.IDCampLocation||'')}"></div>
       <div class="mf-field full"><label>Current Team & League</label><input type="text" id="pf-team" value="${esc(p.CurrentTeam||'')}"></div>
+      <div class="mf-field"><label>Primary Position</label>
+        <select id="pf-primary">
+          <option value="">—</option>
+          <option ${p.PrimaryPosition==='Goalkeeper'?'selected':''}>Goalkeeper</option>
+          <option ${p.PrimaryPosition==='Center Back'?'selected':''}>Center Back</option>
+          <option ${p.PrimaryPosition==='Right Back'?'selected':''}>Right Back</option>
+          <option ${p.PrimaryPosition==='Left Back'?'selected':''}>Left Back</option>
+          <option ${p.PrimaryPosition==='Defensive Midfielder'?'selected':''}>Defensive Midfielder</option>
+          <option ${p.PrimaryPosition==='Central Midfielder'?'selected':''}>Central Midfielder</option>
+          <option ${p.PrimaryPosition==='Attacking Midfielder'?'selected':''}>Attacking Midfielder</option>
+          <option ${p.PrimaryPosition==='Right Midfielder / Winger'?'selected':''}>Right Midfielder / Winger</option>
+          <option ${p.PrimaryPosition==='Left Midfielder / Winger'?'selected':''}>Left Midfielder / Winger</option>
+          <option ${p.PrimaryPosition==='Striker / Center Forward'?'selected':''}>Striker / Center Forward</option>
+          <option ${p.PrimaryPosition==='Second Striker'?'selected':''}>Second Striker</option>
+        </select>
+      </div>
+      <div class="mf-field"><label>Secondary Position</label>
+        <select id="pf-secondary">
+          <option value="">—</option>
+          <option ${p.SecondaryPosition==='Goalkeeper'?'selected':''}>Goalkeeper</option>
+          <option ${p.SecondaryPosition==='Center Back'?'selected':''}>Center Back</option>
+          <option ${p.SecondaryPosition==='Right Back'?'selected':''}>Right Back</option>
+          <option ${p.SecondaryPosition==='Left Back'?'selected':''}>Left Back</option>
+          <option ${p.SecondaryPosition==='Defensive Midfielder'?'selected':''}>Defensive Midfielder</option>
+          <option ${p.SecondaryPosition==='Central Midfielder'?'selected':''}>Central Midfielder</option>
+          <option ${p.SecondaryPosition==='Attacking Midfielder'?'selected':''}>Attacking Midfielder</option>
+          <option ${p.SecondaryPosition==='Right Midfielder / Winger'?'selected':''}>Right Midfielder / Winger</option>
+          <option ${p.SecondaryPosition==='Left Midfielder / Winger'?'selected':''}>Left Midfielder / Winger</option>
+          <option ${p.SecondaryPosition==='Striker / Center Forward'?'selected':''}>Striker / Center Forward</option>
+          <option ${p.SecondaryPosition==='Second Striker'?'selected':''}>Second Striker</option>
+        </select>
+      </div>
       <div class="mf-field full"><label>Past Experience</label><textarea id="pf-exp" rows="4" style="width:100%;background:var(--blue);border:1px solid var(--gold-border);color:var(--text);padding:8px;font-family:inherit;font-size:12px;resize:vertical;">${esc(p.PastExperience||'')}</textarea></div>
       <div class="mf-field"><label>Email</label><input type="email" id="pf-email" value="${esc(p.Email||'')}"></div>
       <div class="mf-field"><label>Phone</label><input type="text" id="pf-phone" value="${esc(p.Phone||'')}"></div>
@@ -985,6 +1023,8 @@ async function savePlayer(id){
       Country:document.getElementById('pf-country').value,
       IDCampLocation:document.getElementById('pf-camp').value,
       CurrentTeam:document.getElementById('pf-team').value,
+      PrimaryPosition:document.getElementById('pf-primary').value,
+      SecondaryPosition:document.getElementById('pf-secondary').value,
       PastExperience:document.getElementById('pf-exp').value,
       Email:document.getElementById('pf-email').value,
       Phone:document.getElementById('pf-phone').value,
@@ -994,7 +1034,7 @@ async function savePlayer(id){
     if(!r.ok)throw new Error(await r.text());
     // Update local cache
     const p=all.find(x=>x._id===id);
-    if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
+    if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PrimaryPosition:fields.PrimaryPosition,SecondaryPosition:fields.SecondaryPosition,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
     toast('Player saved ✓','success');
     openModal(id);
   }catch(e){
