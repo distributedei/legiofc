@@ -363,11 +363,43 @@
     <div class="tab-panel" id="tab-teamsheet">
       <div class="table-area" style="padding:20px;display:block;">
 
-        <!-- Toolbar -->
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+        <!-- Tournament + Line Selector Bar -->
+        <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px 18px;margin-bottom:16px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
+
+          <!-- Tournament -->
           <div>
-            <label style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:4px;">Formation</label>
-            <select id="ts-formation" onchange="buildFormation()" style="background:rgba(22,61,84,0.8);border:1px solid var(--gold-border);color:var(--cream);font-family:Cinzel,serif;font-size:10px;letter-spacing:1px;padding:8px 14px;outline:none;cursor:pointer;">
+            <label style="font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;display:block;margin-bottom:5px;">Tournament</label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <select id="ts-tournament" onchange="switchTournament()" style="background:rgba(22,61,84,0.9);border:1px solid var(--gold-border);color:var(--cream);font-family:Cinzel,serif;font-size:10px;letter-spacing:1px;padding:7px 12px;outline:none;cursor:pointer;min-width:180px;">
+              </select>
+              <input id="ts-new-tourn" type="text" placeholder="New tournament name…" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);color:var(--cream);font-family:Inter,sans-serif;font-size:11px;padding:7px 10px;outline:none;width:180px;">
+              <button onclick="addTournament()" style="padding:7px 12px;background:var(--gold);border:none;color:var(--blue-dark);font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-weight:700;white-space:nowrap;">+ Add</button>
+              <button onclick="deleteTournament()" style="padding:7px 10px;background:transparent;border:1px solid rgba(156,24,41,.4);color:#d07080;font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">✕ Delete</button>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div style="width:1px;height:40px;background:var(--gold-border);flex-shrink:0;"></div>
+
+          <!-- Line -->
+          <div>
+            <label style="font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;display:block;margin-bottom:5px;">Line</label>
+            <div style="display:flex;gap:6px;">
+              <button onclick="switchLine('A')" id="line-btn-A" class="line-btn line-btn-active" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold);background:var(--gold);color:var(--blue-dark);font-weight:700;">Line A</button>
+              <button onclick="switchLine('B')" id="line-btn-B" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">Line B</button>
+              <button onclick="switchLine('C')" id="line-btn-C" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">Line C</button>
+              <button onclick="switchLine('D')" id="line-btn-D" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">Line D</button>
+              <button onclick="switchLine('E')" id="line-btn-E" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">Line E</button>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div style="width:1px;height:40px;background:var(--gold-border);flex-shrink:0;"></div>
+
+          <!-- Formation -->
+          <div>
+            <label style="font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;display:block;margin-bottom:5px;">Formation</label>
+            <select id="ts-formation" onchange="buildFormation()" style="background:rgba(22,61,84,0.9);border:1px solid var(--gold-border);color:var(--cream);font-family:Cinzel,serif;font-size:10px;letter-spacing:1px;padding:7px 12px;outline:none;cursor:pointer;">
               <option value="2-3-1">2-3-1 (Classic 7v7)</option>
               <option value="3-2-1">3-2-1 (Defensive)</option>
               <option value="2-2-2">2-2-2 (Balanced)</option>
@@ -375,13 +407,11 @@
               <option value="3-1-2">3-1-2 (Diamond)</option>
             </select>
           </div>
-          <div>
-            <label style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:4px;">Sheet Name</label>
-            <input id="ts-name" type="text" placeholder="e.g. TST 2026 Starting XI" style="background:rgba(22,61,84,0.8);border:1px solid var(--gold-border);color:var(--cream);font-family:Inter,sans-serif;font-size:12px;padding:8px 14px;outline:none;width:220px;">
-          </div>
+
+          <!-- Actions -->
           <div style="margin-left:auto;display:flex;gap:8px;">
-            <button onclick="clearLineup()" style="padding:8px 16px;background:transparent;border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)';this.style.color='var(--text-dim)'">✕ Clear</button>
-            <button onclick="printLineup()" style="padding:8px 16px;background:var(--gold);border:none;color:var(--blue-dark);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;">⎙ Print</button>
+            <button onclick="clearLineup()" style="padding:7px 14px;background:transparent;border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--gold-border)';this.style.color='var(--text-dim)'">✕ Clear Line</button>
+            <button onclick="printLineup()" style="padding:7px 14px;background:var(--gold);border:none;color:var(--blue-dark);font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;">⎙ Print</button>
           </div>
         </div>
 
@@ -606,7 +636,7 @@ function switchTab(tab){
   document.getElementById(`tab-${tab}`).classList.add('active');
   if(tab==='dashboard'&&all.length)renderDashboard();
   if(tab==='teamsheet'){
-    if(all.length) buildFormation();
+    if(all.length){ if(!currentTournament){initTeamSheet();}else{buildFormation();} }
     else{document.getElementById('ts-bench').innerHTML='<div style="font-size:12px;color:var(--text-faint);padding:10px;">Load the roster first.</div>';}
   }
 }
@@ -1324,214 +1354,216 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeM
 
 // ── TEAM SHEET ──────────────────────────────────────────
 const FORMATIONS = {
-  '2-3-1': {
-    slots:[
-      {pos:'GK',   x:50, y:88},
-      {pos:'CB',   x:30, y:72},{pos:'CB',   x:70, y:72},
-      {pos:'LM',   x:15, y:52},{pos:'CM',   x:50, y:50},{pos:'RM',   x:85, y:52},
-      {pos:'ST',   x:50, y:28},
-    ]
-  },
-  '3-2-1': {
-    slots:[
-      {pos:'GK',   x:50, y:88},
-      {pos:'LB',   x:20, y:72},{pos:'CB',   x:50, y:74},{pos:'RB',   x:80, y:72},
-      {pos:'CM',   x:33, y:52},{pos:'CM',   x:67, y:52},
-      {pos:'ST',   x:50, y:28},
-    ]
-  },
-  '2-2-2': {
-    slots:[
-      {pos:'GK',   x:50, y:88},
-      {pos:'LB',   x:28, y:72},{pos:'RB',   x:72, y:72},
-      {pos:'LM',   x:28, y:52},{pos:'RM',   x:72, y:52},
-      {pos:'ST',   x:33, y:28},{pos:'ST',   x:67, y:28},
-    ]
-  },
-  '1-3-2': {
-    slots:[
-      {pos:'GK',   x:50, y:88},
-      {pos:'CB',   x:50, y:72},
-      {pos:'LM',   x:18, y:52},{pos:'CM',   x:50, y:50},{pos:'RM',   x:82, y:52},
-      {pos:'ST',   x:33, y:28},{pos:'ST',   x:67, y:28},
-    ]
-  },
-  '3-1-2': {
-    slots:[
-      {pos:'GK',   x:50, y:88},
-      {pos:'LB',   x:20, y:72},{pos:'CB',   x:50, y:74},{pos:'RB',   x:80, y:72},
-      {pos:'CM',   x:50, y:52},
-      {pos:'ST',   x:33, y:28},{pos:'ST',   x:67, y:28},
-    ]
-  }
+  '2-3-1':{slots:[{pos:'GK',x:50,y:88},{pos:'CB',x:30,y:72},{pos:'CB',x:70,y:72},{pos:'LM',x:15,y:52},{pos:'CM',x:50,y:50},{pos:'RM',x:85,y:52},{pos:'ST',x:50,y:28}]},
+  '3-2-1':{slots:[{pos:'GK',x:50,y:88},{pos:'LB',x:20,y:72},{pos:'CB',x:50,y:74},{pos:'RB',x:80,y:72},{pos:'CM',x:33,y:52},{pos:'CM',x:67,y:52},{pos:'ST',x:50,y:28}]},
+  '2-2-2':{slots:[{pos:'GK',x:50,y:88},{pos:'LB',x:28,y:72},{pos:'RB',x:72,y:72},{pos:'LM',x:28,y:52},{pos:'RM',x:72,y:52},{pos:'ST',x:33,y:28},{pos:'ST',x:67,y:28}]},
+  '1-3-2':{slots:[{pos:'GK',x:50,y:88},{pos:'CB',x:50,y:72},{pos:'LM',x:18,y:52},{pos:'CM',x:50,y:50},{pos:'RM',x:82,y:52},{pos:'ST',x:33,y:28},{pos:'ST',x:67,y:28}]},
+  '3-1-2':{slots:[{pos:'GK',x:50,y:88},{pos:'LB',x:20,y:72},{pos:'CB',x:50,y:74},{pos:'RB',x:80,y:72},{pos:'CM',x:50,y:52},{pos:'ST',x:33,y:28},{pos:'ST',x:67,y:28}]}
 };
 
-let lineup = {}; // slotIndex -> player _id
+let tsData = {};
+let currentTournament = null;
+let currentLine = 'A';
 let draggedPlayerId = null;
+let pendingSlot = null;
+let pendingPlayerId = null;
+
+function tsCurrentLineup(){ return (tsData[currentTournament] && tsData[currentTournament][currentLine]) ? tsData[currentTournament][currentLine].lineup : {}; }
+function tsCurrentFormation(){ return (tsData[currentTournament] && tsData[currentTournament][currentLine]) ? tsData[currentTournament][currentLine].formation : '2-3-1'; }
+
+function initTeamSheet(){
+  if(!Object.keys(tsData).length){ tsData['TST 2026'] = makeBlankTournament(); }
+  currentTournament = Object.keys(tsData)[0];
+  currentLine = 'A';
+  renderTournamentSelect();
+  buildFormation();
+}
+
+function makeBlankTournament(){
+  var t={};
+  ['A','B','C','D','E'].forEach(function(l){ t[l]={lineup:{},formation:'2-3-1'}; });
+  return t;
+}
+
+function renderTournamentSelect(){
+  var sel=document.getElementById('ts-tournament');
+  if(!sel)return;
+  sel.innerHTML=Object.keys(tsData).map(function(t){ return '<option value="'+esc(t)+'"'+(t===currentTournament?' selected':'')+'>'+esc(t)+'</option>'; }).join('');
+}
+
+function addTournament(){
+  var input=document.getElementById('ts-new-tourn');
+  var name=input.value.trim();
+  if(!name){toast('Enter a tournament name','error');return;}
+  if(tsData[name]){toast('Already exists','error');return;}
+  tsData[name]=makeBlankTournament();
+  currentTournament=name; currentLine='A';
+  input.value='';
+  renderTournamentSelect();
+  buildFormation();
+  toast(name+' added','success');
+}
+
+function deleteTournament(){
+  if(Object.keys(tsData).length<=1){toast('Cannot delete the last tournament','error');return;}
+  delete tsData[currentTournament];
+  currentTournament=Object.keys(tsData)[0]; currentLine='A';
+  renderTournamentSelect();
+  buildFormation();
+  toast('Tournament deleted','');
+}
+
+function switchTournament(){
+  currentTournament=document.getElementById('ts-tournament').value;
+  currentLine='A';
+  updateLineButtons();
+  document.getElementById('ts-formation').value=tsCurrentFormation();
+  refreshPitch();
+}
+
+function switchLine(line){
+  if(tsData[currentTournament] && tsData[currentTournament][currentLine]){
+    tsData[currentTournament][currentLine].formation=document.getElementById('ts-formation').value;
+  }
+  currentLine=line;
+  updateLineButtons();
+  document.getElementById('ts-formation').value=tsCurrentFormation();
+  refreshPitch();
+}
+
+function updateLineButtons(){
+  ['A','B','C','D','E'].forEach(function(l){
+    var btn=document.getElementById('line-btn-'+l);
+    if(!btn)return;
+    var active=l===currentLine;
+    btn.style.background=active?'var(--gold)':'transparent';
+    btn.style.color=active?'var(--blue-dark)':'var(--text-dim)';
+    btn.style.borderColor=active?'var(--gold)':'var(--gold-border)';
+    btn.style.fontWeight=active?'700':'400';
+  });
+}
 
 function buildFormation(){
-  const f = document.getElementById('ts-formation').value;
-  const slots = FORMATIONS[f].slots;
-  lineup = {};
-  renderPitch(slots);
-  renderBench();
+  if(!currentTournament)return;
+  var f=document.getElementById('ts-formation').value;
+  if(tsData[currentTournament] && tsData[currentTournament][currentLine]){
+    tsData[currentTournament][currentLine].formation=f;
+  }
+  refreshPitch();
 }
 
 function renderPitch(slots){
-  const container = document.getElementById('ts-slots');
-  container.innerHTML = slots.map((s,i) => {
-    const p = lineup[i] ? all.find(x=>x._id===lineup[i]) : null;
-    const ini = p ? p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase() : '+';
-    const photoHtml = p && p._headshotUrl
-      ? `<img src="${p._headshotUrl}" onerror="this.outerHTML='${ini}'">`
-      : (p ? ini : '+');
-    return `<div class="ts-slot" style="left:${s.x}%;top:${s.y}%;"
-        onclick="slotClick(${i})"
-        ondragover="event.preventDefault();this.querySelector('.ts-slot-photo').classList.add('drag-over')"
-        ondragleave="this.querySelector('.ts-slot-photo').classList.remove('drag-over')"
-        ondrop="dropOnSlot(event,${i})">
-      <div class="ts-slot-photo ${p?'filled':''}" id="slot-photo-${i}">${photoHtml}</div>
-      <div class="ts-slot-name">${p ? p.FullName.split(' ')[0] : '—'}</div>
-      <div class="ts-slot-pos">${s.pos}</div>
-    </div>`;
+  var container=document.getElementById('ts-slots');
+  var ln=tsCurrentLineup();
+  container.innerHTML=slots.map(function(s,i){
+    var p=ln[i]?all.find(function(x){return x._id===ln[i];}):null;
+    var ini=p?p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase():'+';
+    var photoHtml=p&&p._headshotUrl?'<img src="'+p._headshotUrl+'" onerror="this.outerHTML=\''+ini+'\'">':(p?ini:'+');
+    return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;" onclick="slotClick('+i+')" ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
+      +'<div class="ts-slot-photo '+(p?'filled':'')+'" id="slot-photo-'+i+'">'+photoHtml+'</div>'
+      +'<div class="ts-slot-name">'+(p?p.FullName.split(' ')[0]:'—')+'</div>'
+      +'<div class="ts-slot-pos">'+s.pos+'</div></div>';
   }).join('');
 }
 
 function renderBench(){
-  const q = (document.getElementById('ts-search')?.value||'').toLowerCase();
-  const bench = document.getElementById('ts-bench');
-  const inLineup = new Set(Object.values(lineup));
-  const players = all.filter(p => !inLineup.has(p._id) && (!q || p.FullName.toLowerCase().includes(q) || (p.PrimaryPosition||'').toLowerCase().includes(q)));
-  bench.innerHTML = players.map(p => {
-    const ini = p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    const photoHtml = p._headshotUrl ? `<img src="${p._headshotUrl}" onerror="this.outerHTML='${ini}'">` : ini;
-    return `<div class="ts-bench-player" draggable="true"
-        ondragstart="draggedPlayerId='${p._id}'"
-        ondragend="draggedPlayerId=null"
-        onclick="benchClick('${p._id}')">
-      <div class="ts-bench-photo">${photoHtml}</div>
-      <div style="min-width:0;">
-        <div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.FullName)}</div>
-        <div style="font-size:10px;color:var(--text-faint);">${esc(p.PrimaryPosition||'—')}</div>
-      </div>
-    </div>`;
+  var q=(document.getElementById('ts-search')?document.getElementById('ts-search').value:'').toLowerCase();
+  var bench=document.getElementById('ts-bench');
+  var ln=tsCurrentLineup();
+  var inLineup=new Set(Object.values(ln));
+  var players=all.filter(function(p){ return !inLineup.has(p._id)&&(!q||p.FullName.toLowerCase().includes(q)||(p.PrimaryPosition||'').toLowerCase().includes(q)); });
+  bench.innerHTML=players.map(function(p){
+    var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+    var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" onerror="this.outerHTML=\''+ini+'\'">' :ini;
+    return '<div class="ts-bench-player" draggable="true" ondragstart="draggedPlayerId=\''+p._id+'\'" ondragend="draggedPlayerId=null" onclick="benchClick(\''+p._id+'\')">'
+      +'<div class="ts-bench-photo">'+photoHtml+'</div>'
+      +'<div style="min-width:0;"><div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(p.FullName)+'</div>'
+      +'<div style="font-size:10px;color:var(--text-faint);">'+esc(p.PrimaryPosition||'—')+'</div></div></div>';
   }).join('');
 }
 
-let pendingSlot = null;
+function renderLineupCards(){
+  var container=document.getElementById('ts-lineup-cards');
+  var countEl=document.getElementById('ts-lineup-count');
+  var f=tsCurrentFormation();
+  var slots=FORMATIONS[f].slots;
+  var ln=tsCurrentLineup();
+  var assigned=Object.entries(ln).map(function(e){ return {slot:slots[parseInt(e[0])],player:all.find(function(x){return x._id===e[1];})}; }).filter(function(x){return x.player;});
+  if(countEl)countEl.textContent=assigned.length;
+  if(!assigned.length){ container.innerHTML='<div style="font-size:12px;color:var(--text-faint);font-style:italic;padding:10px;">Drag players onto the pitch to build your lineup.</div>'; return; }
+  container.innerHTML=assigned.map(function(obj){
+    var slot=obj.slot; var p=obj.player;
+    var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+    var age=calcAge(p.BirthDate);
+    var videos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
+    return '<div style="background:rgba(22,61,84,0.7);border:1px solid var(--gold-border);overflow:hidden;">'
+      +'<div style="width:100%;height:100px;background:'+(p._headshotUrl?'#000':'var(--gold)')+';display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid var(--gold-border);position:relative;">'
+      +(p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:top;">':'<span style="font-family:Cinzel,serif;font-size:22px;font-weight:700;color:var(--blue-dark);">'+ini+'</span>')
+      +'<div style="position:absolute;bottom:4px;right:6px;background:rgba(22,61,84,0.9);border:1px solid var(--gold-border);font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;color:var(--gold);padding:2px 6px;text-transform:uppercase;">'+esc(slot.pos)+'</div></div>'
+      +'<div style="padding:8px 10px;">'
+      +'<div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);">'+esc(p.FullName)+'</div>'
+      +'<div style="font-size:10px;color:var(--text-faint);margin-bottom:6px;">'+esc(p.PrimaryPosition||'—')+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:10px;margin-bottom:6px;">'
+      +'<div><span style="color:var(--text-faint);">Age</span><br><span style="color:var(--cream);">'+(age||'—')+'</span></div>'
+      +'<div><span style="color:var(--text-faint);">Country</span><br><span style="color:var(--cream);">'+esc(p.Country||'—')+'</span></div>'
+      +'<div><span style="color:var(--text-faint);">Team</span><br><span style="color:var(--cream);">'+esc(p.CurrentTeam||'—')+'</span></div>'
+      +'<div><span style="color:var(--text-faint);">Travel</span><br><span style="color:'+(p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373')+'">'+(p.CanTravel&&p.CanTravel.startsWith('Yes')?'✓ Yes':'✗ No')+'</span></div>'
+      +'</div>'
+      +(videos.length?'<div style="display:flex;flex-wrap:wrap;gap:3px;">'+videos.map(function(url,i){ return '<a href="'+esc(url)+'" target="_blank" style="font-size:7px;padding:2px 6px;border:1px solid rgba(218,183,81,0.3);color:var(--gold);text-decoration:none;font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;">▶ '+(i===3?'Full':'Clip '+(i+1))+'</a>'; }).join('')+'</div>':'')
+      +'</div></div>';
+  }).join('');
+}
+
 function slotClick(idx){
-  // If a player is selected from bench, assign them
-  if(pendingSlot !== null && pendingPlayerId){
-    assignPlayer(pendingSlot, pendingPlayerId);
-    pendingSlot = null; pendingPlayerId = null;
-    return;
-  }
-  // If slot is filled, remove player
-  if(lineup[idx]){
-    delete lineup[idx];
-    refreshPitch();
-    return;
-  }
-  // Highlight slot waiting for player
-  pendingSlot = idx;
+  var ln=tsCurrentLineup();
+  if(ln[idx]){delete ln[idx];refreshPitch();return;}
+  pendingSlot=idx;
   toast('Select a player from the list →','success');
 }
 
-let pendingPlayerId = null;
 function benchClick(id){
-  if(pendingSlot !== null){
-    assignPlayer(pendingSlot, id);
-    pendingSlot = null; pendingPlayerId = null;
+  if(pendingSlot!==null){
+    assignPlayer(pendingSlot,id);
+    pendingSlot=null;pendingPlayerId=null;
   } else {
-    pendingPlayerId = id;
-    // Find first empty slot
-    const f = document.getElementById('ts-formation').value;
-    const slots = FORMATIONS[f].slots;
-    const emptyIdx = slots.findIndex((_,i)=>!lineup[i]);
-    if(emptyIdx >= 0){
-      assignPlayer(emptyIdx, id);
-      pendingPlayerId = null;
-    } else {
-      toast('No empty slots — click a slot to replace','');
-    }
+    var f=tsCurrentFormation();
+    var slots=FORMATIONS[f].slots;
+    var ln=tsCurrentLineup();
+    var emptyIdx=slots.findIndex(function(_,i){return !ln[i];});
+    if(emptyIdx>=0){assignPlayer(emptyIdx,id);}
+    else{toast('No empty slots — click a slot to replace','');}
   }
 }
 
-function dropOnSlot(e, idx){
+function dropOnSlot(e,idx){
   e.preventDefault();
-  document.querySelectorAll('.ts-slot-photo').forEach(el=>el.classList.remove('drag-over'));
-  if(draggedPlayerId) assignPlayer(idx, draggedPlayerId);
+  document.querySelectorAll('.ts-slot-photo').forEach(function(el){el.classList.remove('drag-over');});
+  if(draggedPlayerId)assignPlayer(idx,draggedPlayerId);
 }
 
-function assignPlayer(slotIdx, playerId){
-  // Remove player from any other slot first
-  Object.keys(lineup).forEach(k=>{ if(lineup[k]===playerId) delete lineup[k]; });
-  lineup[slotIdx] = playerId;
+function assignPlayer(slotIdx,playerId){
+  var ln=tsCurrentLineup();
+  Object.keys(ln).forEach(function(k){if(ln[k]===playerId)delete ln[k];});
+  ln[slotIdx]=playerId;
   refreshPitch();
 }
 
 function refreshPitch(){
-  const f = document.getElementById('ts-formation').value;
+  var f=tsCurrentFormation();
   renderPitch(FORMATIONS[f].slots);
   renderBench();
   renderLineupCards();
 }
 
-function renderLineupCards(){
-  const container = document.getElementById('ts-lineup-cards');
-  const countEl = document.getElementById('ts-lineup-count');
-  const f = document.getElementById('ts-formation').value;
-  const slots = FORMATIONS[f].slots;
-  const assigned = Object.entries(lineup).map(([idx, pid]) => ({
-    slot: slots[parseInt(idx)], player: all.find(x=>x._id===pid)
-  })).filter(x=>x.player);
-
-  countEl.textContent = assigned.length;
-
-  if(!assigned.length){
-    container.innerHTML='<div style="font-size:12px;color:var(--text-faint);font-style:italic;padding:10px;">Drag players onto the pitch to build your lineup.</div>';
-    return;
-  }
-
-  container.innerHTML = assigned.map(({slot, player: p}) => {
-    const ini = p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    const photoHtml = p._headshotUrl
-      ? `<img src="${p._headshotUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.outerHTML='${ini}'">`
-      : ini;
-    const age = calcAge(p.BirthDate);
-    const videos = [p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
-    return `<div style="background:rgba(22,61,84,0.7);border:1px solid var(--gold-border);overflow:hidden;">
-      <!-- Photo -->
-      <div style="width:100%;height:100px;background:rgba(22,61,84,0.9);display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid var(--gold-border);position:relative;">
-        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:22px;font-weight:700;color:var(--blue-dark);background:var(--gold);">${photoHtml}</div>
-        <div style="position:absolute;bottom:4px;right:6px;background:rgba(22,61,84,0.9);border:1px solid var(--gold-border);font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;color:var(--gold);padding:2px 6px;text-transform:uppercase;">${esc(slot.pos)}</div>
-      </div>
-      <!-- Info -->
-      <div style="padding:8px 10px;">
-        <div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.FullName)}</div>
-        <div style="font-size:10px;color:var(--text-faint);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p.CurrentTeam||'—')}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:10px;margin-bottom:6px;">
-          <div><span style="color:var(--text-faint);">Age</span><br><span style="color:var(--cream);">${age||'—'}</span></div>
-          <div><span style="color:var(--text-faint);">Country</span><br><span style="color:var(--cream);">${esc(p.Country||'—')}</span></div>
-          <div><span style="color:var(--text-faint);">Position</span><br><span style="color:var(--cream);">${esc(p.PrimaryPosition||'—')}</span></div>
-          <div><span style="color:var(--text-faint);">Travel</span><br><span style="color:${p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373'};">${p.CanTravel&&p.CanTravel.startsWith('Yes')?'✓':'✗'}</span></div>
-        </div>
-        ${videos.length?`<div style="display:flex;flex-wrap:wrap;gap:3px;">${videos.map((url,i)=>`<a href="${esc(url)}" target="_blank" style="font-size:7px;padding:2px 6px;border:1px solid rgba(218,183,81,0.3);color:var(--gold);text-decoration:none;font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;">▶ ${i===3?'Full':'Clip '+(i+1)}</a>`).join('')}</div>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function filterBench(){ renderBench(); }
+function filterBench(){renderBench();}
 
 function clearLineup(){
-  lineup = {};
+  if(tsData[currentTournament]&&tsData[currentTournament][currentLine])tsData[currentTournament][currentLine].lineup={};
   refreshPitch();
 }
 
-function printLineup(){
-  window.print();
-}
+function printLineup(){window.print();}
+
 
 init();
 </script>
