@@ -1715,7 +1715,7 @@ function renderPitch(slots){
   var container=document.getElementById('ts-slots');
   var ln=tsCurrentLineup();
 
-  // Get height range across all assigned players for relative scaling
+  // Get height range across assigned players for relative scaling
   var assignedPlayers=Object.values(ln).map(function(id){return all.find(function(x){return x._id===id;});}).filter(Boolean);
   var heights=assignedPlayers.map(function(p){
     var m=p.Height&&p.Height.match(/\((\d+)cm\)/);return m?parseInt(m[1]):null;
@@ -1729,28 +1729,28 @@ function renderPitch(slots){
     var ini=p?p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase():'+';
     var photoHtml=p&&p._headshotUrl?'<img src="'+p._headshotUrl+'" onerror="this.outerHTML=\''+ini+'\'">':(p?ini:'+');
 
-    // Size based on player height — taller = bigger avatar
-    var size, fontSize, shadowW, shadowH, nameSize, posSize;
+    // Fixed avatar circle size
+    var size=44;var fontSize=13;
+
+    // Height column — vertical bar below avatar representing player height
+    var colHtml='';
     if(p){
       var m=p.Height&&p.Height.match(/\((\d+)cm\)/);
       var cm=m?parseInt(m[1]):null;
-      var ratio=cm&&hRange>0?(cm-minH)/hRange:0.5; // 0=shortest, 1=tallest
-      size=Math.round(38+ratio*22); // 38px–60px
-      fontSize=Math.round(11+ratio*6);
-      shadowW=Math.round(30+ratio*16);
-      shadowH=Math.round(5+ratio*5);
-      nameSize=Math.round(6+ratio*2);
-      posSize=Math.round(5+ratio*2);
-    } else {
-      size=44;fontSize=13;shadowW=36;shadowH=6;nameSize=7;posSize=6;
+      if(cm){
+        var ratio=(cm-minH)/hRange; // 0=shortest, 1=tallest
+        var colH=Math.round(8+ratio*28); // 8px–36px column
+        var colColor=ratio>0.66?'#4caf50':ratio>0.33?'#dab751':'#64b5f6'; // green=tall, gold=mid, blue=short
+        colHtml='<div style="width:3px;height:'+colH+'px;background:'+colColor+';border-radius:2px;margin-top:2px;margin-bottom:1px;opacity:0.85;" title="'+p.Height+'"></div>';
+      }
     }
-    var slotW=size+20;
 
-    return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:'+slotW+'px;" onclick="slotClick('+i+')" ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
+    return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:64px;" onclick="slotClick('+i+')" ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
       +'<div class="ts-slot-photo '+(p?'filled':'')+'" id="slot-photo-'+i+'" style="width:'+size+'px;height:'+size+'px;font-size:'+fontSize+'px;">'+photoHtml+'</div>'
-      +'<div class="ts-slot-shadow" style="width:'+shadowW+'px;height:'+shadowH+'px;"></div>'
-      +'<div class="ts-slot-name" style="font-size:'+nameSize+'px;max-width:'+slotW+'px;">'+(p?p.FullName.split(' ')[0]:'—')+'</div>'
-      +'<div class="ts-slot-pos" style="font-size:'+posSize+'px;">'+s.pos+'</div></div>';
+      +'<div class="ts-slot-shadow" style="width:36px;height:6px;"></div>'
+      +colHtml
+      +'<div class="ts-slot-name" style="font-size:7px;max-width:64px;">'+(p?p.FullName.split(' ')[0]:'—')+'</div>'
+      +'<div class="ts-slot-pos" style="font-size:6px;">'+s.pos+'</div></div>';
   }).join('');
 }
 
