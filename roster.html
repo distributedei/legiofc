@@ -1665,13 +1665,29 @@ function addTournament(){
   toast(name+' added','success');
 }
 
-function deleteTournament(){
+async function deleteTournament(){
   if(Object.keys(tsData).length<=1){toast('Cannot delete the last tournament','error');return;}
-  delete tsData[currentTournament];
+  const toDelete=currentTournament;
+  delete tsData[toDelete];
   currentTournament=Object.keys(tsData)[0]; currentLine='A';
   renderTournamentSelect();
   buildFormation();
-  toast('Tournament deleted','');
+  toast('Deleting from SharePoint…','');
+  // Delete all SharePoint rows for this tournament
+  try{
+    await getTeamSheetList();
+    const t=await getToken();const h={Authorization:`Bearer ${t}`};
+    const lines=['A','B','C','D','E'];
+    for(const line of lines){
+      const key=`${toDelete}|${line}`;
+      if(tsItemIds[key]){
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items/${tsItemIds[key]}`,
+          {method:'DELETE',headers:h});
+        delete tsItemIds[key];
+      }
+    }
+    toast('Tournament deleted ✓','success');
+  }catch(e){toast('Deleted locally, SharePoint error: '+e.message,'error');}
 }
 
 function switchTournament(){
