@@ -308,6 +308,35 @@
               <option>Second Striker</option>
             </select>
           </div>
+          <div class="field">
+            <label>Height <span>*</span></label>
+            <select id="playerHeight" required>
+              <option value="">Select height…</option>
+              <option>5'4" (163cm)</option>
+              <option>5'5" (165cm)</option>
+              <option>5'6" (168cm)</option>
+              <option>5'7" (170cm)</option>
+              <option>5'8" (173cm)</option>
+              <option>5'9" (175cm)</option>
+              <option>5'10" (178cm)</option>
+              <option>5'11" (180cm)</option>
+              <option>6'0" (183cm)</option>
+              <option>6'1" (185cm)</option>
+              <option>6'2" (188cm)</option>
+              <option>6'3" (191cm)</option>
+              <option>6'4" (193cm)</option>
+              <option>6'5"+ (196cm+)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Dominant Foot <span>*</span></label>
+            <select id="dominantFoot" required>
+              <option value="">Select…</option>
+              <option>Right</option>
+              <option>Left</option>
+              <option>Both</option>
+            </select>
+          </div>
           <div class="field full">
             <label>Current Team & League <span>*</span></label>
             <input type="text" id="currentTeam" placeholder="e.g. FC Miami UPSL" required>
@@ -411,7 +440,7 @@ function fileToBase64(file) {
 
 function validate() {
   if (!selectedTournament) { showError('Please select a tournament.'); document.getElementById('tournamentSelect').focus(); return false; }
-  const required = ['firstName','lastName','birthDate','gender','currentLocation','country','idCampLocation','passportCountry','visaStatus','primaryPosition','currentTeam','email','phone'];
+  const required = ['firstName','lastName','birthDate','gender','currentLocation','country','idCampLocation','passportCountry','visaStatus','primaryPosition','playerHeight','dominantFoot','currentTeam','email','phone'];
   for (const id of required) {
     const el = document.getElementById(id);
     if (!el || !el.value.trim()) {
@@ -477,6 +506,8 @@ async function submitForm() {
     CurrentTeam:          document.getElementById('currentTeam').value.trim(),
     PrimaryPosition:      document.getElementById('primaryPosition').value,
     SecondaryPosition:    document.getElementById('secondaryPosition').value,
+    Height:               document.getElementById('playerHeight').value,
+    DominantFoot:         document.getElementById('dominantFoot').value,
     PastExperience:       document.getElementById('pastExperience').value.trim(),
     HighlightReel1:       document.getElementById('highlight1').value.trim(),
     HighlightReel2:       document.getElementById('highlight2').value.trim(),

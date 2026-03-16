@@ -692,7 +692,7 @@ async function loadRoster(){
   try{
     await getSiteAndLists();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry,PrimaryPosition,SecondaryPosition,HeadshotURL,PlayerPhotoURL';
+    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry,PrimaryPosition,SecondaryPosition,HeadshotURL,PlayerPhotoURL,Height,DominantFoot';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -712,6 +712,7 @@ async function loadRoster(){
         HighlightReel1:item.fields.HighlightReel1||'',HighlightReel2:item.fields.HighlightReel2||'',
         HighlightReel3:item.fields.HighlightReel3||'',FullGameLink:item.fields.FullGameLink||'',
         PrimaryPosition:item.fields.PrimaryPosition||'',SecondaryPosition:item.fields.SecondaryPosition||'',
+        Height:item.fields.Height||'',DominantFoot:item.fields.DominantFoot||'',
         HeadshotURL:item.fields.HeadshotURL||'',PlayerPhotoURL:item.fields.PlayerPhotoURL||'',
         _headshotUrl:(item.fields.HeadshotURL||'').startsWith('http')?item.fields.HeadshotURL:(item.fields.HeadshotURL?'https://legiofc.sharepoint.com'+item.fields.HeadshotURL:''), // populated separately if needed
       })));
@@ -928,6 +929,8 @@ async function renderPlayerCards(filterType, filterValue){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;margin-bottom:12px;">
           <div><span style="color:var(--text-faint);">Age</span><br><span style="color:var(--cream);font-weight:500;">${age||'—'}</span></div>
           <div><span style="color:var(--text-faint);">Position</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.PrimaryPosition||'—')}</span></div>
+          <div><span style="color:var(--text-faint);">Height</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.Height||'—')}</span></div>
+          <div><span style="color:var(--text-faint);">Foot</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.DominantFoot||'—')}</span></div>
           <div><span style="color:var(--text-faint);">Country</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.Country||'—')}</span></div>
           <div><span style="color:var(--text-faint);">Location</span><br><span style="color:var(--cream);font-weight:500;">${esc(p.CurrentLocation||'—')}</span></div>
           <div><span style="color:var(--text-faint);">Travel</span><br><span style="color:${p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373'};font-weight:500;">${p.CanTravel&&p.CanTravel.startsWith('Yes')?'✓ Yes':'✗ No'}</span></div>
@@ -1105,6 +1108,8 @@ function renderPlayerView(p){
     <div class="m-section"><div class="m-sec-title">Playing History</div><div class="m-grid">
       <div class="m-field"><label>Primary Position</label><div class="val">${esc(p.PrimaryPosition||'—')}</div></div>
       <div class="m-field"><label>Secondary Position</label><div class="val">${esc(p.SecondaryPosition||'—')}</div></div>
+      <div class="m-field"><label>Height</label><div class="val">${esc(p.Height||'—')}</div></div>
+      <div class="m-field"><label>Dominant Foot</label><div class="val">${esc(p.DominantFoot||'—')}</div></div>
       <div class="m-field full"><label>Current Team & League</label><div class="val">${esc(p.CurrentTeam||'—')}</div></div>
     </div>
     <div style="margin-top:12px"><label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
@@ -1148,6 +1153,20 @@ function editPlayer(id){
       <div class="mf-field"><label>Country</label><input type="text" id="pf-country" value="${esc(p.Country||'')}"></div>
       <div class="mf-field"><label>ID Camp Location</label><input type="text" id="pf-camp" value="${esc(p.IDCampLocation||'')}"></div>
       <div class="mf-field full"><label>Current Team & League</label><input type="text" id="pf-team" value="${esc(p.CurrentTeam||'')}"></div>
+      <div class="mf-field"><label>Height</label>
+        <select id="pf-height">
+          <option value="">—</option>
+          ${["5'4\" (163cm)","5'5\" (165cm)","5'6\" (168cm)","5'7\" (170cm)","5'8\" (173cm)","5'9\" (175cm)","5'10\" (178cm)","5'11\" (180cm)","6'0\" (183cm)","6'1\" (185cm)","6'2\" (188cm)","6'3\" (191cm)","6'4\" (193cm)","6'5\"+ (196cm+)"].map(h=>`<option ${p.Height===h?'selected':''}>${h}</option>`).join('')}
+        </select>
+      </div>
+      <div class="mf-field"><label>Dominant Foot</label>
+        <select id="pf-foot">
+          <option value="">—</option>
+          <option ${p.DominantFoot==='Right'?'selected':''}>Right</option>
+          <option ${p.DominantFoot==='Left'?'selected':''}>Left</option>
+          <option ${p.DominantFoot==='Both'?'selected':''}>Both</option>
+        </select>
+      </div>
       <div class="mf-field"><label>Primary Position</label>
         <select id="pf-primary">
           <option value="">—</option>
@@ -1208,6 +1227,8 @@ async function savePlayer(id){
       CurrentTeam:document.getElementById('pf-team').value,
       PrimaryPosition:document.getElementById('pf-primary').value,
       SecondaryPosition:document.getElementById('pf-secondary').value,
+      Height:document.getElementById('pf-height').value,
+      DominantFoot:document.getElementById('pf-foot').value,
       PastExperience:document.getElementById('pf-exp').value,
       Email:document.getElementById('pf-email').value,
       Phone:document.getElementById('pf-phone').value,
@@ -1217,7 +1238,7 @@ async function savePlayer(id){
     if(!r.ok)throw new Error(await r.text());
     // Update local cache
     const p=all.find(x=>x._id===id);
-    if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PrimaryPosition:fields.PrimaryPosition,SecondaryPosition:fields.SecondaryPosition,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
+    if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PrimaryPosition:fields.PrimaryPosition,SecondaryPosition:fields.SecondaryPosition,Height:fields.Height,DominantFoot:fields.DominantFoot,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
     toast('Player saved ✓','success');
     openModal(id);
   }catch(e){
