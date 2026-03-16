@@ -343,6 +343,8 @@
               <th onclick="sortBy('IDCampLocation')">Camp Site <span class="sa">↕</span></th>
               <th onclick="sortBy('CurrentTeam')">Current Team <span class="sa">↕</span></th>
               <th onclick="sortBy('PrimaryPosition')">Position <span class="sa">↕</span></th>
+              <th onclick="sortBy('Height')">Height <span class="sa">↕</span></th>
+              <th onclick="sortBy('DominantFoot')">Foot <span class="sa">↕</span></th>
               <th onclick="sortBy('CanTravel')">Travel <span class="sa">↕</span></th>
               <th>Phone</th>
               <th onclick="sortBy('SubmittedDate')">Submitted <span class="sa">↕</span></th>
@@ -351,7 +353,7 @@
             </tr>
           </thead>
           <tbody id="tbody">
-            <tr><td colspan="13"><div class="state-box">
+            <tr><td colspan="15"><div class="state-box">
               <div class="state-icon">⚔</div>
               <div class="state-title">Summoning The Legion</div>
               <div class="dots"><span></span><span></span><span></span></div>
@@ -723,7 +725,7 @@ async function loadRoster(){
     document.getElementById('foot-time').textContent=`Updated ${new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}`;
     toast(`${all.length} registrations loaded`,'success');
   }catch(e){
-    document.getElementById('tbody').innerHTML=`<tr><td colspan="13"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="15"><div class="state-box"><div class="state-icon">⚠</div><div class="state-title">Could Not Load Roster</div><div class="state-text">${esc(e.message)}</div></div></td></tr>`;
     toast(e.message,'error');
   }finally{spinning(false,'ref-btn','ref-icon');}
 }
@@ -983,7 +985,7 @@ function render(){
   document.getElementById('s-travel').textContent=all.filter(p=>p.CanTravel==='Yes').length;
   document.getElementById('s-camps').textContent=new Set(all.map(p=>p.IDCampLocation).filter(Boolean)).size;
   const tbody=document.getElementById('tbody');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="13"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;document.getElementById('foot-label').textContent='';return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="15"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;document.getElementById('foot-label').textContent='';return;}
   tbody.innerHTML=filtered.map((p,i)=>{
     const ini=p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const hasVideos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
@@ -1004,6 +1006,8 @@ function render(){
       <td>${esc(p.IDCampLocation||'—')}</td>
       <td>${esc(p.CurrentTeam||'—')}</td>
       <td>${esc(p.PrimaryPosition||'—')}</td>
+      <td>${esc(p.Height||'—')}</td>
+      <td>${p.DominantFoot?`<span style="font-size:10px;">${p.DominantFoot==='Right'?'R 🦶':p.DominantFoot==='Left'?'L 🦶':'Both 🦶'}</span>`:'—'}</td>
       <td><span class="tag ${p.CanTravel==='No'?'tag-no':''}">${esc(p.CanTravel||'—')}</span></td>
       <td>${p.Phone?`<a class="email-link" href="https://wa.me/${p.Phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()">📱 ${esc(p.Phone)}</a>`:'—'}</td>
       <td>${p.SubmittedDate?new Date(p.SubmittedDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
