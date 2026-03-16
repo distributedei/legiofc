@@ -1563,12 +1563,13 @@ async function saveTeamSheet(){
         Tournament: currentTournament,
         Line: line,
         Formation: lineData.formation || '2-3-1',
-        Players: JSON.stringify(lineup)
+        Players: Object.keys(lineup).length > 0 ? JSON.stringify(lineup) : ''
       };
       const key = `${currentTournament}|${line}`;
       if(tsItemIds[key]){
-        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items/${tsItemIds[key]}/fields`,
+        const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items/${tsItemIds[key]}/fields`,
           {method:'PATCH',headers:h,body:JSON.stringify(fields)});
+        if(!r.ok) console.warn('PATCH failed:',r.status, await r.text());
       } else {
         const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items`,
           {method:'POST',headers:h,body:JSON.stringify({fields})})).json();
