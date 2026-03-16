@@ -851,8 +851,10 @@ function renderDashboardMetrics(){
 }
 
 async function fetchHeadshotUrl(playerName, storedUrl){
-  // Use stored full URL directly — Power Automate writes https://legiofc.sharepoint.com/...
-  if(storedUrl && storedUrl.startsWith('https://')) return storedUrl;
+  // Use stored full URL — encode spaces for browser compatibility
+  if(storedUrl && storedUrl.startsWith('https://')){
+    return storedUrl.replace(/ /g, '%20');
+  }
 
   // Fallback: search folder via Graph API
   try{
@@ -1082,8 +1084,8 @@ function renderPlayerView(p){
     ? videoLinks.map(v=>`<a href="${esc(v.url)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(218,183,81,0.08);border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;margin-right:6px;margin-bottom:6px;" onmouseover="this.style.background='rgba(218,183,81,0.2)'" onmouseout="this.style.background='rgba(218,183,81,0.08)'"><svg width="8" height="8" viewBox="0 0 10 10" fill="var(--gold)"><polygon points="0,0 10,5 0,10"/></svg>${v.label}</a>`).join('')
     : '<span style="font-size:12px;color:var(--text-faint);font-style:italic;">No video links on file</span>';
 
-  const headshotUrl = p._headshotUrl || p.HeadshotURL || '';
-  const playerPhotoUrl = p._playerPhotoUrl || p.PlayerPhotoURL || '';
+  const headshotUrl = (p._headshotUrl || p.HeadshotURL || '').replace(/ /g,'%20');
+  const playerPhotoUrl = (p._playerPhotoUrl || p.PlayerPhotoURL || '').replace(/ /g,'%20');
 
   document.getElementById('m-body').innerHTML=`
     <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
