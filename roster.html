@@ -1811,7 +1811,7 @@ function renderLineupCards(){
 
 function slotClick(idx){
   var ln=tsCurrentLineup();
-  if(ln[idx]){delete ln[idx];refreshPitch();return;}
+  if(ln[idx]){delete ln[idx];refreshPitch();saveTeamSheet();return;}
   pendingSlot=idx;
   toast('Select a player from the list →','success');
 }
@@ -1880,6 +1880,7 @@ function filterBench(){ renderBench(); }
 function clearLineup(){
   if(tsData[currentTournament]&&tsData[currentTournament][currentLine])tsData[currentTournament][currentLine].lineup={};
   refreshPitch();
+  saveTeamSheet();
 }
 
 function printLineup(){window.print();}
