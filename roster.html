@@ -1564,7 +1564,7 @@ async function saveTeamSheet(){
         Tournament: currentTournament,
         Line: line,
         Formation: lineData.formation || '2-3-1',
-        Players: Object.keys(lineup).length > 0 ? JSON.stringify(lineup) : ''
+        Players: Object.keys(lineup).length > 0 ? JSON.stringify(lineup) : null
       };
       const key = `${currentTournament}|${line}`;
       if(tsItemIds[key]){
