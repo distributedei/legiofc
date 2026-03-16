@@ -1515,7 +1515,8 @@ async function getTeamSheetList(){
     teamSheetListId=found.id;
     // Log columns to debug internal names
     const cols=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/columns`,{headers:h})).json();
-    console.log('TeamSheets columns:',cols.value.map(c=>({name:c.name,displayName:c.displayName})));
+    const customCols = cols.value.filter(c=>!c.readOnly).map(c=>({name:c.name,displayName:c.displayName}));
+    console.log('TeamSheets columns:',customCols);
     return;
   }
   // Create list
