@@ -1666,14 +1666,16 @@ function addTournament(){
 }
 
 async function deleteTournament(){
-  if(Object.keys(tsData).length<=1){toast('Cannot delete the last tournament','error');return;}
   const toDelete=currentTournament;
   delete tsData[toDelete];
+  // If no tournaments left, create a fresh blank one
+  if(Object.keys(tsData).length===0){
+    tsData['TST 2026']=makeBlankTournament();
+  }
   currentTournament=Object.keys(tsData)[0]; currentLine='A';
   renderTournamentSelect();
   buildFormation();
   toast('Deleting from SharePoint…','');
-  // Delete all SharePoint rows for this tournament
   try{
     await getTeamSheetList();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
