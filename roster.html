@@ -851,29 +851,16 @@ function renderDashboardMetrics(){
 }
 
 async function fetchHeadshotUrl(playerName, storedUrl){
-  const t=await getToken();
-  const h={Authorization:`Bearer ${t}`};
+  // Use stored full URL directly — Power Automate writes https://legiofc.sharepoint.com/...
+  if(storedUrl && storedUrl.startsWith('https://')) return storedUrl;
 
-  // Try stored path first
-  if(storedUrl){
-    try{
-      const path = storedUrl.startsWith('/') ? storedUrl : storedUrl.replace('https://legiofc.sharepoint.com','');
-      // Encode each path segment separately
-      const encoded = path.split('/').map(s=>encodeURIComponent(s)).join('/');
-      const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:${encoded}`,{headers:h});
-      if(res.ok){
-        const data=await res.json();
-        if(data['@microsoft.graph.downloadUrl']) return data['@microsoft.graph.downloadUrl'];
-      }
-    }catch(e){}
-  }
-
-  // Fallback: list folder contents by player name
+  // Fallback: search folder via Graph API
   try{
-    const folderPath = '/Shared Documents/PlayerPhotos/'+playerName;
-    const encoded = folderPath.split('/').map(s=>encodeURIComponent(s)).join('/');
+    const t=await getToken();const h={Authorization:`Bearer ${t}`};
+    const folderPath='/Shared Documents/PlayerPhotos/'+playerName;
+    const encoded=folderPath.split('/').map(s=>encodeURIComponent(s)).join('/');
     const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:${encoded}:/children`,{headers:h});
-    if(!res.ok) return null;
+    if(!res.ok)return null;
     const data=await res.json();
     const files=data.value||[];
     const headshot=files.find(f=>f.name.toLowerCase().includes('headshot'));
@@ -1095,9 +1082,8 @@ function renderPlayerView(p){
     ? videoLinks.map(v=>`<a href="${esc(v.url)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(218,183,81,0.08);border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;margin-right:6px;margin-bottom:6px;" onmouseover="this.style.background='rgba(218,183,81,0.2)'" onmouseout="this.style.background='rgba(218,183,81,0.08)'"><svg width="8" height="8" viewBox="0 0 10 10" fill="var(--gold)"><polygon points="0,0 10,5 0,10"/></svg>${v.label}</a>`).join('')
     : '<span style="font-size:12px;color:var(--text-faint);font-style:italic;">No video links on file</span>';
 
-  const fixUrl = u => !u ? '' : u.startsWith('http') ? u : 'https://legiofc.sharepoint.com'+u;
-  const headshotUrl = p._headshotUrl || fixUrl(p.HeadshotURL);
-  const playerPhotoUrl = p._playerPhotoUrl || fixUrl(p.PlayerPhotoURL);
+  const headshotUrl = p._headshotUrl || p.HeadshotURL || '';
+  const playerPhotoUrl = p._playerPhotoUrl || p.PlayerPhotoURL || '';
 
   document.getElementById('m-body').innerHTML=`
     <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
