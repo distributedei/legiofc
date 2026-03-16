@@ -1714,19 +1714,38 @@ function buildFormation(){
 function renderPitch(slots){
   var container=document.getElementById('ts-slots');
   var ln=tsCurrentLineup();
+
+  // Get height range across all assigned players for relative scaling
+  var assignedPlayers=Object.values(ln).map(function(id){return all.find(function(x){return x._id===id;});}).filter(Boolean);
+  var heights=assignedPlayers.map(function(p){
+    var m=p.Height&&p.Height.match(/\((\d+)cm\)/);return m?parseInt(m[1]):null;
+  }).filter(Boolean);
+  var minH=heights.length?Math.min.apply(null,heights):163;
+  var maxH=heights.length?Math.max.apply(null,heights):196;
+  var hRange=Math.max(maxH-minH,1);
+
   container.innerHTML=slots.map(function(s,i){
     var p=ln[i]?all.find(function(x){return x._id===ln[i];}):null;
     var ini=p?p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase():'+';
     var photoHtml=p&&p._headshotUrl?'<img src="'+p._headshotUrl+'" onerror="this.outerHTML=\''+ini+'\'">':(p?ini:'+');
-    // Depth scaling — players near bottom (y~90) are larger, near top (y~20) smaller
-    var depth = s.y / 100; // 0=top, 1=bottom
-    var size = Math.round(36 + depth * 24); // 36px at top, 60px at bottom
-    var fontSize = Math.round(10 + depth * 7);
-    var shadowW = Math.round(28 + depth * 18);
-    var shadowH = Math.round(5 + depth * 5);
-    var nameSize = Math.round(6 + depth * 2);
-    var posSize = Math.round(5 + depth * 2);
-    var slotW = size + 20;
+
+    // Size based on player height — taller = bigger avatar
+    var size, fontSize, shadowW, shadowH, nameSize, posSize;
+    if(p){
+      var m=p.Height&&p.Height.match(/\((\d+)cm\)/);
+      var cm=m?parseInt(m[1]):null;
+      var ratio=cm&&hRange>0?(cm-minH)/hRange:0.5; // 0=shortest, 1=tallest
+      size=Math.round(38+ratio*22); // 38px–60px
+      fontSize=Math.round(11+ratio*6);
+      shadowW=Math.round(30+ratio*16);
+      shadowH=Math.round(5+ratio*5);
+      nameSize=Math.round(6+ratio*2);
+      posSize=Math.round(5+ratio*2);
+    } else {
+      size=44;fontSize=13;shadowW=36;shadowH=6;nameSize=7;posSize=6;
+    }
+    var slotW=size+20;
+
     return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:'+slotW+'px;" onclick="slotClick('+i+')" ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
       +'<div class="ts-slot-photo '+(p?'filled':'')+'" id="slot-photo-'+i+'" style="width:'+size+'px;height:'+size+'px;font-size:'+fontSize+'px;">'+photoHtml+'</div>'
       +'<div class="ts-slot-shadow" style="width:'+shadowW+'px;height:'+shadowH+'px;"></div>'
