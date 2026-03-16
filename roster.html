@@ -306,12 +306,14 @@
 
     <!-- ══ ROSTER TAB ══ -->
     <div class="tab-panel" id="tab-roster">
-      <div class="stats-bar">
+      <div class="stats-bar" style="grid-template-columns:repeat(7,1fr);">
         <div class="stat"><div class="stat-label">Registered</div><div class="stat-val" id="s-total">—</div></div>
         <div class="stat"><div class="stat-label">Showing</div><div class="stat-val" id="s-show">—</div></div>
         <div class="stat"><div class="stat-label">Locations</div><div class="stat-val" id="s-loc">—</div></div>
         <div class="stat"><div class="stat-label">Can Travel</div><div class="stat-val" id="s-travel">—</div></div>
         <div class="stat"><div class="stat-label">Camp Sites</div><div class="stat-val" id="s-camps">—</div></div>
+        <div class="stat"><div class="stat-label">Avg Height</div><div class="stat-val" id="s-height" style="font-size:16px;">—</div></div>
+        <div class="stat"><div class="stat-label">Left Footed</div><div class="stat-val" id="s-left">—</div></div>
       </div>
       <div class="toolbar">
         <div class="search-wrap">
@@ -982,8 +984,12 @@ function render(){
   document.getElementById('s-total').textContent=all.length;
   document.getElementById('s-show').textContent=filtered.length;
   document.getElementById('s-loc').textContent=new Set(all.map(p=>p.CurrentLocation).filter(Boolean)).size;
-  document.getElementById('s-travel').textContent=all.filter(p=>p.CanTravel==='Yes').length;
+  document.getElementById('s-travel').textContent=all.filter(p=>p.CanTravel&&p.CanTravel.startsWith('Yes')).length;
   document.getElementById('s-camps').textContent=new Set(all.map(p=>p.IDCampLocation).filter(Boolean)).size;
+  document.getElementById('s-left').textContent=all.filter(p=>p.DominantFoot==='Left').length;
+  // Avg height — parse cm from strings like "5'10\" (178cm)"
+  const heights=all.map(p=>{const m=p.Height&&p.Height.match(/\((\d+)cm\)/);return m?parseInt(m[1]):null;}).filter(Boolean);
+  document.getElementById('s-height').textContent=heights.length?Math.round(heights.reduce((a,b)=>a+b,0)/heights.length)+'cm':'—';
   const tbody=document.getElementById('tbody');
   if(!filtered.length){tbody.innerHTML=`<tr><td colspan="15"><div class="state-box"><div class="state-icon">⚔</div><div class="state-title">No Players Found</div><div class="state-text">Adjust your search or filters.</div></div></td></tr>`;document.getElementById('foot-label').textContent='';return;}
   tbody.innerHTML=filtered.map((p,i)=>{
