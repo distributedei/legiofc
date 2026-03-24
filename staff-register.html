@@ -227,6 +227,7 @@
     </div>
 
     <button type="submit" class="submit-btn" id="submit-btn" onclick="submitForm()">Submit Registration</button>
+    <pre id="debug-out" style="display:none;margin-top:16px;padding:12px;background:rgba(156,24,41,0.1);border:1px solid rgba(156,24,41,0.3);color:#d07080;font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;"></pre>
   </form>
 
   <!-- Success -->
@@ -335,9 +336,16 @@ async function submitForm(){
         document.getElementById('success-screen').style.display='block';
         toast('Registration submitted!');
       } else {
+        var errText='';
+        try{errText=await res.text();}catch(x){}
+        var dbg=document.getElementById('debug-out');
+        dbg.style.display='block';
+        dbg.textContent='Status: '+res.status+'\n'+errText;
         throw new Error('Server error: '+res.status);
       }
     }catch(e){
+    var dbg=document.getElementById('debug-out');
+    if(dbg&&!dbg.textContent) {dbg.style.display='block';dbg.textContent=e.message+'\n'+(e.stack||'');}
     toast('Error: '+e.message,true);
     btn.textContent='SUBMIT REGISTRATION';
     btn.disabled=false;
