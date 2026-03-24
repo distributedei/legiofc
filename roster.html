@@ -2514,14 +2514,14 @@ function printLineup(){
       +'<span style="font-size:11px;color:#666;">Formation: '+formation+'</span>'
       +'<span style="font-size:11px;color:#666;">Players: '+playerCount+'/7</span>'
       +'</div></div>'
-      // Two-column: pitch left, coach+summary+schedule right
+      // Two-column: coach+summary+schedule left, pitch right
       +'<div style="display:flex;gap:14px;margin-top:6px;">'
-      +'<div class="pp-pitch" style="flex:1;">'+pitchSvg+'</div>'
       +'<div style="width:200px;flex-shrink:0;">'
       +coachHtml
       +summaryHtml
       +scheduleHtml
       +'</div>'
+      +'<div class="pp-pitch" style="flex:1;">'+pitchSvg+'</div>'
       +'</div>'
       // Roster table
       +'<div class="pp-table">'
