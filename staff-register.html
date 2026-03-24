@@ -321,13 +321,10 @@ async function submitForm(){
       SubmittedDate:      new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'})).toISOString(),
     };
 
-    const res=await fetch(FLOW_URL,{
-      method:'POST',
-      headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify(payload)
-    });
+    const sent=navigator.sendBeacon(FLOW_URL, new Blob([JSON.stringify(payload)],{type:'text/plain'}));
+    if(!sent) throw new Error('Submission failed — sendBeacon returned false');
 
-    if(!res.ok) throw new Error('Submission failed: '+res.status);
+    // Show success (sendBeacon is fire-and-forget, no response to check)
 
     // Show success
     document.getElementById('staff-form').style.display='none';
