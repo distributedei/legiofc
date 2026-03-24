@@ -195,6 +195,12 @@
     .ts-bench-photo{width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:10px;font-weight:700;color:var(--blue-dark);flex-shrink:0;overflow:hidden;}
     .ts-bench-photo img{width:100%;height:100%;object-fit:cover;object-position:top;}
     .ts-slot.drag-over .ts-slot-photo{border-color:#4caf50;box-shadow:0 0 24px rgba(76,175,80,0.8);}
+    .ts-hover-card{position:fixed;z-index:9999;background:var(--blue-dark);border:1px solid var(--gold);padding:12px 14px;min-width:200px;max-width:260px;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:none;}
+    .ts-hover-card .hc-name{font-family:Cinzel,serif;font-size:13px;font-weight:600;color:var(--cream);margin-bottom:2px;}
+    .ts-hover-card .hc-pos{font-size:10px;color:var(--gold);margin-bottom:8px;font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;}
+    .ts-hover-card .hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px;}
+    .ts-hover-card .hc-label{color:var(--text-faint);}
+    .ts-hover-card .hc-val{color:var(--cream);}
 
     @media(max-width:768px){nav{padding:0 14px}.nav-sub,.nav-div,.nav-label{display:none}.stats-bar{grid-template-columns:repeat(3,1fr)}.toolbar{padding:10px 12px;gap:8px}.sel{min-width:90px}body{overflow:auto}.layout{height:auto;overflow:visible}#app-screen{overflow:visible}.table-area{overflow:auto;max-height:60vh}}
   </style>
@@ -653,6 +659,8 @@
     <button onclick="clearSelection()" style="padding:8px 18px;background:transparent;color:var(--text-faint);border:1px solid var(--gold-border);font-family:Cinzel,serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Clear</button>
   </div>
 </div>
+
+<div class="ts-hover-card" id="ts-hover-card"></div>
 
 <script>
 const CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
@@ -1770,7 +1778,8 @@ function renderPitch(slots){
       }
     }
 
-    return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:64px;" onclick="slotClick('+i+')" ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
+    var hoverAttrs=p?' onmouseenter="showHoverCard(event,\''+p._id+'\')" onmousemove="moveHoverCard(event)" onmouseleave="hideHoverCard()"':'';
+    return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:64px;" onclick="slotClick('+i+')"'+hoverAttrs+' ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
       +'<div class="ts-slot-photo '+(p?'filled':'')+'" id="slot-photo-'+i+'" style="width:'+size+'px;height:'+size+'px;font-size:'+fontSize+'px;">'+photoHtml+'</div>'
       +(p?'<div onclick="event.stopPropagation();removeFromSlot('+i+')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:rgba(156,24,41,0.9);border:1px solid rgba(156,24,41,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;line-height:1;z-index:2;">✕</div>':'')
       +'<div class="ts-slot-shadow" style="width:36px;height:6px;"></div>'
@@ -1796,7 +1805,7 @@ function renderBench(){
   bench.innerHTML=players.map(function(p){
     var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
     var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+ini+'\'">' :ini;
-    return '<div class="ts-bench-player" draggable="true" ondragstart="draggedPlayerId=\''+p._id+'\'" ondragend="draggedPlayerId=null" onclick="benchClick(\''+p._id+'\')">'
+    return '<div class="ts-bench-player" draggable="true" ondragstart="draggedPlayerId=\''+p._id+'\'" ondragend="draggedPlayerId=null" onclick="benchClick(\''+p._id+'\')" onmouseenter="showHoverCard(event,\''+p._id+'\')" onmousemove="moveHoverCard(event)" onmouseleave="hideHoverCard()">'
       +'<div class="ts-bench-photo">'+photoHtml+'</div>'
       +'<div style="min-width:0;"><div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(p.FullName)+'</div>'
       +'<div style="font-size:10px;color:var(--text-faint);">'+esc(p.PrimaryPosition||'—')+'</div></div></div>';
@@ -1836,6 +1845,7 @@ function renderLineupCards(){
 }
 
 function slotClick(idx){
+  hideHoverCard();
   var ln=tsCurrentLineup();
   if(ln[idx]){openModal(ln[idx]);return;}
   pendingSlot=idx;
@@ -1845,8 +1855,38 @@ function removeFromSlot(idx){
   var ln=tsCurrentLineup();
   if(ln[idx]){delete ln[idx];refreshPitch();saveTeamSheet();}
 }
+function showHoverCard(e,playerId){
+  var p=all.find(function(x){return x._id===playerId;});
+  if(!p)return;
+  var hc=document.getElementById('ts-hover-card');
+  var age=calcAge(p.BirthDate);
+  var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:50px;height:50px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--gold);float:right;margin:0 0 6px 8px;">':'';
+  hc.innerHTML=photoHtml
+    +'<div class="hc-name">'+esc(p.FullName)+'</div>'
+    +'<div class="hc-pos">'+(p.PrimaryPosition||'—')+(p.SecondaryPosition?' / '+p.SecondaryPosition:'')+'</div>'
+    +'<div class="hc-grid">'
+    +'<div><span class="hc-label">Age</span><br><span class="hc-val">'+(age||'—')+'</span></div>'
+    +'<div><span class="hc-label">Height</span><br><span class="hc-val">'+esc(p.Height||'—')+'</span></div>'
+    +'<div><span class="hc-label">Foot</span><br><span class="hc-val">'+esc(p.DominantFoot||'—')+'</span></div>'
+    +'<div><span class="hc-label">Travel</span><br><span class="hc-val" style="color:'+(p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373')+'">'+(p.CanTravel&&p.CanTravel.startsWith('Yes')?'✓ Yes':'✗ No')+'</span></div>'
+    +'<div style="grid-column:span 2;"><span class="hc-label">Team</span><br><span class="hc-val">'+esc(p.CurrentTeam||'—')+'</span></div>'
+    +'</div>'
+    +'<div style="margin-top:8px;font-size:9px;color:var(--text-faint);font-style:italic;">Click to open full card</div>';
+  hc.style.display='block';
+  positionHoverCard(e);
+}
+function positionHoverCard(e){
+  var hc=document.getElementById('ts-hover-card');
+  var x=e.clientX+16,y=e.clientY+12;
+  if(x+270>window.innerWidth) x=e.clientX-270;
+  if(y+200>window.innerHeight) y=e.clientY-200;
+  hc.style.left=x+'px';hc.style.top=y+'px';
+}
+function moveHoverCard(e){positionHoverCard(e);}
+function hideHoverCard(){document.getElementById('ts-hover-card').style.display='none';}
 
 function benchClick(id){
+  hideHoverCard();
   if(pendingSlot!==null){
     assignPlayer(pendingSlot,id);
     pendingSlot=null;pendingPlayerId=null;
