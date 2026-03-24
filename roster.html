@@ -1484,7 +1484,7 @@ function emailSelected(){
   const emails=[...document.querySelectorAll('.player-cb:checked')]
     .map(cb=>cb.dataset.email).filter(Boolean);
   if(!emails.length){toast('No players with email addresses selected','error');return;}
-  window.location.href='mailto:?bcc='+encodeURIComponent(emails.join(','));
+  setTimeout(function(){window.open('mailto:?bcc='+encodeURIComponent(emails.join(',')),'_self');},50);
 }
 function clearSelection(){
   document.querySelectorAll('.player-cb').forEach(cb=>{cb.checked=false;});
