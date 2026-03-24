@@ -2119,9 +2119,11 @@ function printLineup(){
       var p=pid?all.find(function(x){return x._id===pid;}):null;
       var name=p?p.FullName.split(' ')[0]:'—';
       var ini=p?p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase():'+';
-      return '<circle cx="'+s.x+'" cy="'+s.y+'" r="5" fill="'+(p?'#dab751':'rgba(255,255,255,0.3)')+'" stroke="'+(p?'#fff':'rgba(255,255,255,0.3)')+'" stroke-width="0.5"/>'
-        +'<text x="'+s.x+'" y="'+(s.y-7)+'" text-anchor="middle" fill="#fff" font-size="3.5" font-family="sans-serif" font-weight="700">'+esc(name)+'</text>'
-        +'<text x="'+s.x+'" y="'+(s.y+9)+'" text-anchor="middle" fill="rgba(218,183,81,0.9)" font-size="2.8" font-family="sans-serif" font-weight="600">'+s.pos+'</text>';
+      // Scale y from CSS percentage (0-100) to SVG viewBox (0-154)
+      var sy=Math.round(s.y*1.54);
+      return '<circle cx="'+s.x+'" cy="'+sy+'" r="5" fill="'+(p?'#dab751':'rgba(255,255,255,0.3)')+'" stroke="'+(p?'#fff':'rgba(255,255,255,0.3)')+'" stroke-width="0.5"/>'
+        +'<text x="'+s.x+'" y="'+(sy-7)+'" text-anchor="middle" fill="#fff" font-size="3.5" font-family="sans-serif" font-weight="700">'+esc(name)+'</text>'
+        +'<text x="'+s.x+'" y="'+(sy+9)+'" text-anchor="middle" fill="rgba(218,183,81,0.9)" font-size="2.8" font-family="sans-serif" font-weight="600">'+s.pos+'</text>';
     }).join('');
 
     var pitchSvg='<svg viewBox="0 0 100 154" style="display:block;margin:0 auto;">'
