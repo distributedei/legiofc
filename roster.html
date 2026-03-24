@@ -333,7 +333,7 @@
         <table>
           <thead>
             <tr>
-              <th style="width:32px;cursor:default"></th>
+              <th style="width:32px;cursor:default"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)" style="cursor:pointer;accent-color:var(--gold);"></th>
               <th onclick="sortBy('FullName')">Name <span class="sa">↕</span></th>
               <th onclick="sortBy('BirthDate')">DOB <span class="sa">↕</span></th>
               <th onclick="sortBy('Gender')">Gender <span class="sa">↕</span></th>
@@ -644,6 +644,14 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div id="selection-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--blue-dark);border-top:2px solid var(--gold);padding:12px 24px;z-index:9999;align-items:center;justify-content:space-between;">
+  <span style="font-family:Cinzel,serif;font-size:13px;color:var(--cream);letter-spacing:1px;"><span id="sel-count">0</span> players selected</span>
+  <div style="display:flex;gap:10px;">
+    <button onclick="emailSelected()" style="padding:8px 18px;background:var(--gold);color:var(--blue-dark);border:none;font-family:Cinzel,serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✉ Email Selected (BCC)</button>
+    <button onclick="clearSelection()" style="padding:8px 18px;background:transparent;color:var(--text-faint);border:1px solid var(--gold-border);font-family:Cinzel,serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Clear</button>
+  </div>
+</div>
 
 <script>
 const CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
@@ -1001,6 +1009,9 @@ function sortBy(col){sortAsc=sortCol===col?!sortAsc:true;sortCol=col;doSort();}
 function doSort(){filtered.sort((a,b)=>{const va=String(a[sortCol]||'').toLowerCase();const vb=String(b[sortCol]||'').toLowerCase();return sortAsc?va.localeCompare(vb):vb.localeCompare(va);});render();}
 
 function render(){
+  // Reset selection state
+  const sa=document.getElementById('select-all');if(sa)sa.checked=false;
+  const sb=document.getElementById('selection-bar');if(sb)sb.style.display='none';
   document.getElementById('s-total').textContent=all.length;
   document.getElementById('s-show').textContent=filtered.length;
   document.getElementById('s-loc').textContent=new Set(all.map(p=>p.CurrentLocation).filter(Boolean)).size;
@@ -1020,7 +1031,7 @@ function render(){
       ? `<img src="${p._headshotUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:28px;height:28px;border-radius:50%;background:var(--gold);align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>`
       : `<div id="trow-av-${esc(p._id)}" style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>`;
     return `<tr>
-      <td class="td-num">${i+1}</td>
+      <td class="td-num"><input type="checkbox" class="player-cb" data-email="${esc(p.Email||'')}" data-name="${esc(p.FullName||'')}" onclick="event.stopPropagation();updateSelectionBar()" style="cursor:pointer;accent-color:var(--gold);"></td>
       <td class="td-name" onclick="openModal('${esc(p._id)}')" style="display:flex;align-items:center;gap:8px;">
         ${avatarHtml}
         ${esc(p.FullName||'—')}
@@ -1451,6 +1462,36 @@ function closeMatchModal(e){if(!e||e.target===document.getElementById('match-ov'
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function spinning(on,btnId,iconId){document.getElementById(btnId).disabled=on;document.getElementById(iconId).className=on?'spinning':'';}
 let _t;
+function toggleSelectAll(el){
+  document.querySelectorAll('.player-cb').forEach(cb=>{cb.checked=el.checked;});
+  updateSelectionBar();
+}
+function updateSelectionBar(){
+  const checked=document.querySelectorAll('.player-cb:checked');
+  const bar=document.getElementById('selection-bar');
+  const count=document.getElementById('sel-count');
+  const selectAll=document.getElementById('select-all');
+  if(checked.length){
+    bar.style.display='flex';
+    count.textContent=checked.length;
+  } else {
+    bar.style.display='none';
+  }
+  const total=document.querySelectorAll('.player-cb');
+  if(selectAll) selectAll.checked=total.length>0&&checked.length===total.length;
+}
+function emailSelected(){
+  const emails=[...document.querySelectorAll('.player-cb:checked')]
+    .map(cb=>cb.dataset.email).filter(Boolean);
+  if(!emails.length){toast('No players with email addresses selected','error');return;}
+  window.location.href='mailto:?bcc='+encodeURIComponent(emails.join(','));
+}
+function clearSelection(){
+  document.querySelectorAll('.player-cb').forEach(cb=>{cb.checked=false;});
+  const selectAll=document.getElementById('select-all');
+  if(selectAll) selectAll.checked=false;
+  updateSelectionBar();
+}
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(_t);_t=setTimeout(()=>el.classList.remove('show'),3800);}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();}});
 
