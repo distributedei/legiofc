@@ -1064,17 +1064,20 @@ function openModal(id){
     av.innerHTML=`<img src="${p._headshotUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentElement.textContent='${ini}'">`;
   } else {
     fetchHeadshotUrl(p.FullName, p.HeadshotURL).then(url=>{
-      if(!url) return;
-      p._headshotUrl=url;
-      if(document.getElementById('m-av')===av){
+      p._headshotUrl=url||'';
+      if(document.getElementById('m-av')===av && url){
         av.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentElement.textContent='${ini}'">`;
       }
+      const box=document.getElementById('m-headshot-box');
+      if(box) box.innerHTML=url?`<label>Headshot</label><a href="${url}" target="_blank"><img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Headshot</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>';
     });
   }
   // Also fetch player photo URL for modal body
   if(!p._playerPhotoUrl){
     fetchHeadshotUrl(p.FullName, p.PlayerPhotoURL, 'action').then(url=>{
-      if(url) p._playerPhotoUrl=url;
+      p._playerPhotoUrl=url||'';
+      const box=document.getElementById('m-photo-box');
+      if(box) box.innerHTML=url?`<label>Player Photo</label><a href="${url}" target="_blank"><img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Player Photo</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>';
     });
   }
   document.getElementById('m-name').textContent=p.FullName||'—';
@@ -1140,8 +1143,8 @@ function renderPlayerView(p){
     <div style="margin-top:12px"><label style="display:block;font-size:8px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px">Past Playing Experience</label>
     <div class="exp-box">${esc(p.PastExperience||'No experience provided')}</div></div></div>
     <div class="m-section"><div class="m-sec-title">Photos</div><div class="m-grid">
-      <div class="m-field">${headshotUrl?`<label>Headshot</label><a href="${esc(headshotUrl)}" target="_blank"><img src="${esc(headshotUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Headshot</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
-      <div class="m-field">${playerPhotoUrl?`<label>Player Photo</label><a href="${esc(playerPhotoUrl)}" target="_blank"><img src="${esc(playerPhotoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Player Photo</label><div class="val" style="color:var(--text-faint);">Not uploaded</div>'}</div>
+      <div class="m-field" id="m-headshot-box">${headshotUrl?`<label>Headshot</label><a href="${esc(headshotUrl)}" target="_blank"><img src="${esc(headshotUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Headshot</label><div class="val" style="color:var(--text-faint);">Loading...</div>'}</div>
+      <div class="m-field" id="m-photo-box">${playerPhotoUrl?`<label>Player Photo</label><a href="${esc(playerPhotoUrl)}" target="_blank"><img src="${esc(playerPhotoUrl)}" style="width:80px;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--gold-border);"></a>`:'<label>Player Photo</label><div class="val" style="color:var(--text-faint);">Loading...</div>'}</div>
     </div></div>
     <div class="m-section"><div class="m-sec-title">Video Links</div>
       <div style="display:flex;flex-wrap:wrap;margin-top:4px;">${videoHtml}</div>
