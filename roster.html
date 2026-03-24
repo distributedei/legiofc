@@ -865,12 +865,12 @@ function renderDashboardMetrics(){
 }
 
 async function fetchHeadshotUrl(playerName, storedUrl){
-  // Use stored full URL — encode spaces for browser compatibility
-  if(storedUrl && storedUrl.startsWith('https://')){
+  // Use stored URL only if it's NOT a SharePoint internal path (those require auth and break img tags)
+  if(storedUrl && storedUrl.startsWith('https://') && !storedUrl.includes('.sharepoint.com')){
     return storedUrl.replace(/ /g, '%20');
   }
 
-  // Fallback: search folder via Graph API
+  // Fetch from PlayerPhotos folder via Graph API (returns pre-authenticated CDN URL)
   try{
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
     const folderPath='/Shared Documents/PlayerPhotos/'+playerName;
