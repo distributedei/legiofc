@@ -343,8 +343,8 @@
           </div>
           <div class="field full">
             <label>Past Playing Experience <span>*</span></label>
-            <textarea id="pastExperience" placeholder="Describe your playing background — clubs, leagues, levels, achievements…" required oninput="document.getElementById('exp-count').textContent=this.value.length"></textarea>
-            <div style="text-align:right;font-size:11px;color:var(--text-faint);margin-top:4px;"><span id="exp-count">0</span> characters</div>
+            <textarea id="pastExperience" placeholder="Describe your playing background — clubs, leagues, levels, achievements…" required maxlength="2000" oninput="var c=this.value.length;var el=document.getElementById('exp-count');el.textContent=(2000-c);el.style.color=c>1800?'#e57373':c>1500?'var(--gold)':'var(--text-faint)'"></textarea>
+            <div style="text-align:right;font-size:11px;color:var(--text-faint);margin-top:4px;"><span id="exp-count">2000</span> remaining</div>
           </div>
           <div class="field full">
             <label>Highlight Reel — Link 1</label>
