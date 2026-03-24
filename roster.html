@@ -966,9 +966,16 @@ async function renderPlayerCards(filterType, filterValue){
     if(!p.FullName)continue;
     fetchHeadshotUrl(p.FullName, p.HeadshotURL).then(url=>{
       if(!url)return;
+      p._headshotUrl=url;
       const photoDiv=document.getElementById(`pcard-photo-${idx}`);
       if(photoDiv){
-        photoDiv.innerHTML=`<img src="${url}" alt="${esc(p.FullName)}" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.parentElement.innerHTML='<div style=\\'width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);\\'>'+${JSON.stringify(p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase())}+'</div>'">`;
+        const img=document.createElement('img');
+        img.src=url;
+        img.alt=p.FullName;
+        img.style.cssText='width:100%;height:100%;object-fit:cover;object-position:top;';
+        img.onerror=function(){photoDiv.innerHTML=`<div style="width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);">${p.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>`;};
+        photoDiv.innerHTML='';
+        photoDiv.appendChild(img);
       }
     });
   }
@@ -1013,7 +1020,7 @@ function render(){
     const hasVideos=[p.HighlightReel1,p.HighlightReel2,p.HighlightReel3,p.FullGameLink].filter(Boolean);
     const videoIcons=hasVideos.map((url,vi)=>`<a href="${esc(url)}" target="_blank" onclick="event.stopPropagation()" title="${vi===3?'Full Game':'Clip '+(vi+1)}" style="color:var(--gold);text-decoration:none;font-size:13px;margin-right:4px;">▶</a>`).join('');
     const avatarHtml = p._headshotUrl
-      ? `<img src="${p._headshotUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;flex-shrink:0;" onerror="this.outerHTML='<div style=\\'width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;\\'>${ini}</div>'">`
+      ? `<img src="${p._headshotUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;flex-shrink:0;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;width:28px;height:28px;border-radius:50%;background:var(--gold);align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>`
       : `<div id="trow-av-${esc(p._id)}" style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>`;
     return `<tr>
       <td class="td-num">${i+1}</td>
@@ -1760,7 +1767,7 @@ function renderPitch(slots){
   container.innerHTML=slots.map(function(s,i){
     var p=ln[i]?all.find(function(x){return x._id===ln[i];}):null;
     var ini=p?p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase():'+';
-    var photoHtml=p&&p._headshotUrl?'<img src="'+p._headshotUrl+'" onerror="this.outerHTML=\''+ini+'\'">':(p?ini:'+');
+    var photoHtml=p&&p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+ini+'\'">':(p?ini:'+');
 
     // Fixed avatar circle size
     var size=44;var fontSize=13;
@@ -1802,7 +1809,7 @@ function renderBench(){
   });
   bench.innerHTML=players.map(function(p){
     var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
-    var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" onerror="this.outerHTML=\''+ini+'\'">' :ini;
+    var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+ini+'\'">' :ini;
     return '<div class="ts-bench-player" draggable="true" ondragstart="draggedPlayerId=\''+p._id+'\'" ondragend="draggedPlayerId=null" onclick="benchClick(\''+p._id+'\')">'
       +'<div class="ts-bench-photo">'+photoHtml+'</div>'
       +'<div style="min-width:0;"><div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(p.FullName)+'</div>'
