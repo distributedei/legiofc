@@ -710,7 +710,7 @@ async function loadRoster(){
   try{
     await getSiteAndLists();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry,PrimaryPosition,SecondaryPosition,HeadshotURL,PlayerPhotoURL,Height,DominantFoot';
+    const fields='Title,LastName,BirthDate,Gender,Email,Phone,CurrentLocation,Country,IDCampLocation,CurrentTeam,PastExperience,CanTravel,SubmittedDate,PassportCountry,VisaStatus,HighlightReel1,HighlightReel2,HighlightReel3,FullGameLink,TravelRestrictions,PassportExpiry,Postion,SecondaryPosition,HeadshotURL,PlayerPhotoURL,Height,DominantFoot';
     let url=`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items?$expand=fields($select=${fields})&$top=999`;
     let rows=[];
     while(url){
@@ -729,7 +729,7 @@ async function loadRoster(){
         PassportExpiry:item.fields.PassportExpiry||'',TravelRestrictions:item.fields.TravelRestrictions||'',
         HighlightReel1:item.fields.HighlightReel1||'',HighlightReel2:item.fields.HighlightReel2||'',
         HighlightReel3:item.fields.HighlightReel3||'',FullGameLink:item.fields.FullGameLink||'',
-        PrimaryPosition:item.fields.PrimaryPosition||'',SecondaryPosition:item.fields.SecondaryPosition||'',
+        PrimaryPosition:item.fields.Postion||'',SecondaryPosition:item.fields.SecondaryPosition||'',
         Height:item.fields.Height||'',DominantFoot:item.fields.DominantFoot||'',
         HeadshotURL:item.fields.HeadshotURL||'',PlayerPhotoURL:item.fields.PlayerPhotoURL||'',
         _headshotUrl:'',_playerPhotoUrl:'',
@@ -1240,7 +1240,7 @@ async function savePlayer(id){
       Country:document.getElementById('pf-country').value,
       IDCampLocation:document.getElementById('pf-camp').value,
       CurrentTeam:document.getElementById('pf-team').value,
-      PrimaryPosition:document.getElementById('pf-primary').value,
+      Postion:document.getElementById('pf-primary').value,
       SecondaryPosition:document.getElementById('pf-secondary').value,
       Height:document.getElementById('pf-height').value,
       DominantFoot:document.getElementById('pf-foot').value,
@@ -1253,7 +1253,7 @@ async function savePlayer(id){
     if(!r.ok)throw new Error(await r.text());
     // Update local cache
     const p=all.find(x=>x._id===id);
-    if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PrimaryPosition:fields.PrimaryPosition,SecondaryPosition:fields.SecondaryPosition,Height:fields.Height,DominantFoot:fields.DominantFoot,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
+    if(p){Object.assign(p,{FullName:fields.Title,LastName:fields.LastName,BirthDate:fields.BirthDate,Gender:fields.Gender,CanTravel:fields.CanTravel,CurrentLocation:fields.CurrentLocation,Country:fields.Country,IDCampLocation:fields.IDCampLocation,CurrentTeam:fields.CurrentTeam,PrimaryPosition:fields.Postion,SecondaryPosition:fields.SecondaryPosition,Height:fields.Height,DominantFoot:fields.DominantFoot,PastExperience:fields.PastExperience,Email:fields.Email,Phone:fields.Phone});}
     toast('Player saved ✓','success');
     openModal(id);
   }catch(e){
@@ -1487,7 +1487,7 @@ async function autoAssignPositions(){
     let saved=0;
     for(const {p,pos} of assignments){
       const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${rosterListId}/items/${p._id}/fields`,
-        {method:'PATCH',headers:h,body:JSON.stringify({PrimaryPosition:pos})});
+        {method:'PATCH',headers:h,body:JSON.stringify({Postion:pos})});
       if(r.ok){p.PrimaryPosition=pos;saved++;}
     }
     render(); renderDashboard();
