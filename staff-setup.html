@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Legio FC — Staff Roster Setup</title>
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a1929;color:#f8f6f1;font-family:'Inter',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.card{background:rgba(22,61,84,0.6);border:1px solid rgba(218,183,81,0.3);padding:40px;max-width:600px;width:100%}
+h1{font-family:Georgia,serif;font-size:24px;color:#dab751;letter-spacing:3px;margin-bottom:8px}
+.sub{font-size:13px;color:rgba(248,246,241,0.5);margin-bottom:24px}
+.log{background:rgba(10,25,41,0.8);border:1px solid rgba(218,183,81,0.2);padding:16px;font-family:monospace;font-size:12px;line-height:1.8;max-height:400px;overflow-y:auto;margin-bottom:20px;color:rgba(248,246,241,0.7)}
+.log .ok{color:#4caf50}
+.log .err{color:#e57373}
+.log .info{color:#dab751}
+button{padding:12px 24px;background:#dab751;border:none;color:#0a1929;font-family:Georgia,serif;font-size:14px;letter-spacing:2px;cursor:pointer;font-weight:700;text-transform:uppercase}
+button:disabled{opacity:0.5;cursor:not-allowed}
+.done{text-align:center;margin-top:16px;font-size:13px;color:#4caf50}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>STAFF ROSTER SETUP</h1>
+  <div class="sub">Creates the StaffRoster SharePoint list with all required columns.</div>
+  <div class="log" id="log"><span class="info">Ready. Sign in and click Create to begin.</span></div>
+  <div style="display:flex;gap:12px">
+    <button id="signin-btn" onclick="signIn()">Sign In</button>
+    <button id="create-btn" onclick="createList()" disabled>Create List</button>
+  </div>
+  <div class="done" id="done" style="display:none">✓ StaffRoster list created. You can close this page.</div>
+</div>
+
+<script>
+const CLIENT_ID = 'b1c58e0f-4e20-40e8-be74-5c231a030a90';
+const TENANT_ID = '99b5fc0c-be85-4531-a7de-bc8da0002ec2';
+const SITE_HOST = 'legiofc.sharepoint.com';
+
+const msalConfig = {
+  auth:{clientId:CLIENT_ID,authority:`https://login.microsoftonline.com/${TENANT_ID}`,redirectUri:window.location.href.split('?')[0].split('#')[0]},
+  cache:{cacheLocation:'sessionStorage'}
+};
+const loginReq = {scopes:['Sites.ReadWrite.All','Files.ReadWrite.All','User.Read']};
+const msal_ = new msal.PublicClientApplication(msalConfig);
+
+let siteId=null;
+
+function log(msg,cls){
+  const el=document.getElementById('log');
+  el.innerHTML+=`\n<span class="${cls||''}">${msg}</span>`;
+  el.scrollTop=el.scrollHeight;
+}
+
+async function getToken(){
+  const a=msal_.getAllAccounts();
+  if(!a.length) throw new Error('Not authenticated');
+  const r=await msal_.acquireTokenSilent({...loginReq,account:a[0]});
+  return r.accessToken;
+}
+
+async function signIn(){
+  await msal_.initialize();
+  try{
+    const r=await msal_.loginPopup(loginReq);
+    log('Signed in as '+r.account.name,'ok');
+    document.getElementById('create-btn').disabled=false;
+  }catch(e){log('Sign-in failed: '+e.message,'err');}
+}
+
+async function createList(){
+  document.getElementById('create-btn').disabled=true;
+  try{
+    const t=await getToken();
+    const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
+    const hGet={Authorization:`Bearer ${t}`};
+
+    // Get site ID
+    log('Finding site...','info');
+    const site=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${SITE_HOST}`,{headers:hGet})).json();
+    siteId=site.id;
+    log('Site: '+siteId,'ok');
+
+    // Check if list exists
+    log('Checking for existing StaffRoster list...','info');
+    const lists=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists?$select=id,displayName`,{headers:hGet})).json();
+    const existing=lists.value.find(l=>l.displayName==='StaffRoster');
+
+    let listId;
+    if(existing){
+      listId=existing.id;
+      log('StaffRoster list already exists ('+listId+')','info');
+      log('Will add any missing columns...','info');
+    } else {
+      // Create list
+      log('Creating StaffRoster list...','info');
+      const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists`,{
+        method:'POST',headers:h,
+        body:JSON.stringify({
+          displayName:'StaffRoster',
+          list:{template:'genericList'},
+          columns:[]
+        })
+      });
+      if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Create failed');}
+      const newList=await res.json();
+      listId=newList.id;
+      log('List created: '+listId,'ok');
+    }
+
+    // Define columns
+    const columns=[
+      {name:'Email',text:{}},
+      {name:'Phone',text:{}},
+      {name:'Role',text:{}},
+      {name:'Location',text:{}},
+      {name:'Active',text:{}},
+      {name:'ProfilePhotoURL',text:{}},
+      {name:'PassportCountry',text:{}},
+      {name:'PassportExpiry',text:{}},
+      {name:'VisaStatus',text:{}},
+      {name:'TravelRestrictions',text:{allowMultipleValues:false,maxLength:0}},
+      {name:'CanTravel',text:{}},
+      {name:'LicenseLevel',text:{}}
+    ];
+
+    // Get existing columns
+    const cols=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/columns`,{headers:hGet})).json();
+    const existingCols=cols.value.map(c=>c.name);
+
+    // Add missing columns
+    for(const col of columns){
+      if(existingCols.includes(col.name)){
+        log('Column exists: '+col.name,'info');
+        continue;
+      }
+      log('Adding column: '+col.name+'...','info');
+      const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/columns`,{
+        method:'POST',headers:h,
+        body:JSON.stringify(col)
+      });
+      if(r.ok){
+        log('  ✓ '+col.name,'ok');
+      } else {
+        const e=await r.json();
+        log('  ✗ '+col.name+': '+(e.error?.message||r.status),'err');
+      }
+    }
+
+    // Create StaffPhotos folder in Shared Documents
+    log('Creating StaffPhotos folder...','info');
+    try{
+      await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root/children`,{
+        method:'POST',headers:h,
+        body:JSON.stringify({name:'StaffPhotos',folder:{},'@microsoft.graph.conflictBehavior':'fail'})
+      });
+      log('StaffPhotos folder created','ok');
+    }catch(e){
+      log('StaffPhotos folder may already exist','info');
+    }
+
+    log('','');
+    log('═══ SETUP COMPLETE ═══','ok');
+    log('List: StaffRoster','ok');
+    log('Columns: Title, Email, Phone, Role, Location, Active, ProfilePhotoURL, PassportCountry, PassportExpiry, VisaStatus, TravelRestrictions, CanTravel, LicenseLevel','ok');
+    log('Photos folder: /Shared Documents/StaffPhotos/','ok');
+    document.getElementById('done').style.display='block';
+
+  }catch(e){
+    log('ERROR: '+e.message,'err');
+    document.getElementById('create-btn').disabled=false;
+  }
+}
+</script>
+</body>
+</html>
