@@ -195,6 +195,20 @@
     .ts-bench-photo{width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:10px;font-weight:700;color:var(--blue-dark);flex-shrink:0;overflow:hidden;}
     .ts-bench-photo img{width:100%;height:100%;object-fit:cover;object-position:top;}
     .ts-slot.drag-over .ts-slot-photo{border-color:#4caf50;box-shadow:0 0 24px rgba(76,175,80,0.8);}
+    .ts-summary-line{margin-bottom:20px;}
+    .ts-summary-label{font-family:Cinzel,serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--gold-border);padding-bottom:6px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+    .ts-summary-label .sl-formation{font-size:9px;color:var(--text-faint);letter-spacing:1px;}
+    .ts-summary-players{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+    .ts-summary-card{background:rgba(22,61,84,0.7);border:1px solid var(--gold-border);overflow:hidden;cursor:pointer;transition:border-color .2s;}
+    .ts-summary-card:hover{border-color:var(--gold);}
+    .ts-summary-card .sc-photo{width:100%;aspect-ratio:1;background:var(--gold);display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid var(--gold-border);}
+    .ts-summary-card .sc-photo img{width:100%;height:100%;object-fit:cover;object-position:top;}
+    .ts-summary-card .sc-ini{font-family:Cinzel,serif;font-weight:700;color:var(--blue-dark);}
+    .ts-summary-card .sc-info{padding:6px 8px;}
+    .ts-summary-card .sc-name{font-family:Cinzel,serif;font-size:10px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ts-summary-card .sc-pos{font-size:9px;color:var(--text-faint);}
+    .ts-summary-card .sc-detail{font-size:9px;color:var(--text-faint);margin-top:3px;}
+    .ts-summary-empty{background:rgba(22,61,84,0.3);border:1px dashed var(--gold-border);aspect-ratio:auto;display:flex;align-items:center;justify-content:center;min-height:100px;font-family:Cinzel,serif;font-size:18px;color:var(--gold-border);}
     .ts-hover-card{position:fixed;z-index:9999;background:var(--blue-dark);border:1px solid var(--gold);min-width:340px;max-width:380px;max-height:70vh;overflow-y:auto;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,0.7);display:none;scrollbar-width:thin;scrollbar-color:var(--gold-border) transparent;}
     .ts-hover-card .hc-header{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--gold-border);}
     .ts-hover-card .hc-avatar{width:56px;height:56px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:20px;font-weight:700;color:var(--blue-dark);overflow:hidden;flex-shrink:0;border:2px solid var(--gold);}
@@ -413,6 +427,8 @@
               <button onclick="switchLine('C')" id="line-btn-C" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">Line C</button>
               <button onclick="switchLine('D')" id="line-btn-D" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">Line D</button>
               <button onclick="switchLine('E')" id="line-btn-E" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">Line E</button>
+              <div style="width:1px;height:28px;background:var(--gold-border);align-self:center;"></div>
+              <button onclick="showLineSummary()" id="line-btn-summary" class="line-btn" style="padding:7px 16px;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--gold-border);background:transparent;color:var(--text-dim);">☰ Summary</button>
             </div>
           </div>
 
@@ -439,7 +455,7 @@
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:auto 1fr 280px;gap:20px;align-items:start;">
+        <div id="ts-editor-view" style="display:grid;grid-template-columns:auto 1fr 280px;gap:20px;align-items:start;">
 
           <!-- Pitch -->
           <div class="ts-pitch-wrap">
@@ -522,6 +538,12 @@
           </div>
 
         </div>
+
+        <!-- Summary View (all lines) -->
+        <div id="ts-summary-view" style="display:none;padding:10px 0;">
+          <div id="ts-summary-content"></div>
+        </div>
+
       </div>
     </div>
 
@@ -1718,12 +1740,22 @@ async function deleteTournament(){
 function switchTournament(){
   currentTournament=document.getElementById('ts-tournament').value;
   currentLine='A';
+  // Exit summary view if active
+  document.getElementById('ts-editor-view').style.display='grid';
+  document.getElementById('ts-summary-view').style.display='none';
+  var sumBtn=document.getElementById('line-btn-summary');
+  if(sumBtn){sumBtn.style.background='transparent';sumBtn.style.color='var(--text-dim)';sumBtn.style.borderColor='var(--gold-border)';sumBtn.style.fontWeight='400';}
   updateLineButtons();
   document.getElementById('ts-formation').value=tsCurrentFormation();
   refreshPitch();
 }
 
 function switchLine(line){
+  // Exit summary view if active
+  document.getElementById('ts-editor-view').style.display='grid';
+  document.getElementById('ts-summary-view').style.display='none';
+  var sumBtn=document.getElementById('line-btn-summary');
+  if(sumBtn){sumBtn.style.background='transparent';sumBtn.style.color='var(--text-dim)';sumBtn.style.borderColor='var(--gold-border)';sumBtn.style.fontWeight='400';}
   if(tsData[currentTournament] && tsData[currentTournament][currentLine]){
     tsData[currentTournament][currentLine].formation=document.getElementById('ts-formation').value;
   }
@@ -1743,6 +1775,58 @@ function updateLineButtons(){
     btn.style.borderColor=active?'var(--gold)':'var(--gold-border)';
     btn.style.fontWeight=active?'700':'400';
   });
+}
+
+function showLineSummary(){
+  // Hide editor, show summary
+  document.getElementById('ts-editor-view').style.display='none';
+  document.getElementById('ts-summary-view').style.display='block';
+  // Deactivate all line buttons, activate summary
+  ['A','B','C','D','E'].forEach(function(l){
+    var btn=document.getElementById('line-btn-'+l);
+    if(btn){btn.style.background='transparent';btn.style.color='var(--text-dim)';btn.style.borderColor='var(--gold-border)';btn.style.fontWeight='400';}
+  });
+  var sumBtn=document.getElementById('line-btn-summary');
+  if(sumBtn){sumBtn.style.background='var(--gold)';sumBtn.style.color='var(--blue-dark)';sumBtn.style.borderColor='var(--gold)';sumBtn.style.fontWeight='700';}
+  renderLineSummary();
+}
+
+function renderLineSummary(){
+  var container=document.getElementById('ts-summary-content');
+  if(!tsData[currentTournament]){container.innerHTML='<div style="color:var(--text-faint);font-style:italic;padding:20px;">No tournament selected.</div>';return;}
+  var lines=['A','B','C','D','E'];
+  container.innerHTML=lines.map(function(line){
+    var ld=tsData[currentTournament][line];
+    if(!ld)return '';
+    var formation=ld.formation||'2-3-1';
+    var slots=FORMATIONS[formation]?FORMATIONS[formation].slots:FORMATIONS['2-3-1'].slots;
+    var lineup=ld.lineup||{};
+    // Build array of 7 slots
+    var cards=[];
+    for(var i=0;i<slots.length;i++){
+      var pid=lineup[i];
+      var p=pid?all.find(function(x){return x._id===pid;}):null;
+      if(p){
+        var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+        var age=calcAge(p.BirthDate);
+        var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'">':'<span class="sc-ini" style="font-size:clamp(14px,3vw,22px);">'+ini+'</span>';
+        cards.push('<div class="ts-summary-card" onclick="openModal(\''+p._id+'\')" onmouseenter="showHoverCard(event,\''+p._id+'\')" onmouseleave="hideHoverCard()">'
+          +'<div class="sc-photo">'+photoHtml+'</div>'
+          +'<div class="sc-info">'
+          +'<div class="sc-name">'+esc(p.FullName)+'</div>'
+          +'<div class="sc-pos">'+esc(slots[i].pos)+' — '+esc(p.PrimaryPosition||'—')+'</div>'
+          +'<div class="sc-detail">'+(age?age+'y':'')+(p.Height?' · '+esc(p.Height):'')+(p.DominantFoot?' · '+p.DominantFoot:'')+'</div>'
+          +'</div></div>');
+      } else {
+        cards.push('<div class="ts-summary-empty">'+slots[i].pos+'</div>');
+      }
+    }
+    var count=Object.keys(lineup).length;
+    return '<div class="ts-summary-line">'
+      +'<div class="ts-summary-label"><span>Line '+line+' — '+count+'/7</span><span class="sl-formation">'+formation+'</span></div>'
+      +'<div class="ts-summary-players">'+cards.join('')+'</div>'
+      +'</div>';
+  }).join('');
 }
 
 function buildFormation(){
