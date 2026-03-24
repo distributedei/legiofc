@@ -2468,10 +2468,15 @@ async function loadStaff(){
     buildStaffFilters();
     filterStaff();
     // Load photos
+    let staffPhotoTimer=null;
     allStaff.forEach(s=>{
       if(!s.FullName)return;
       fetchHeadshotUrl(s.FullName,s.ProfilePhotoURL,'headshot','StaffPhotos').then(url=>{
-        if(url){s._photoUrl=url;renderStaff();}
+        if(url){
+          s._photoUrl=url;
+          clearTimeout(staffPhotoTimer);
+          staffPhotoTimer=setTimeout(renderStaff,300);
+        }
       });
     });
     toast(allStaff.length+' staff loaded','success');
@@ -2515,7 +2520,7 @@ function renderStaff(){
       <td>${esc(s.Role||'—')}</td>
       <td>${esc(s.LicenseLevel||'—')}</td>
       <td>${esc(s.Location||'—')}</td>
-      <td><span class="tag ${s.CanTravel==='No'?'tag-no':''}">${esc(s.CanTravel||'—')}</span></td>
+      <td><span style="color:${s.CanTravel==='Yes'||s.CanTravel==='Yes — No Restrictions'?'#4caf50':'#e57373'}">${s.CanTravel&&s.CanTravel.startsWith('Yes')?'✓ Yes':'✗ No'}</span></td>
       <td>${s.Phone?`<a class="email-link" href="https://wa.me/${s.Phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()">📱 ${esc(s.Phone)}</a>`:'—'}</td>
       <td>${s.Email?`<a class="email-link" href="#" onclick="event.preventDefault();event.stopPropagation();window.open('mailto:${esc(s.Email)}','_self')">${esc(s.Email)}</a>`:'—'}</td>
       <td><span style="color:${s.Active==='Yes'?'#4caf50':'#e57373'}">${s.Active==='Yes'?'✓ Active':'✗ Inactive'}</span></td>
