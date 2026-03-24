@@ -468,11 +468,8 @@
 
         <div id="ts-editor-view" style="display:grid;grid-template-columns:auto 1fr 280px;gap:12px;align-items:start;margin-top:-6px;">
 
-          <!-- Pitch + Coach -->
+          <!-- Pitch -->
           <div>
-            <!-- Head Coach Card -->
-            <div id="ts-coach-card" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:8px 10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;min-height:54px;">
-            </div>
             <div class="ts-pitch-wrap">
           <div class="ts-pitch-inner">
           <div id="ts-pitch" style="position:relative;aspect-ratio:0.65;width:340px;flex-shrink:0;overflow:hidden;border-radius:6px;">
@@ -2093,22 +2090,8 @@ function getHeadCoach(){
 }
 
 function renderCoachCard(){
-  var card=document.getElementById('ts-coach-card');
-  if(!card)return;
-  var hc=getHeadCoach();
-  if(!hc){
-    card.innerHTML='<div style="width:40px;height:40px;border-radius:50%;background:rgba(218,183,81,0.2);border:2px dashed var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:var(--text-faint);">HC</div>'
-      +'<div><div style="font-family:Cinzel,serif;font-size:10px;color:var(--text-faint);letter-spacing:1px;">No Head Coach Assigned</div>'
-      +'<div style="font-size:9px;color:var(--text-faint);margin-top:2px;">Assign staff above</div></div>';
-    return;
-  }
-  var ini=hc.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
-  var photoHtml=hc._photoUrl?'<img src="'+hc._photoUrl+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:center 20%;border:2px solid var(--gold);flex-shrink:0;">':'<div style="width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:14px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">'+ini+'</div>';
-  card.innerHTML=photoHtml
-    +'<div><div style="font-family:Cinzel,serif;font-size:12px;font-weight:600;color:var(--cream);letter-spacing:1px;">'+esc(hc.FullName)+'</div>'
-    +'<div style="font-size:9px;color:var(--gold);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;">Head Coach</div>'
-    +(hc.LicenseLevel?'<div style="font-size:8px;color:var(--text-faint);margin-top:1px;">'+esc(hc.LicenseLevel)+'</div>':'')
-    +'</div>';
+  // Coach card is now in renderLineupCards — just re-render lineup
+  renderLineupCards();
 }
 
 function buildFormation(){
@@ -2175,7 +2158,34 @@ function renderLineupCards(){
   var assigned=Object.entries(ln).map(function(e){ return {slot:slots[parseInt(e[0])],player:all.find(function(x){return x._id===e[1];})}; }).filter(function(x){return x.player;});
   if(countEl)countEl.textContent=assigned.length;
   if(!assigned.length){ container.innerHTML='<div style="font-size:12px;color:var(--text-faint);font-style:italic;padding:10px;">Drag players onto the pitch to build your lineup.</div>'; return; }
-  container.innerHTML=assigned.map(function(obj){
+  
+  // Head Coach card (position 1)
+  var hc=getHeadCoach();
+  var coachCardHtml='';
+  if(hc){
+    var cIni=hc.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+    coachCardHtml='<div onclick="viewStaff(\''+hc._id+'\')" style="background:rgba(22,61,84,0.7);border:1px solid var(--gold);overflow:hidden;cursor:pointer;" onmouseover="this.style.borderColor=\'var(--gold)\'" onmouseout="this.style.borderColor=\'var(--gold)\'">'
+      +'<div style="width:100%;aspect-ratio:1;background:'+(hc._photoUrl?'#000':'var(--gold)')+';display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid var(--gold);position:relative;">'
+      +(hc._photoUrl?'<img src="'+hc._photoUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;">':'<span style="font-family:Cinzel,serif;font-size:22px;font-weight:700;color:var(--blue-dark);">'+cIni+'</span>')
+      +'<div style="position:absolute;bottom:4px;right:6px;background:rgba(22,61,84,0.9);border:1px solid var(--gold);font-family:Cinzel,serif;font-size:7px;letter-spacing:1px;color:var(--gold);padding:2px 6px;text-transform:uppercase;">HC</div></div>'
+      +'<div style="padding:8px 10px;">'
+      +'<div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--gold);">'+esc(hc.FullName)+'</div>'
+      +'<div style="font-size:10px;color:var(--gold);margin-bottom:6px;">Head Coach</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:10px;">'
+      +'<div><span style="color:var(--text-faint);">License</span><br><span style="color:var(--cream);">'+esc(hc.LicenseLevel||'—')+'</span></div>'
+      +'<div><span style="color:var(--text-faint);">Location</span><br><span style="color:var(--cream);">'+esc(hc.Location||'—')+'</span></div>'
+      +'</div></div></div>';
+  } else {
+    coachCardHtml='<div style="background:rgba(22,61,84,0.4);border:1px dashed var(--gold-border);overflow:hidden;">'
+      +'<div style="width:100%;aspect-ratio:1;background:rgba(218,183,81,0.1);display:flex;align-items:center;justify-content:center;border-bottom:1px dashed var(--gold-border);">'
+      +'<span style="font-family:Cinzel,serif;font-size:22px;color:var(--text-faint);">HC</span></div>'
+      +'<div style="padding:8px 10px;">'
+      +'<div style="font-family:Cinzel,serif;font-size:11px;color:var(--text-faint);">Head Coach</div>'
+      +'<div style="font-size:10px;color:var(--text-faint);font-style:italic;">Not assigned</div>'
+      +'</div></div>';
+  }
+
+  container.innerHTML=coachCardHtml+assigned.map(function(obj){
     var slot=obj.slot; var p=obj.player;
     var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
     var age=calcAge(p.BirthDate);
