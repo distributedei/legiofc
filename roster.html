@@ -274,6 +274,7 @@
       <button class="tab-btn" onclick="switchTab('roster')">⚔ Player Database</button>
       <button class="tab-btn" onclick="switchTab('teamsheet')">🟢 Team Sheet</button>
       <button class="tab-btn" onclick="switchTab('matches')">🏆 Matches</button>
+      <button class="tab-btn" onclick="switchTab('staff')">👥 Staff</button>
     </div>
 
     <!-- ══ DASHBOARD TAB ══ -->
@@ -595,10 +596,167 @@
       </div>
     </div>
 
+    <!-- ══ STAFF TAB ══ -->
+    <div class="tab-panel" id="tab-staff">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="s-ic">👥</span>
+          <input class="search-input" id="sq" placeholder="Search staff by name, role, location…" oninput="filterStaff()">
+        </div>
+        <select class="sel" id="sf-role" onchange="filterStaff()"><option value="">All Roles</option></select>
+        <select class="sel" id="sf-active" onchange="filterStaff()">
+          <option value="">All Status</option><option value="Yes">Active</option><option value="No">Inactive</option>
+        </select>
+        <button class="ref-btn" onclick="loadStaff()"><span style="font-size:13px">↻</span> Refresh</button>
+        <button class="add-btn" onclick="openStaffModal()">+ Add Staff</button>
+      </div>
+      <div class="table-area">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32px;cursor:default"></th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>License</th>
+              <th>Location</th>
+              <th>Travel</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stbody">
+            <tr><td colspan="10"><div class="state-box">
+              <div class="state-icon">👥</div>
+              <div class="state-title">Loading Staff</div>
+              <div class="dots"><span></span><span></span><span></span></div>
+            </div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-foot">
+        <span class="foot-txt" id="sfoot-label"></span>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- PLAYER MODAL -->
+<!-- STAFF MODAL -->
+<div class="m-overlay" id="staff-ov" onclick="closeStaffModal(event)">
+  <div class="modal" style="max-width:640px;">
+    <div class="m-head">
+      <div class="m-head-left">
+        <div class="m-avatar" style="background:var(--gold);" id="sm-av">👥</div>
+        <div><div class="m-title" id="sm-title">Add Staff</div></div>
+      </div>
+      <button class="m-close" onclick="closeStaffModal()">✕</button>
+    </div>
+    <div class="m-body" style="padding:0;overflow-y:auto;">
+      <div class="match-form" id="staff-form">
+        <div class="mf-field">
+          <label>First Name *</label>
+          <input type="text" id="sf-first" required>
+        </div>
+        <div class="mf-field">
+          <label>Last Name *</label>
+          <input type="text" id="sf-last" required>
+        </div>
+        <div class="mf-field">
+          <label>Role *</label>
+          <select id="sf-role-input">
+            <option value="">Select…</option>
+            <option>Head Coach</option>
+            <option>Assistant Coach</option>
+            <option>GK Coach</option>
+            <option>Analyst</option>
+            <option>Team Manager</option>
+            <option>Physio</option>
+            <option>Operations</option>
+          </select>
+        </div>
+        <div class="mf-field">
+          <label>License Level</label>
+          <select id="sf-license">
+            <option value="">Select…</option>
+            <option>USSF Grassroots</option>
+            <option>USSF D</option>
+            <option>USSF C</option>
+            <option>USSF B</option>
+            <option>USSF A</option>
+            <option>USSF Pro</option>
+            <option>UEFA C</option>
+            <option>UEFA B</option>
+            <option>UEFA A</option>
+            <option>UEFA Pro</option>
+            <option>Other</option>
+            <option>N/A</option>
+          </select>
+        </div>
+        <div class="mf-field">
+          <label>Email *</label>
+          <input type="email" id="sf-email" required>
+        </div>
+        <div class="mf-field">
+          <label>Phone</label>
+          <input type="tel" id="sf-phone">
+        </div>
+        <div class="mf-field">
+          <label>Location</label>
+          <input type="text" id="sf-location" placeholder="e.g. Stuart, Florida">
+        </div>
+        <div class="mf-field">
+          <label>Active</label>
+          <select id="sf-active-input">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div class="mf-field">
+          <label>Passport Country</label>
+          <input type="text" id="sf-passport">
+        </div>
+        <div class="mf-field">
+          <label>Passport Expiry</label>
+          <input type="text" id="sf-passexp" placeholder="MM/YYYY">
+        </div>
+        <div class="mf-field">
+          <label>Visa Status</label>
+          <select id="sf-visa">
+            <option value="">Select…</option>
+            <option>US Citizen</option>
+            <option>Permanent Resident</option>
+            <option>Work Visa (H-1B/O-1)</option>
+            <option>Student Visa (F-1)</option>
+            <option>Tourist / B-2 Visa</option>
+            <option>ESTA / Visa Waiver</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="mf-field">
+          <label>Can Travel</label>
+          <select id="sf-travel">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div class="mf-field full">
+          <label>Travel Restrictions</label>
+          <textarea id="sf-restrictions" placeholder="Any travel limitations…" style="resize:vertical;min-height:60px;"></textarea>
+        </div>
+        <div class="mf-field full">
+          <label>Brief Biography</label>
+          <textarea id="sf-bio" placeholder="Background, experience, coaching philosophy…" style="resize:vertical;min-height:80px;"></textarea>
+        </div>
+        <div class="mf-actions">
+          <button class="cancel-btn" onclick="closeStaffModal()">Cancel</button>
+          <button class="save-btn" id="sm-save-btn" onclick="saveStaff()">Save Staff</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="m-overlay" id="m-ov" onclick="closeModal(event)">
   <div class="modal">
     <div class="m-head">
@@ -742,7 +900,9 @@ const msal_ = new msal.PublicClientApplication(msalConfig);
 
 let all=[],filtered=[],sortCol='FullName',sortAsc=true;
 let allMatches=[],filteredMatches=[];
-let siteId=null,rosterListId=null,matchListId=null;
+let siteId=null,rosterListId=null,matchListId=null,staffListId=null;
+let allStaff=[],filteredStaff=[];
+let editingStaffId=null;
 let editingMatchId=null;
 
 // ── AUTH ──
@@ -769,6 +929,7 @@ function switchTab(tab){
     if(all.length){ if(!currentTournament){initTeamSheet();}else{buildFormation();} }
     else{document.getElementById('ts-bench').innerHTML='<div style="font-size:12px;color:var(--text-faint);padding:10px;">Load the roster first.</div>';}
   }
+  if(tab==='staff'&&!allStaff.length) loadStaff();
 }
 
 // ── GRAPH IDs ──
@@ -781,6 +942,7 @@ async function getSiteAndLists(){
   for(const l of ls.value){
     if(l.displayName==='IDCampRoster')rosterListId=l.id;
     if(l.displayName==='LegioMatches')matchListId=l.id;
+    if(l.displayName==='StaffRoster')staffListId=l.id;
   }
 }
 
@@ -1578,7 +1740,7 @@ function clearSelection(){
   updateSelectionBar();
 }
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast ${type} show`;clearTimeout(_t);_t=setTimeout(()=>el.classList.remove('show'),3800);}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMatchModal();closeStaffModal();}});
 
 let teamSheetListId = null;
 let tsItemIds = {}; // key: "Tournament|Line" → SharePoint item ID
@@ -2274,6 +2436,185 @@ function printLineup(){
   setTimeout(function(){w.print();},500);
 }
 
+
+// ── STAFF ──
+async function loadStaff(){
+  try{
+    await getSiteAndLists();
+    if(!staffListId){toast('StaffRoster list not found','error');return;}
+    const t=await getToken();const h={Authorization:`Bearer ${t}`};
+    const fields='Title,Email,Phone,Role,Location,Active,ProfilePhotoURL,PassportCountry,PassportExpiry,VisaStatus,TravelRestrictions,CanTravel,LicenseLevel,BriefBiography';
+    const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${staffListId}/items?$expand=fields($select=${fields})&$top=999`,{headers:h})).json();
+    allStaff=(res.value||[]).map(item=>({
+      _id:item.id,
+      FullName:item.fields.Title||'',
+      Email:item.fields.Email||'',
+      Phone:item.fields.Phone||'',
+      Role:item.fields.Role||'',
+      Location:item.fields.Location||'',
+      Active:item.fields.Active||'Yes',
+      ProfilePhotoURL:item.fields.ProfilePhotoURL||'',
+      PassportCountry:item.fields.PassportCountry||'',
+      PassportExpiry:item.fields.PassportExpiry||'',
+      VisaStatus:item.fields.VisaStatus||'',
+      TravelRestrictions:item.fields.TravelRestrictions||'',
+      CanTravel:item.fields.CanTravel||'',
+      LicenseLevel:item.fields.LicenseLevel||'',
+      BriefBiography:item.fields.BriefBiography||'',
+      _photoUrl:''
+    })).sort((a,b)=>a.FullName.localeCompare(b.FullName));
+    buildStaffFilters();
+    filterStaff();
+    // Load photos
+    allStaff.forEach(s=>{
+      if(!s.FullName)return;
+      fetchHeadshotUrl(s.FullName,s.ProfilePhotoURL).then(url=>{
+        if(url){s._photoUrl=url;renderStaff();}
+      });
+    });
+    toast(allStaff.length+' staff loaded','success');
+  }catch(e){toast('Failed to load staff: '+e.message,'error');}
+}
+
+function buildStaffFilters(){
+  const roles=[...new Set(allStaff.map(s=>s.Role).filter(Boolean))].sort();
+  const sel=document.getElementById('sf-role');
+  sel.innerHTML='<option value="">All Roles</option>'+roles.map(r=>'<option>'+esc(r)+'</option>').join('');
+}
+
+function filterStaff(){
+  const q=(document.getElementById('sq').value||'').toLowerCase();
+  const role=document.getElementById('sf-role').value;
+  const active=document.getElementById('sf-active').value;
+  filteredStaff=allStaff.filter(s=>{
+    if(q&&![s.FullName,s.Role,s.Location,s.Email,s.LicenseLevel].some(v=>v&&v.toLowerCase().includes(q)))return false;
+    if(role&&s.Role!==role)return false;
+    if(active&&s.Active!==active)return false;
+    return true;
+  });
+  renderStaff();
+}
+
+function renderStaff(){
+  const tbody=document.getElementById('stbody');
+  if(!filteredStaff.length){
+    tbody.innerHTML='<tr><td colspan="10"><div class="state-box"><div class="state-icon">👥</div><div class="state-title">No Staff Found</div></div></td></tr>';
+    document.getElementById('sfoot-label').textContent='';
+    return;
+  }
+  tbody.innerHTML=filteredStaff.map((s,i)=>{
+    const ini=s.FullName.split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const av=s._photoUrl
+      ?`<img src="${s._photoUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:center 20%;flex-shrink:0;">`
+      :`<div style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">${ini}</div>`;
+    return `<tr>
+      <td class="td-num">${i+1}</td>
+      <td class="td-name" onclick="viewStaff('${esc(s._id)}')" style="display:flex;align-items:center;gap:8px;">${av} ${esc(s.FullName)}</td>
+      <td>${esc(s.Role||'—')}</td>
+      <td>${esc(s.LicenseLevel||'—')}</td>
+      <td>${esc(s.Location||'—')}</td>
+      <td><span class="tag ${s.CanTravel==='No'?'tag-no':''}">${esc(s.CanTravel||'—')}</span></td>
+      <td>${s.Phone?`<a class="email-link" href="https://wa.me/${s.Phone.replace(/[^0-9]/g,'')}" target="_blank" onclick="event.stopPropagation()">📱 ${esc(s.Phone)}</a>`:'—'}</td>
+      <td>${s.Email?`<a class="email-link" href="#" onclick="event.preventDefault();event.stopPropagation();window.open('mailto:${esc(s.Email)}','_self')">${esc(s.Email)}</a>`:'—'}</td>
+      <td><span style="color:${s.Active==='Yes'?'#4caf50':'#e57373'}">${s.Active==='Yes'?'✓ Active':'✗ Inactive'}</span></td>
+      <td>
+        <button onclick="event.stopPropagation();editStaff('${esc(s._id)}')" style="background:transparent;border:1px solid var(--gold-border);color:var(--gold);padding:3px 8px;cursor:pointer;font-size:10px;font-family:Cinzel,serif;">Edit</button>
+        <button onclick="event.stopPropagation();deleteStaff('${esc(s._id)}')" style="background:transparent;border:1px solid rgba(156,24,41,0.4);color:#d07080;padding:3px 8px;cursor:pointer;font-size:10px;font-family:Cinzel,serif;margin-left:4px;">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('sfoot-label').textContent=filteredStaff.length+' of '+allStaff.length+' staff';
+}
+
+function openStaffModal(s){
+  editingStaffId=s?s._id:null;
+  document.getElementById('sm-title').textContent=s?'Edit Staff':'Add Staff';
+  document.getElementById('sf-first').value=s?(s.FullName.split(' ')[0]||''):'';
+  document.getElementById('sf-last').value=s?(s.FullName.split(' ').slice(1).join(' ')||''):'';
+  document.getElementById('sf-role-input').value=s?s.Role:'';
+  document.getElementById('sf-license').value=s?s.LicenseLevel:'';
+  document.getElementById('sf-email').value=s?s.Email:'';
+  document.getElementById('sf-phone').value=s?s.Phone:'';
+  document.getElementById('sf-location').value=s?s.Location:'';
+  document.getElementById('sf-active-input').value=s?s.Active:'Yes';
+  document.getElementById('sf-passport').value=s?s.PassportCountry:'';
+  document.getElementById('sf-passexp').value=s?s.PassportExpiry:'';
+  document.getElementById('sf-visa').value=s?s.VisaStatus:'';
+  document.getElementById('sf-travel').value=s?s.CanTravel:'Yes';
+  document.getElementById('sf-restrictions').value=s?s.TravelRestrictions:'';
+  document.getElementById('sf-bio').value=s?s.BriefBiography:'';
+  document.getElementById('staff-ov').classList.add('open');
+}
+function closeStaffModal(e){if(!e||e.target===e.currentTarget)document.getElementById('staff-ov').classList.remove('open');}
+
+function editStaff(id){
+  const s=allStaff.find(x=>x._id===id);
+  if(s)openStaffModal(s);
+}
+
+function viewStaff(id){
+  const s=allStaff.find(x=>x._id===id);
+  if(s)openStaffModal(s);
+}
+
+async function saveStaff(){
+  const btn=document.getElementById('sm-save-btn');
+  btn.textContent='Saving…';btn.disabled=true;
+  try{
+    await getSiteAndLists();
+    const t=await getToken();
+    const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
+    const first=document.getElementById('sf-first').value.trim();
+    const last=document.getElementById('sf-last').value.trim();
+    if(!first||!last){toast('First and last name required','error');return;}
+    const fields={
+      Title:(first+' '+last).trim(),
+      Email:document.getElementById('sf-email').value.trim(),
+      Phone:document.getElementById('sf-phone').value.trim(),
+      Role:document.getElementById('sf-role-input').value,
+      Location:document.getElementById('sf-location').value.trim(),
+      Active:document.getElementById('sf-active-input').value,
+      PassportCountry:document.getElementById('sf-passport').value.trim(),
+      PassportExpiry:document.getElementById('sf-passexp').value.trim(),
+      VisaStatus:document.getElementById('sf-visa').value,
+      CanTravel:document.getElementById('sf-travel').value,
+      TravelRestrictions:document.getElementById('sf-restrictions').value.trim(),
+      LicenseLevel:document.getElementById('sf-license').value,
+      BriefBiography:document.getElementById('sf-bio').value.trim()
+    };
+    if(editingStaffId){
+      const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${staffListId}/items/${editingStaffId}/fields`,
+        {method:'PATCH',headers:h,body:JSON.stringify(fields)});
+      if(!r.ok)throw new Error(await r.text());
+      toast('Staff updated ✓','success');
+    } else {
+      const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${staffListId}/items`,
+        {method:'POST',headers:h,body:JSON.stringify({fields})});
+      if(!r.ok)throw new Error(await r.text());
+      toast('Staff added ✓','success');
+    }
+    closeStaffModal();
+    loadStaff();
+  }catch(e){
+    toast('Error: '+e.message,'error');
+  }finally{
+    btn.textContent='Save Staff';btn.disabled=false;
+  }
+}
+
+async function deleteStaff(id){
+  const s=allStaff.find(x=>x._id===id);
+  if(!s||!confirm('Delete '+s.FullName+'?'))return;
+  try{
+    await getSiteAndLists();
+    const t=await getToken();
+    await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${staffListId}/items/${id}`,
+      {method:'DELETE',headers:{Authorization:`Bearer ${t}`}});
+    allStaff=allStaff.filter(x=>x._id!==id);
+    filterStaff();
+    toast(s.FullName+' deleted','success');
+  }catch(e){toast('Delete failed: '+e.message,'error');}
+}
 
 // ── AI LINEUP ANALYSIS ──
 let aiApiKey = sessionStorage.getItem('aiApiKey') || '';
