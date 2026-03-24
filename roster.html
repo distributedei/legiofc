@@ -457,6 +457,15 @@
           </div>
         </div>
 
+        <!-- Staff Assignment Bar -->
+        <div style="background:rgba(22,61,84,0.3);border:1px solid var(--gold-border);padding:8px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <label style="font-family:Cinzel,serif;font-size:7px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;flex-shrink:0;">👥 Coaching Staff</label>
+          <div id="ts-staff-chips" style="display:flex;gap:6px;flex-wrap:wrap;flex:1;"></div>
+          <select id="ts-staff-add" onchange="addStaffToTournament(this.value);this.value=''" style="background:rgba(22,61,84,0.9);border:1px solid var(--gold-border);color:var(--cream);font-family:Cinzel,serif;font-size:9px;letter-spacing:1px;padding:5px 10px;outline:none;cursor:pointer;min-width:160px;">
+            <option value="">+ Assign Staff…</option>
+          </select>
+        </div>
+
         <div id="ts-editor-view" style="display:grid;grid-template-columns:auto 1fr 280px;gap:12px;align-items:start;margin-top:-6px;">
 
           <!-- Pitch -->
@@ -1780,6 +1789,16 @@ async function getTeamSheetList(){
         console.log('Comments column added to TeamSheets');
       }catch(e){console.warn('Could not add Comments column:',e);}
     }
+    // Add TournamentStaff column if missing
+    if(!customCols.find(c=>c.name==='TournamentStaff')){
+      try{
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/columns`,{
+          method:'POST',headers:{...h,'Content-Type':'application/json'},
+          body:JSON.stringify({name:'TournamentStaff',text:{allowMultipleValues:false,maxLength:0}})
+        });
+        console.log('TournamentStaff column added to TeamSheets');
+      }catch(e){console.warn('Could not add TournamentStaff column:',e);}
+    }
     return;
   }
   // Create list
@@ -1794,7 +1813,8 @@ async function getTeamSheetList(){
         {name:'Formation',text:{}},
         {name:'Players',text:{allowMultipleValues:false,maxLength:0}},
         {name:'Analysis',text:{allowMultipleValues:false,maxLength:0}},
-        {name:'Comments',text:{allowMultipleValues:false,maxLength:0}}
+        {name:'Comments',text:{allowMultipleValues:false,maxLength:0}},
+        {name:'TournamentStaff',text:{allowMultipleValues:false,maxLength:0}}
       ]
     })
   });
@@ -1833,6 +1853,10 @@ async function saveTeamSheet(){
         Analysis: lineData.analysis || null,
         Comments: lineData.comments && lineData.comments.length ? JSON.stringify(lineData.comments) : null
       };
+      // Store staff assignments on Line A record
+      if(line==='A'){
+        fields.TournamentStaff = tsStaffMap[currentTournament] && tsStaffMap[currentTournament].length ? JSON.stringify(tsStaffMap[currentTournament]) : null;
+      }
       const key = `${currentTournament}|${line}`;
       if(tsItemIds[key]){
         const r=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items/${tsItemIds[key]}/fields`,
@@ -1856,10 +1880,10 @@ async function loadTeamSheet(){
   try{
     await getTeamSheetList();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,Tournament,Line,Formation,Players,Analysis,Comments';
+    const fields='Title,Tournament,Line,Formation,Players,Analysis,Comments,TournamentStaff';
     const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items?$expand=fields($select=${fields})&$top=999`,{headers:h})).json();
     if(!res.value||!res.value.length) return;
-    tsData={};
+    tsData={};tsStaffMap={};
     res.value.forEach(item=>{
       const f=item.fields;
       if(!f.Tournament||!f.Line) return;
@@ -1870,6 +1894,10 @@ async function loadTeamSheet(){
       try{ comments=JSON.parse(f.Comments||'[]'); }catch(e){}
       tsData[f.Tournament][f.Line]={lineup, formation: f.Formation||'2-3-1', analysis: f.Analysis||'', comments: comments};
       tsItemIds[`${f.Tournament}|${f.Line}`]=item.id;
+      // Load staff from Line A record
+      if(f.Line==='A'&&f.TournamentStaff){
+        try{tsStaffMap[f.Tournament]=JSON.parse(f.TournamentStaff);}catch(e){}
+      }
     });
     if(Object.keys(tsData).length){
       currentTournament=Object.keys(tsData)[0];
@@ -1878,6 +1906,8 @@ async function loadTeamSheet(){
       buildFormation();
       toast('Team sheets loaded ✓','success');
       updateAnalyzeBtn();
+      if(allStaff.length){populateStaffDropdown();renderStaffChips();}
+      else{loadStaff().then(function(){populateStaffDropdown();renderStaffChips();});}
     }
   }catch(e){console.warn('No saved team sheets:',e.message);}
 }
@@ -1892,6 +1922,7 @@ const FORMATIONS = {
 };
 
 let tsData = {};
+let tsStaffMap = {}; // tournament → [staffId, ...]
 let currentTournament = null;
 let currentLine = 'A';
 let draggedPlayerId = null;
@@ -1975,6 +2006,8 @@ function switchTournament(){
   document.getElementById('ts-formation').value=tsCurrentFormation();
   refreshPitch();
   updateAnalyzeBtn();
+  populateStaffDropdown();
+  renderStaffChips();
 }
 
 function switchLine(line){
@@ -2055,6 +2088,57 @@ function renderLineSummary(){
       +'<div class="ts-summary-players">'+cards.join('')+'</div>'
       +'</div>';
   }).join('');
+}
+
+function populateStaffDropdown(){
+  var sel=document.getElementById('ts-staff-add');
+  if(!sel)return;
+  var assigned=tsStaffMap[currentTournament]||[];
+  var available=allStaff.filter(function(s){return s.Active==='Yes'&&assigned.indexOf(s._id)===-1;});
+  sel.innerHTML='<option value="">+ Assign Staff…</option>'+available.map(function(s){
+    return '<option value="'+esc(s._id)+'">'+esc(s.FullName)+' — '+esc(s.Role||'Staff')+'</option>';
+  }).join('');
+}
+
+function renderStaffChips(){
+  var container=document.getElementById('ts-staff-chips');
+  if(!container)return;
+  var assigned=tsStaffMap[currentTournament]||[];
+  if(!assigned.length){
+    container.innerHTML='<span style="font-size:10px;color:var(--text-faint);font-style:italic;">No staff assigned</span>';
+    return;
+  }
+  container.innerHTML=assigned.map(function(id){
+    var s=allStaff.find(function(x){return x._id===id;});
+    if(!s)return '';
+    var ini=s.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+    var photoHtml=s._photoUrl?'<img src="'+s._photoUrl+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover;object-position:center 20%;">':'<div style="width:22px;height:22px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:7px;font-weight:700;color:var(--blue-dark);">'+ini+'</div>';
+    return '<div style="display:flex;align-items:center;gap:5px;background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:3px 8px 3px 4px;font-size:10px;color:var(--cream);">'
+      +photoHtml
+      +'<span style="font-family:Cinzel,serif;letter-spacing:1px;">'+esc(s.FullName)+'</span>'
+      +'<span style="font-size:8px;color:var(--text-faint);">'+esc(s.Role||'')+'</span>'
+      +'<span onclick="removeStaffFromTournament(\''+id+'\')" style="cursor:pointer;color:var(--text-faint);font-size:12px;margin-left:4px;">✕</span>'
+      +'</div>';
+  }).join('');
+}
+
+function addStaffToTournament(id){
+  if(!id||!currentTournament)return;
+  if(!tsStaffMap[currentTournament])tsStaffMap[currentTournament]=[];
+  if(tsStaffMap[currentTournament].indexOf(id)===-1){
+    tsStaffMap[currentTournament].push(id);
+    renderStaffChips();
+    populateStaffDropdown();
+    saveTeamSheet();
+  }
+}
+
+function removeStaffFromTournament(id){
+  if(!currentTournament||!tsStaffMap[currentTournament])return;
+  tsStaffMap[currentTournament]=tsStaffMap[currentTournament].filter(function(x){return x!==id;});
+  renderStaffChips();
+  populateStaffDropdown();
+  saveTeamSheet();
 }
 
 function buildFormation(){
@@ -2377,7 +2461,14 @@ function printLineup(){
       +'<span style="font-size:11px;font-weight:600;color:#dab751;letter-spacing:2px;">LINE '+line+'</span>'
       +'<span style="font-size:11px;color:#666;">Formation: '+formation+'</span>'
       +'<span style="font-size:11px;color:#666;">Players: '+playerCount+'/7</span>'
-      +'</div></div>'
+      +'</div>'
+      +(function(){
+        var staffIds=tsStaffMap[currentTournament]||[];
+        if(!staffIds.length) return '';
+        var names=staffIds.map(function(id){var s=allStaff.find(function(x){return x._id===id;});return s?(s.FullName+' ('+s.Role+')'):'';}).filter(Boolean);
+        return '<div style="margin-top:4px;font-size:10px;color:#888;">Staff: '+names.join(' · ')+'</div>';
+      })()
+      +'</div>'
       +'<div class="pp-pitch">'+pitchSvg+'</div>'
       +'<div class="pp-table">'
       +'<table>'
