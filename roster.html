@@ -2436,41 +2436,69 @@ function printLineup(){
     var coachHtml='';
     if(headCoach){
       var cIni=headCoach.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
-      var coachPhoto=headCoach._photoUrl?'<img src="'+headCoach._photoUrl+'" style="width:90px;height:90px;border-radius:50%;object-fit:cover;object-position:center 20%;border:3px solid #dab751;display:block;margin:0 auto 8px;">':'<div style="width:90px;height:90px;border-radius:50%;background:#dab751;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:28px;font-weight:700;color:#1c5575;margin:0 auto 8px;">'+cIni+'</div>';
-      coachHtml=coachPhoto
-        +'<div style="font-family:Georgia,serif;font-size:13px;font-weight:700;color:#1c5575;text-align:center;">'+esc(headCoach.FullName)+'</div>'
-        +'<div style="font-size:9px;color:#dab751;text-align:center;letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Head Coach</div>'
-        +(headCoach.LicenseLevel?'<div style="font-size:8px;color:#888;text-align:center;margin-top:2px;">'+esc(headCoach.LicenseLevel)+'</div>':'');
+      var coachPhoto=headCoach._photoUrl?'<img src="'+headCoach._photoUrl+'" style="width:100%;aspect-ratio:1;object-fit:cover;object-position:center 20%;display:block;border:2px solid #dab751;">':'<div style="width:100%;aspect-ratio:1;background:#dab751;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:36px;font-weight:700;color:#1c5575;">'+cIni+'</div>';
+      coachHtml='<div style="border:1px solid #ddd;margin-bottom:10px;">'
+        +coachPhoto
+        +'<div style="background:#1c5575;padding:6px 8px;text-align:center;">'
+        +'<div style="font-family:Georgia,serif;font-size:11px;font-weight:700;color:#fff;">'+esc(headCoach.FullName)+'</div>'
+        +'<div style="font-size:8px;color:#dab751;letter-spacing:2px;text-transform:uppercase;margin-top:1px;">Head Coach</div>'
+        +(headCoach.LicenseLevel?'<div style="font-size:7px;color:rgba(255,255,255,0.6);margin-top:1px;">'+esc(headCoach.LicenseLevel)+'</div>':'')
+        +'</div></div>';
     } else {
-      coachHtml='<div style="width:90px;height:90px;border-radius:50%;background:#eee;border:2px dashed #ccc;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:24px;color:#999;margin:0 auto 8px;">HC</div>'
-        +'<div style="font-size:10px;color:#999;text-align:center;">No Coach Assigned</div>';
+      coachHtml='<div style="border:1px dashed #ccc;margin-bottom:10px;">'
+        +'<div style="width:100%;aspect-ratio:1;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:28px;color:#ccc;">HC</div>'
+        +'<div style="background:#eee;padding:6px 8px;text-align:center;font-size:9px;color:#999;">No Coach Assigned</div></div>';
     }
 
-    // Staff list
+    // Tournament summary box
     var staffList=tsStaffMap[currentTournament]||[];
-    var staffNamesHtml=staffList.length?staffList.map(function(entry){
-      var id=typeof entry==='string'?entry:entry.id;
-      var tRole=typeof entry==='string'?'':entry.tournamentRole||'';
-      var s=allStaff.find(function(x){return x._id===id;});
-      return s?'<div style="font-size:8px;color:#555;">'+esc(s.FullName)+' — <span style="color:#dab751;">'+(tRole||s.Role||'Staff')+'</span></div>':'';
-    }).filter(Boolean).join(''):'';
-
-    // Match schedule for this tournament
-    var tournMatches=allMatches.filter(function(m){return m.Tournament===currentTournament;}).sort(function(a,b){return (a.MatchDate||'').localeCompare(b.MatchDate||'');});
-    var scheduleHtml='';
-    if(tournMatches.length){
-      scheduleHtml='<div style="margin-top:12px;border-top:1px solid #ddd;padding-top:8px;">'
-        +'<div style="font-family:Georgia,serif;font-size:8px;letter-spacing:2px;color:#1c5575;text-transform:uppercase;margin-bottom:6px;">Game Schedule</div>'
-        +tournMatches.map(function(m){
-          var d=m.MatchDate?new Date(m.MatchDate).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'TBD';
-          var score=(m.Status==='Final')?(m.LegioScore||0)+'-'+(m.OpponentScore||0):'';
-          return '<div style="font-size:8px;padding:2px 0;display:flex;justify-content:space-between;">'
-            +'<span style="color:#333;">'+esc(m.Opponent||m.Title||'—')+'</span>'
-            +'<span style="color:#888;">'+d+(score?' · <b>'+score+'</b>':'')+'</span>'
-            +'</div>';
-        }).join('')
-        +'</div>';
+    var totalPlayers=0;var filledLines=0;
+    ['A','B','C','D','E'].forEach(function(l){
+      var ld2=tsData[currentTournament][l];
+      if(ld2){var c=Object.keys(ld2.lineup||{}).length;if(c>0){totalPlayers+=c;filledLines++;}}
+    });
+    var summaryHtml='<div style="border:1px solid #ddd;padding:8px;margin-bottom:10px;background:#fafafa;">'
+      +'<div style="font-family:Georgia,serif;font-size:7px;letter-spacing:2px;color:#1c5575;text-transform:uppercase;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:6px;">Tournament Summary</div>'
+      +'<div style="font-size:8px;color:#333;line-height:1.8;">'
+      +'<div style="display:flex;justify-content:space-between;"><span>Lines Active</span><b>'+filledLines+'</b></div>'
+      +'<div style="display:flex;justify-content:space-between;"><span>Total Players</span><b>'+totalPlayers+'</b></div>'
+      +'<div style="display:flex;justify-content:space-between;"><span>Staff Assigned</span><b>'+staffList.length+'</b></div>'
+      +'</div>';
+    // Staff names
+    if(staffList.length){
+      summaryHtml+='<div style="border-top:1px solid #ddd;margin-top:4px;padding-top:4px;">';
+      staffList.forEach(function(entry){
+        var id=typeof entry==='string'?entry:entry.id;
+        var tRole=typeof entry==='string'?'':entry.tournamentRole||'';
+        var s=allStaff.find(function(x){return x._id===id;});
+        if(s) summaryHtml+='<div style="font-size:7px;color:#555;padding:1px 0;">'+esc(s.FullName)+' — <span style="color:#dab751;">'+(tRole||s.Role||'Staff')+'</span></div>';
+      });
+      summaryHtml+='</div>';
     }
+    summaryHtml+='</div>';
+
+    // Game schedule box
+    var tournMatches=allMatches.filter(function(m){return m.Tournament===currentTournament;}).sort(function(a,b){return (a.MatchDate||'').localeCompare(b.MatchDate||'');});
+    var scheduleHtml='<div style="border:1px solid #ddd;padding:8px;background:#fafafa;">'
+      +'<div style="font-family:Georgia,serif;font-size:7px;letter-spacing:2px;color:#1c5575;text-transform:uppercase;border-bottom:1px solid #ddd;padding-bottom:4px;margin-bottom:6px;">Game Schedule</div>';
+    if(tournMatches.length){
+      scheduleHtml+=tournMatches.map(function(m){
+        var d=m.MatchDate?new Date(m.MatchDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'TBD';
+        var time=m.MatchDate?new Date(m.MatchDate).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
+        var score=(m.Status==='Final')?'<b>'+(m.LegioScore||0)+'–'+(m.OpponentScore||0)+'</b>':'';
+        var statusColor=m.Status==='Final'?'#333':m.Status==='Live'?'#e53935':'#888';
+        return '<div style="font-size:7px;padding:3px 0;border-bottom:1px solid #eee;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+          +'<span style="font-weight:600;color:#333;">vs '+esc(m.Opponent||'TBD')+'</span>'
+          +'<span style="color:'+statusColor+';font-weight:600;">'+(score||esc(m.Status||''))+'</span>'
+          +'</div>'
+          +'<div style="color:#888;">'+d+(time?' · '+time:'')+(m.Venue?' · '+esc(m.Venue):'')+'</div>'
+          +'</div>';
+      }).join('');
+    } else {
+      scheduleHtml+='<div style="font-size:8px;color:#999;font-style:italic;">No matches scheduled</div>';
+    }
+    scheduleHtml+='</div>';
 
     pages.push(
       '<div class="print-page">'
@@ -2486,12 +2514,12 @@ function printLineup(){
       +'<span style="font-size:11px;color:#666;">Formation: '+formation+'</span>'
       +'<span style="font-size:11px;color:#666;">Players: '+playerCount+'/7</span>'
       +'</div></div>'
-      // Two-column: pitch left, coach right
-      +'<div style="display:flex;gap:16px;margin-top:6px;">'
+      // Two-column: pitch left, coach+summary+schedule right
+      +'<div style="display:flex;gap:14px;margin-top:6px;">'
       +'<div class="pp-pitch" style="flex:1;">'+pitchSvg+'</div>'
-      +'<div style="width:180px;flex-shrink:0;padding:10px 0;">'
+      +'<div style="width:200px;flex-shrink:0;">'
       +coachHtml
-      +staffNamesHtml
+      +summaryHtml
       +scheduleHtml
       +'</div>'
       +'</div>'
