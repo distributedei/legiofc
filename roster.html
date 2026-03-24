@@ -2004,8 +2004,10 @@ function showHoverCard(e,playerId){
 }
 function positionHoverCard(e){
   var hc=document.getElementById('ts-hover-card');
-  var x=e.clientX+20,y=e.clientY-100;
-  if(x+390>window.innerWidth) x=e.clientX-400;
+  // Prefer placing to the left of cursor to avoid covering bench list
+  var x=e.clientX-hc.offsetWidth-30;
+  if(x<10) x=e.clientX+30;
+  var y=e.clientY-100;
   if(y<10) y=10;
   if(y+hc.offsetHeight>window.innerHeight-10) y=window.innerHeight-hc.offsetHeight-10;
   hc.style.left=x+'px';hc.style.top=y+'px';
