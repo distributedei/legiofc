@@ -519,7 +519,7 @@ async function submitForm() {
     PlayerPhoto:          passportB64,
     PlayerExt:            playerExt,
     Tournament:           selectedTournament,
-    SubmittedDate:        new Date().toISOString(),
+    SubmittedDate:        new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'})).toISOString(),
   };
 
   try {
