@@ -468,8 +468,12 @@
 
         <div id="ts-editor-view" style="display:grid;grid-template-columns:auto 1fr 280px;gap:12px;align-items:start;margin-top:-6px;">
 
-          <!-- Pitch -->
-          <div class="ts-pitch-wrap">
+          <!-- Pitch + Coach -->
+          <div>
+            <!-- Head Coach Card -->
+            <div id="ts-coach-card" style="background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:8px 10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;min-height:54px;">
+            </div>
+            <div class="ts-pitch-wrap">
           <div class="ts-pitch-inner">
           <div id="ts-pitch" style="position:relative;aspect-ratio:0.65;width:340px;flex-shrink:0;overflow:hidden;border-radius:6px;">
             <!-- Deep grass base -->
@@ -519,6 +523,7 @@
               <path d="M92,151 A5,5 0 0,0 97,146" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>
             </svg>
             <div id="ts-slots" style="position:absolute;inset:0;"></div>
+          </div>
           </div>
           </div>
           </div>
@@ -1806,8 +1811,8 @@ async function loadTeamSheet(){
       buildFormation();
       toast('Team sheets loaded ✓','success');
       updateAnalyzeBtn();
-      if(allStaff.length){populateStaffDropdown();renderStaffChips();}
-      else{loadStaff().then(function(){populateStaffDropdown();renderStaffChips();});}
+      if(allStaff.length){populateStaffDropdown();renderStaffChips();renderCoachCard();}
+      else{loadStaff().then(function(){populateStaffDropdown();renderStaffChips();renderCoachCard();});}
     }
   }catch(e){console.warn('No saved team sheets:',e.message);}
 }
@@ -1908,6 +1913,7 @@ function switchTournament(){
   updateAnalyzeBtn();
   populateStaffDropdown();
   renderStaffChips();
+  renderCoachCard();
 }
 
 function switchLine(line){
@@ -2040,6 +2046,7 @@ function addStaffToTournament(id){
     tsStaffMap[currentTournament].push({id:id, tournamentRole:s?s.Role:''});
     renderStaffChips();
     populateStaffDropdown();
+    renderCoachCard();
     saveTeamSheet();
   }
 }
@@ -2055,6 +2062,7 @@ function updateStaffRole(id,role){
       entry.tournamentRole=role;
     }
     renderStaffChips();
+    renderCoachCard();
     saveTeamSheet();
   }
 }
@@ -2064,6 +2072,7 @@ function removeStaffFromTournament(id){
   tsStaffMap[currentTournament]=tsStaffMap[currentTournament].filter(function(x){return (typeof x==='string'?x:x.id)!==id;});
   renderStaffChips();
   populateStaffDropdown();
+  renderCoachCard();
   saveTeamSheet();
 }
 
@@ -2076,12 +2085,30 @@ function getHeadCoach(){
     var s=allStaff.find(function(x){return x._id===id;});
     if(s&&(tRole==='Head Coach'||s.Role==='Head Coach'))return s;
   }
-  // Fallback to first assigned
   if(assigned.length){
     var firstId=typeof assigned[0]==='string'?assigned[0]:assigned[0].id;
     return allStaff.find(function(x){return x._id===firstId;})||null;
   }
   return null;
+}
+
+function renderCoachCard(){
+  var card=document.getElementById('ts-coach-card');
+  if(!card)return;
+  var hc=getHeadCoach();
+  if(!hc){
+    card.innerHTML='<div style="width:40px;height:40px;border-radius:50%;background:rgba(218,183,81,0.2);border:2px dashed var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:var(--text-faint);">HC</div>'
+      +'<div><div style="font-family:Cinzel,serif;font-size:10px;color:var(--text-faint);letter-spacing:1px;">No Head Coach Assigned</div>'
+      +'<div style="font-size:9px;color:var(--text-faint);margin-top:2px;">Assign staff above</div></div>';
+    return;
+  }
+  var ini=hc.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+  var photoHtml=hc._photoUrl?'<img src="'+hc._photoUrl+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:center 20%;border:2px solid var(--gold);flex-shrink:0;">':'<div style="width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:14px;font-weight:700;color:var(--blue-dark);flex-shrink:0;">'+ini+'</div>';
+  card.innerHTML=photoHtml
+    +'<div><div style="font-family:Cinzel,serif;font-size:12px;font-weight:600;color:var(--cream);letter-spacing:1px;">'+esc(hc.FullName)+'</div>'
+    +'<div style="font-size:9px;color:var(--gold);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;">Head Coach</div>'
+    +(hc.LicenseLevel?'<div style="font-size:8px;color:var(--text-faint);margin-top:1px;">'+esc(hc.LicenseLevel)+'</div>':'')
+    +'</div>';
 }
 
 function buildFormation(){
@@ -2375,53 +2402,65 @@ function printLineup(){
       +playerDots
       +'</svg>';
 
-    // Build photo card grid: Coach + 7 players in 2 rows of 4
-    var cardStyle='style="text-align:center;border:1px solid #ddd;padding:6px;background:#fafafa;"';
-    var imgStyle='style="width:100%;aspect-ratio:1;object-fit:cover;object-position:center 20%;display:block;border:1px solid #ccc;margin-bottom:4px;"';
-    var emptyStyle='style="width:100%;aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#999;border:1px solid #ccc;margin-bottom:4px;"';
-
-    // Coach card (first assigned staff, or head coach)
-    var headCoach=getHeadCoach();
-    var coachCard='<div '+cardStyle+'>';
-    if(headCoach){
-      var cIni=headCoach.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
-      coachCard+=headCoach._photoUrl?'<img src="'+headCoach._photoUrl+'" '+imgStyle+'>':'<div '+emptyStyle+'>'+cIni+'</div>';
-      coachCard+='<div style="font-family:Georgia,serif;font-size:9px;font-weight:700;color:#1c5575;">'+esc(headCoach.FullName)+'</div>';
-      coachCard+='<div style="font-size:8px;color:#dab751;letter-spacing:1px;text-transform:uppercase;">'+esc(headCoach.Role||'Coach')+'</div>';
-      coachCard+='<div style="font-size:7px;color:#888;margin-top:1px;">'+esc(headCoach.LicenseLevel||'')+'</div>';
-    } else {
-      coachCard+='<div '+emptyStyle+'>HC</div>';
-      coachCard+='<div style="font-size:9px;color:#999;">No Coach Assigned</div>';
-    }
-    coachCard+='</div>';
-
-    // Player cards by slot order
-    var playerCards=slots.map(function(s,i){
+    // Build roster table rows
+    var rosterRows=slots.map(function(s,i){
       var pid=lineup[i];
       var p=pid?all.find(function(x){return x._id===pid;}):null;
-      var card='<div '+cardStyle+'>';
-      if(p){
-        var pIni=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
-        card+=p._headshotUrl?'<img src="'+p._headshotUrl+'" '+imgStyle+'>':'<div '+emptyStyle+'>'+pIni+'</div>';
-        card+='<div style="font-family:Georgia,serif;font-size:9px;font-weight:700;color:#1c5575;">'+esc(p.FullName)+'</div>';
-        card+='<div style="font-size:8px;color:#dab751;letter-spacing:1px;text-transform:uppercase;">'+s.pos+'</div>';
-        card+='<div style="font-size:7px;color:#888;margin-top:1px;">'+(calcAge(p.BirthDate)||'—')+'y · '+esc(p.Height||'—')+' · '+esc(p.DominantFoot||'—')+'</div>';
-      } else {
-        card+='<div '+emptyStyle+'>'+s.pos+'</div>';
-        card+='<div style="font-size:9px;color:#999;">'+s.pos+'</div>';
-      }
-      card+='</div>';
-      return card;
-    });
+      if(!p) return '<tr><td style="padding:4px 6px;border-bottom:1px solid #ddd;color:#999;">'+s.pos+'</td><td colspan="5" style="padding:4px 6px;border-bottom:1px solid #ddd;color:#999;">—</td></tr>';
+      var age=calcAge(p.BirthDate);
+      var pIni=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+      var photoTd=p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;object-position:center 20%;">':'<div style="width:24px;height:24px;border-radius:50%;background:#dab751;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#1c5575;">'+pIni+'</div>';
+      return '<tr>'
+        +'<td style="padding:4px 6px;border-bottom:1px solid #ddd;font-weight:600;color:#dab751;">'+s.pos+'</td>'
+        +'<td style="padding:4px 6px;border-bottom:1px solid #ddd;">'+photoTd+'</td>'
+        +'<td style="padding:4px 6px;border-bottom:1px solid #ddd;font-weight:600;">'+esc(p.FullName)+'</td>'
+        +'<td style="padding:4px 6px;border-bottom:1px solid #ddd;">'+esc(p.PrimaryPosition||'—')+'</td>'
+        +'<td style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:center;">'+(age||'—')+'</td>'
+        +'<td style="padding:4px 6px;border-bottom:1px solid #ddd;">'+esc(p.Height||'—')+'</td>'
+        +'<td style="padding:4px 6px;border-bottom:1px solid #ddd;text-align:center;">'+esc(p.DominantFoot||'—')+'</td>'
+        +'</tr>';
+    }).join('');
 
-    // Combine: row 1 = coach + first 3 players, row 2 = last 4 players
-    var allCards=[coachCard].concat(playerCards);
-    var rosterGrid='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;">'
-      +allCards.slice(0,4).join('')
-      +'</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;">'
-      +allCards.slice(4,8).join('')
-      +'</div>';
+    // Coach panel (right side)
+    var headCoach=getHeadCoach();
+    var coachHtml='';
+    if(headCoach){
+      var cIni=headCoach.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+      var coachPhoto=headCoach._photoUrl?'<img src="'+headCoach._photoUrl+'" style="width:90px;height:90px;border-radius:50%;object-fit:cover;object-position:center 20%;border:3px solid #dab751;display:block;margin:0 auto 8px;">':'<div style="width:90px;height:90px;border-radius:50%;background:#dab751;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:28px;font-weight:700;color:#1c5575;margin:0 auto 8px;">'+cIni+'</div>';
+      coachHtml=coachPhoto
+        +'<div style="font-family:Georgia,serif;font-size:13px;font-weight:700;color:#1c5575;text-align:center;">'+esc(headCoach.FullName)+'</div>'
+        +'<div style="font-size:9px;color:#dab751;text-align:center;letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Head Coach</div>'
+        +(headCoach.LicenseLevel?'<div style="font-size:8px;color:#888;text-align:center;margin-top:2px;">'+esc(headCoach.LicenseLevel)+'</div>':'');
+    } else {
+      coachHtml='<div style="width:90px;height:90px;border-radius:50%;background:#eee;border:2px dashed #ccc;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:24px;color:#999;margin:0 auto 8px;">HC</div>'
+        +'<div style="font-size:10px;color:#999;text-align:center;">No Coach Assigned</div>';
+    }
+
+    // Staff list
+    var staffList=tsStaffMap[currentTournament]||[];
+    var staffNamesHtml=staffList.length?staffList.map(function(entry){
+      var id=typeof entry==='string'?entry:entry.id;
+      var tRole=typeof entry==='string'?'':entry.tournamentRole||'';
+      var s=allStaff.find(function(x){return x._id===id;});
+      return s?'<div style="font-size:8px;color:#555;">'+esc(s.FullName)+' — <span style="color:#dab751;">'+(tRole||s.Role||'Staff')+'</span></div>':'';
+    }).filter(Boolean).join(''):'';
+
+    // Match schedule for this tournament
+    var tournMatches=allMatches.filter(function(m){return m.Tournament===currentTournament;}).sort(function(a,b){return (a.MatchDate||'').localeCompare(b.MatchDate||'');});
+    var scheduleHtml='';
+    if(tournMatches.length){
+      scheduleHtml='<div style="margin-top:12px;border-top:1px solid #ddd;padding-top:8px;">'
+        +'<div style="font-family:Georgia,serif;font-size:8px;letter-spacing:2px;color:#1c5575;text-transform:uppercase;margin-bottom:6px;">Game Schedule</div>'
+        +tournMatches.map(function(m){
+          var d=m.MatchDate?new Date(m.MatchDate).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'TBD';
+          var score=(m.Status==='Final')?(m.LegioScore||0)+'-'+(m.OpponentScore||0):'';
+          return '<div style="font-size:8px;padding:2px 0;display:flex;justify-content:space-between;">'
+            +'<span style="color:#333;">'+esc(m.Opponent||m.Title||'—')+'</span>'
+            +'<span style="color:#888;">'+d+(score?' · <b>'+score+'</b>':'')+'</span>'
+            +'</div>';
+        }).join('')
+        +'</div>';
+    }
 
     pages.push(
       '<div class="print-page">'
@@ -2436,21 +2475,29 @@ function printLineup(){
       +'<span style="font-size:11px;font-weight:600;color:#dab751;letter-spacing:2px;">LINE '+line+'</span>'
       +'<span style="font-size:11px;color:#666;">Formation: '+formation+'</span>'
       +'<span style="font-size:11px;color:#666;">Players: '+playerCount+'/7</span>'
+      +'</div></div>'
+      // Two-column: pitch left, coach right
+      +'<div style="display:flex;gap:16px;margin-top:6px;">'
+      +'<div class="pp-pitch" style="flex:1;">'+pitchSvg+'</div>'
+      +'<div style="width:180px;flex-shrink:0;padding:10px 0;">'
+      +coachHtml
+      +staffNamesHtml
+      +scheduleHtml
       +'</div>'
-      +(function(){
-        var staffList=tsStaffMap[currentTournament]||[];
-        if(!staffList.length) return '';
-        var names=staffList.map(function(entry){
-          var id=typeof entry==='string'?entry:entry.id;
-          var tRole=typeof entry==='string'?'':entry.tournamentRole||'';
-          var s=allStaff.find(function(x){return x._id===id;});
-          return s?(s.FullName+' ('+(tRole||s.Role||'Staff')+')'):'';
-        }).filter(Boolean);
-        return '<div style="margin-top:4px;font-size:10px;color:#888;">Staff: '+names.join(' · ')+'</div>';
-      })()
       +'</div>'
-      +'<div class="pp-pitch">'+pitchSvg+'</div>'
-      +'<div class="pp-table">'+rosterGrid+'</div></div>'
+      // Roster table
+      +'<div class="pp-table">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:10px;">'
+      +'<thead><tr style="background:#1c5575;color:#fff;">'
+      +'<th style="padding:4px 6px;text-align:left;">SLOT</th>'
+      +'<th style="padding:4px 6px;text-align:left;width:30px;"></th>'
+      +'<th style="padding:4px 6px;text-align:left;">NAME</th>'
+      +'<th style="padding:4px 6px;text-align:left;">POSITION</th>'
+      +'<th style="padding:4px 6px;text-align:center;">AGE</th>'
+      +'<th style="padding:4px 6px;text-align:left;">HEIGHT</th>'
+      +'<th style="padding:4px 6px;text-align:center;">FOOT</th>'
+      +'</tr></thead><tbody>'+rosterRows+'</tbody></table>'
+      +'</div></div>'
     );
 
     // If saved analysis exists for this line, add analysis page
@@ -2488,8 +2535,8 @@ function printLineup(){
     +'.print-page.analysis{height:auto;overflow:visible;}'
     +'.pp-header{text-align:center;margin-bottom:6px;flex-shrink:0;}'
     +'.pp-meta{text-align:center;margin-bottom:6px;flex-shrink:0;}'
-    +'.pp-pitch{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}'
-    +'.pp-pitch svg{max-height:360px;width:auto;}'
+    +'.pp-pitch{flex:1;min-height:0;}'
+    +'.pp-pitch svg{max-height:340px;width:auto;display:block;}'
     +'.pp-table{flex-shrink:0;margin-top:8px;}'
     +'.pp-table table{width:100%;border-collapse:collapse;font-size:11px;}'
     +'</style></head><body>'
