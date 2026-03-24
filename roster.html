@@ -648,7 +648,7 @@
 <div id="selection-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--blue-dark);border-top:2px solid var(--gold);padding:12px 24px;z-index:9999;align-items:center;justify-content:space-between;">
   <span style="font-family:Cinzel,serif;font-size:13px;color:var(--cream);letter-spacing:1px;"><span id="sel-count">0</span> players selected</span>
   <div style="display:flex;gap:10px;">
-    <button onclick="emailSelected()" style="padding:8px 18px;background:var(--gold);color:var(--blue-dark);border:none;font-family:Cinzel,serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">✉ Email Selected (BCC)</button>
+    <button onclick="emailSelected()" style="padding:8px 18px;background:var(--gold);color:var(--blue-dark);border:none;font-family:Cinzel,serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">📋 Copy Emails (BCC)</button>
     <button onclick="clearSelection()" style="padding:8px 18px;background:transparent;color:var(--text-faint);border:1px solid var(--gold-border);font-family:Cinzel,serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Clear</button>
   </div>
 </div>
@@ -1484,7 +1484,11 @@ function emailSelected(){
   const emails=[...document.querySelectorAll('.player-cb:checked')]
     .map(cb=>cb.dataset.email).filter(Boolean);
   if(!emails.length){toast('No players with email addresses selected','error');return;}
-  setTimeout(function(){window.open('mailto:?bcc='+encodeURIComponent(emails.join(',')),'_self');},50);
+  navigator.clipboard.writeText(emails.join(', ')).then(function(){
+    toast(emails.length+' emails copied — paste into BCC','success');
+  }).catch(function(){
+    prompt('Copy these emails and paste into BCC:', emails.join(', '));
+  });
 }
 function clearSelection(){
   document.querySelectorAll('.player-cb').forEach(cb=>{cb.checked=false;});
