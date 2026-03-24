@@ -1670,6 +1670,7 @@ let tsData = {};
 let currentTournament = null;
 let currentLine = 'A';
 let draggedPlayerId = null;
+let draggedFromSlot = null;
 let pendingSlot = null;
 let pendingPlayerId = null;
 
@@ -1873,7 +1874,8 @@ function renderPitch(slots){
     }
 
     var hoverAttrs=p?' onmouseenter="showHoverCard(event,\''+p._id+'\')" onmousemove="moveHoverCard(event)" onmouseleave="hideHoverCard()"':'';
-    return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:64px;" onclick="slotClick('+i+')"'+hoverAttrs+' ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
+    var dragAttrs=p?' draggable="true" ondragstart="hideHoverCard();draggedPlayerId=\''+ln[i]+'\';draggedFromSlot='+i+'" ondragend="draggedPlayerId=null;draggedFromSlot=null"':'';
+    return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:64px;" onclick="slotClick('+i+')"'+hoverAttrs+dragAttrs+' ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
       +'<div class="ts-slot-photo '+(p?'filled':'')+'" id="slot-photo-'+i+'" style="width:'+size+'px;height:'+size+'px;font-size:'+fontSize+'px;">'+photoHtml+'</div>'
       +(p?'<div onclick="event.stopPropagation();removeFromSlot('+i+')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:rgba(156,24,41,0.9);border:1px solid rgba(156,24,41,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;line-height:1;z-index:2;">✕</div>':'')
       +'<div class="ts-slot-shadow" style="width:36px;height:6px;"></div>'
@@ -1899,7 +1901,7 @@ function renderBench(){
   bench.innerHTML=players.map(function(p){
     var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
     var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display=\'none\';this.parentElement.textContent=\''+ini+'\'">' :ini;
-    return '<div class="ts-bench-player" draggable="true" ondragstart="draggedPlayerId=\''+p._id+'\'" ondragend="draggedPlayerId=null" onclick="benchClick(\''+p._id+'\')" onmouseenter="showHoverCard(event,\''+p._id+'\')" onmousemove="moveHoverCard(event)" onmouseleave="hideHoverCard()">'
+    return '<div class="ts-bench-player" draggable="true" ondragstart="draggedPlayerId=\''+p._id+'\';draggedFromSlot=null" ondragend="draggedPlayerId=null" onclick="benchClick(\''+p._id+'\')" onmouseenter="showHoverCard(event,\''+p._id+'\')" onmousemove="moveHoverCard(event)" onmouseleave="hideHoverCard()">'
       +'<div class="ts-bench-photo">'+photoHtml+'</div>'
       +'<div style="min-width:0;"><div style="font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(p.FullName)+'</div>'
       +'<div style="font-size:10px;color:var(--text-faint);">'+esc(p.PrimaryPosition||'—')+'</div></div></div>';
@@ -2035,7 +2037,21 @@ function benchClick(id){
 function dropOnSlot(e,idx){
   e.preventDefault();
   document.querySelectorAll('.ts-slot-photo').forEach(function(el){el.classList.remove('drag-over');});
-  if(draggedPlayerId)assignPlayer(idx,draggedPlayerId);
+  if(!draggedPlayerId) return;
+  if(draggedFromSlot!==null && draggedFromSlot!==idx){
+    // Swap: move target player to source slot
+    var ln=tsCurrentLineup();
+    var targetPlayer=ln[idx]||null;
+    ln[idx]=draggedPlayerId;
+    if(targetPlayer) ln[draggedFromSlot]=targetPlayer;
+    else delete ln[draggedFromSlot];
+    draggedFromSlot=null;
+    draggedPlayerId=null;
+    refreshPitch();
+    saveTeamSheet();
+  } else {
+    assignPlayer(idx,draggedPlayerId);
+  }
 }
 
 function assignPlayer(slotIdx,playerId){
