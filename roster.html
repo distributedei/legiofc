@@ -195,12 +195,22 @@
     .ts-bench-photo{width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:10px;font-weight:700;color:var(--blue-dark);flex-shrink:0;overflow:hidden;}
     .ts-bench-photo img{width:100%;height:100%;object-fit:cover;object-position:top;}
     .ts-slot.drag-over .ts-slot-photo{border-color:#4caf50;box-shadow:0 0 24px rgba(76,175,80,0.8);}
-    .ts-hover-card{position:fixed;z-index:9999;background:var(--blue-dark);border:1px solid var(--gold);padding:12px 14px;min-width:200px;max-width:260px;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:none;}
-    .ts-hover-card .hc-name{font-family:Cinzel,serif;font-size:13px;font-weight:600;color:var(--cream);margin-bottom:2px;}
-    .ts-hover-card .hc-pos{font-size:10px;color:var(--gold);margin-bottom:8px;font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;}
-    .ts-hover-card .hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px;}
-    .ts-hover-card .hc-label{color:var(--text-faint);}
-    .ts-hover-card .hc-val{color:var(--cream);}
+    .ts-hover-card{position:fixed;z-index:9999;background:var(--blue-dark);border:1px solid var(--gold);min-width:340px;max-width:380px;max-height:70vh;overflow-y:auto;pointer-events:none;box-shadow:0 12px 40px rgba(0,0,0,0.7);display:none;scrollbar-width:thin;scrollbar-color:var(--gold-border) transparent;}
+    .ts-hover-card .hc-header{padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--gold-border);}
+    .ts-hover-card .hc-avatar{width:56px;height:56px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:20px;font-weight:700;color:var(--blue-dark);overflow:hidden;flex-shrink:0;border:2px solid var(--gold);}
+    .ts-hover-card .hc-avatar img{width:100%;height:100%;object-fit:cover;object-position:top;}
+    .ts-hover-card .hc-name{font-family:Cinzel,serif;font-size:15px;font-weight:600;color:var(--cream);}
+    .ts-hover-card .hc-badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+    .ts-hover-card .hc-badge{font-size:8px;padding:2px 8px;background:rgba(218,183,81,0.1);border:1px solid var(--gold-border);color:var(--gold);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;}
+    .ts-hover-card .hc-body{padding:12px 16px;}
+    .ts-hover-card .hc-section{margin-bottom:12px;}
+    .ts-hover-card .hc-sec-title{font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--gold-border);}
+    .ts-hover-card .hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .ts-hover-card .hc-label{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;}
+    .ts-hover-card .hc-val{font-size:12px;color:var(--cream);margin-top:1px;}
+    .ts-hover-card .hc-full{grid-column:span 2;}
+    .ts-hover-card .hc-exp{font-size:11px;color:var(--cream);background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);padding:8px 10px;line-height:1.5;max-height:80px;overflow-y:auto;margin-top:4px;}
+    .ts-hover-card .hc-footer{padding:8px 16px;border-top:1px solid var(--gold-border);font-size:9px;color:var(--text-faint);font-style:italic;text-align:center;}
 
     @media(max-width:768px){nav{padding:0 14px}.nav-sub,.nav-div,.nav-label{display:none}.stats-bar{grid-template-columns:repeat(3,1fr)}.toolbar{padding:10px 12px;gap:8px}.sel{min-width:90px}body{overflow:auto}.layout{height:auto;overflow:visible}#app-screen{overflow:visible}.table-area{overflow:auto;max-height:60vh}}
   </style>
@@ -1859,30 +1869,64 @@ function showHoverCard(e,playerId){
   var p=all.find(function(x){return x._id===playerId;});
   if(!p)return;
   var hc=document.getElementById('ts-hover-card');
+  var ini=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
   var age=calcAge(p.BirthDate);
-  var photoHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'" style="width:50px;height:50px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--gold);float:right;margin:0 0 6px 8px;">':'';
-  hc.innerHTML=photoHtml
-    +'<div class="hc-name">'+esc(p.FullName)+'</div>'
-    +'<div class="hc-pos">'+(p.PrimaryPosition||'—')+(p.SecondaryPosition?' / '+p.SecondaryPosition:'')+'</div>'
-    +'<div class="hc-grid">'
-    +'<div><span class="hc-label">Age</span><br><span class="hc-val">'+(age||'—')+'</span></div>'
-    +'<div><span class="hc-label">Height</span><br><span class="hc-val">'+esc(p.Height||'—')+'</span></div>'
-    +'<div><span class="hc-label">Foot</span><br><span class="hc-val">'+esc(p.DominantFoot||'—')+'</span></div>'
-    +'<div><span class="hc-label">Travel</span><br><span class="hc-val" style="color:'+(p.CanTravel&&p.CanTravel.startsWith('Yes')?'#4caf50':'#e57373')+'">'+(p.CanTravel&&p.CanTravel.startsWith('Yes')?'✓ Yes':'✗ No')+'</span></div>'
-    +'<div style="grid-column:span 2;"><span class="hc-label">Team</span><br><span class="hc-val">'+esc(p.CurrentTeam||'—')+'</span></div>'
+  var avatarHtml=p._headshotUrl?'<img src="'+p._headshotUrl+'">':ini;
+  var videos=[
+    {url:p.HighlightReel1,label:'Clip 1'},{url:p.HighlightReel2,label:'Clip 2'},
+    {url:p.HighlightReel3,label:'Clip 3'},{url:p.FullGameLink,label:'Full Game'}
+  ].filter(function(v){return v.url;});
+  var videoHtml=videos.length?videos.map(function(v){return '<span style="font-size:7px;padding:2px 6px;border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase;">▶ '+v.label+'</span>';}).join(' '):'<span style="font-size:10px;color:var(--text-faint);font-style:italic;">No video links</span>';
+
+  hc.innerHTML='<div class="hc-header">'
+    +'<div class="hc-avatar">'+avatarHtml+'</div>'
+    +'<div><div class="hc-name">'+esc(p.FullName)+'</div>'
+    +'<div class="hc-badges">'
+    +(p.Gender?'<span class="hc-badge">'+esc(p.Gender)+'</span>':'')
+    +(p.IDCampLocation?'<span class="hc-badge">'+esc(p.IDCampLocation)+'</span>':'')
+    +(p.CanTravel?'<span class="hc-badge"'+(p.CanTravel==='No'?' style="border-color:rgba(156,24,41,0.5);color:#d07080;"':'')+'>Travel: '+esc(p.CanTravel)+'</span>':'')
+    +'</div></div></div>'
+    +'<div class="hc-body">'
+    +'<div class="hc-section"><div class="hc-sec-title">Playing History</div><div class="hc-grid">'
+    +'<div><div class="hc-label">Primary Position</div><div class="hc-val">'+esc(p.PrimaryPosition||'—')+'</div></div>'
+    +'<div><div class="hc-label">Secondary Position</div><div class="hc-val">'+esc(p.SecondaryPosition||'—')+'</div></div>'
+    +'<div><div class="hc-label">Height</div><div class="hc-val">'+esc(p.Height||'—')+'</div></div>'
+    +'<div><div class="hc-label">Dominant Foot</div><div class="hc-val">'+esc(p.DominantFoot||'—')+'</div></div>'
+    +'<div class="hc-full"><div class="hc-label">Current Team & League</div><div class="hc-val">'+esc(p.CurrentTeam||'—')+'</div></div>'
     +'</div>'
-    +'<div style="margin-top:8px;font-size:9px;color:var(--text-faint);font-style:italic;">Click to open full card</div>';
+    +(p.PastExperience?'<div style="margin-top:8px;"><div class="hc-label">Past Experience</div><div class="hc-exp">'+esc(p.PastExperience)+'</div></div>':'')
+    +'</div>'
+    +'<div class="hc-section"><div class="hc-sec-title">Player Info</div><div class="hc-grid">'
+    +'<div><div class="hc-label">Age</div><div class="hc-val">'+(age||'—')+'</div></div>'
+    +'<div><div class="hc-label">DOB</div><div class="hc-val">'+esc(p.BirthDate||'—')+'</div></div>'
+    +'<div><div class="hc-label">Country</div><div class="hc-val">'+esc(p.Country||'—')+'</div></div>'
+    +'<div><div class="hc-label">Location</div><div class="hc-val">'+esc(p.CurrentLocation||'—')+'</div></div>'
+    +'</div></div>'
+    +'<div class="hc-section"><div class="hc-sec-title">Passport & Travel</div><div class="hc-grid">'
+    +'<div><div class="hc-label">Passport</div><div class="hc-val">'+esc(p.PassportCountry||'—')+'</div></div>'
+    +'<div><div class="hc-label">Expiry</div><div class="hc-val">'+esc(p.PassportExpiry||'—')+'</div></div>'
+    +'<div class="hc-full"><div class="hc-label">Visa Status</div><div class="hc-val">'+esc(p.VisaStatus||'—')+'</div></div>'
+    +(p.TravelRestrictions?'<div class="hc-full"><div class="hc-label">Restrictions</div><div class="hc-val" style="font-size:11px;">'+esc(p.TravelRestrictions)+'</div></div>':'')
+    +'</div></div>'
+    +'<div class="hc-section"><div class="hc-sec-title">Video Links</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">'+videoHtml+'</div></div>'
+    +'<div class="hc-section"><div class="hc-sec-title">Contact</div><div class="hc-grid">'
+    +'<div><div class="hc-label">Email</div><div class="hc-val">'+esc(p.Email||'—')+'</div></div>'
+    +'<div><div class="hc-label">Phone</div><div class="hc-val">'+esc(p.Phone||'—')+'</div></div>'
+    +'</div></div>'
+    +'</div>'
+    +'<div class="hc-footer">Click to open editable card</div>';
   hc.style.display='block';
   positionHoverCard(e);
 }
 function positionHoverCard(e){
   var hc=document.getElementById('ts-hover-card');
-  var x=e.clientX+16,y=e.clientY+12;
-  if(x+270>window.innerWidth) x=e.clientX-270;
-  if(y+200>window.innerHeight) y=e.clientY-200;
+  var x=e.clientX+20,y=e.clientY-100;
+  if(x+390>window.innerWidth) x=e.clientX-400;
+  if(y<10) y=10;
+  if(y+hc.offsetHeight>window.innerHeight-10) y=window.innerHeight-hc.offsetHeight-10;
   hc.style.left=x+'px';hc.style.top=y+'px';
 }
-function moveHoverCard(e){positionHoverCard(e);}
+function moveHoverCard(e){/* position locked on show */}
 function hideHoverCard(){document.getElementById('ts-hover-card').style.display='none';}
 
 function benchClick(id){
