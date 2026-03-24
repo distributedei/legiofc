@@ -2536,6 +2536,18 @@ function renderStaff(){
 function openStaffModal(s){
   editingStaffId=s?s._id:null;
   document.getElementById('sm-title').textContent=s?'Edit Staff':'Add Staff';
+  // Set avatar
+  var av=document.getElementById('sm-av');
+  if(s&&s._photoUrl){
+    av.style.background='#000';av.style.overflow='hidden';av.style.padding='0';
+    av.innerHTML='<img src="'+s._photoUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;">';
+  } else if(s){
+    var ini=s.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+    av.style.background='var(--gold)';av.style.overflow='hidden';av.style.padding='0';
+    av.innerHTML='<span style="font-family:Cinzel,serif;font-size:18px;font-weight:700;color:var(--blue-dark);">'+ini+'</span>';
+  } else {
+    av.style.background='var(--gold)';av.innerHTML='👥';
+  }
   document.getElementById('sf-first').value=s?(s.FullName.split(' ')[0]||''):'';
   document.getElementById('sf-last').value=s?(s.FullName.split(' ').slice(1).join(' ')||''):'';
   document.getElementById('sf-role-input').value=s?s.Role:'';
