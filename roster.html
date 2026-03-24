@@ -654,116 +654,16 @@
 
 <!-- STAFF MODAL -->
 <div class="m-overlay" id="staff-ov" onclick="closeStaffModal(event)">
-  <div class="modal" style="max-width:640px;">
+  <div class="modal" style="max-width:620px;">
     <div class="m-head">
       <div class="m-head-left">
-        <div class="m-avatar" style="background:var(--gold);" id="sm-av">👥</div>
-        <div><div class="m-title" id="sm-title">Add Staff</div></div>
+        <div class="m-avatar" id="sm-av" style="background:var(--gold);overflow:hidden;padding:0;"></div>
+        <div><div class="m-title" id="sm-name"></div><div class="m-badges" id="sm-badges"></div></div>
       </div>
       <button class="m-close" onclick="closeStaffModal()">✕</button>
     </div>
-    <div class="m-body" style="padding:0;overflow-y:auto;">
-      <div class="match-form" id="staff-form">
-        <div class="mf-field">
-          <label>First Name *</label>
-          <input type="text" id="sf-first" required>
-        </div>
-        <div class="mf-field">
-          <label>Last Name *</label>
-          <input type="text" id="sf-last" required>
-        </div>
-        <div class="mf-field">
-          <label>Role *</label>
-          <select id="sf-role-input">
-            <option value="">Select…</option>
-            <option>Head Coach</option>
-            <option>Assistant Coach</option>
-            <option>GK Coach</option>
-            <option>Analyst</option>
-            <option>Team Manager</option>
-            <option>Physio</option>
-            <option>Operations</option>
-          </select>
-        </div>
-        <div class="mf-field">
-          <label>License Level</label>
-          <select id="sf-license">
-            <option value="">Select…</option>
-            <option>USSF Grassroots</option>
-            <option>USSF D</option>
-            <option>USSF C</option>
-            <option>USSF B</option>
-            <option>USSF A</option>
-            <option>USSF Pro</option>
-            <option>UEFA C</option>
-            <option>UEFA B</option>
-            <option>UEFA A</option>
-            <option>UEFA Pro</option>
-            <option>Other</option>
-            <option>N/A</option>
-          </select>
-        </div>
-        <div class="mf-field">
-          <label>Email *</label>
-          <input type="email" id="sf-email" required>
-        </div>
-        <div class="mf-field">
-          <label>Phone</label>
-          <input type="tel" id="sf-phone">
-        </div>
-        <div class="mf-field">
-          <label>Location</label>
-          <input type="text" id="sf-location" placeholder="e.g. Stuart, Florida">
-        </div>
-        <div class="mf-field">
-          <label>Active</label>
-          <select id="sf-active-input">
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-          </select>
-        </div>
-        <div class="mf-field">
-          <label>Passport Country</label>
-          <input type="text" id="sf-passport">
-        </div>
-        <div class="mf-field">
-          <label>Passport Expiry</label>
-          <input type="text" id="sf-passexp" placeholder="MM/YYYY">
-        </div>
-        <div class="mf-field">
-          <label>Visa Status</label>
-          <select id="sf-visa">
-            <option value="">Select…</option>
-            <option>US Citizen</option>
-            <option>Permanent Resident</option>
-            <option>Work Visa (H-1B/O-1)</option>
-            <option>Student Visa (F-1)</option>
-            <option>Tourist / B-2 Visa</option>
-            <option>ESTA / Visa Waiver</option>
-            <option>Other</option>
-          </select>
-        </div>
-        <div class="mf-field">
-          <label>Can Travel</label>
-          <select id="sf-travel">
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-          </select>
-        </div>
-        <div class="mf-field full">
-          <label>Travel Restrictions</label>
-          <textarea id="sf-restrictions" placeholder="Any travel limitations…" style="resize:vertical;min-height:60px;"></textarea>
-        </div>
-        <div class="mf-field full">
-          <label>Brief Biography</label>
-          <textarea id="sf-bio" placeholder="Background, experience, coaching philosophy…" style="resize:vertical;min-height:80px;"></textarea>
-        </div>
-        <div class="mf-actions">
-          <button class="cancel-btn" onclick="closeStaffModal()">Cancel</button>
-          <button class="save-btn" id="sm-save-btn" onclick="saveStaff()">Save Staff</button>
-        </div>
-      </div>
-    </div>
+    <div class="m-actions" id="sm-actions"></div>
+    <div class="m-body" id="sm-body" style="overflow-y:auto;"></div>
   </div>
 </div>
 <div class="m-overlay" id="m-ov" onclick="closeModal(event)">
@@ -2624,48 +2524,114 @@ function renderStaff(){
   document.getElementById('sfoot-label').textContent=filteredStaff.length+' of '+allStaff.length+' staff';
 }
 
-function openStaffModal(s){
-  editingStaffId=s?s._id:null;
-  document.getElementById('sm-title').textContent=s?'Edit Staff':'Add Staff';
-  // Set avatar
+function setStaffAvatar(s){
   var av=document.getElementById('sm-av');
   if(s&&s._photoUrl){
-    av.style.background='#000';av.style.overflow='hidden';av.style.padding='0';
+    av.style.background='#000';
     av.innerHTML='<img src="'+s._photoUrl+'" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;">';
   } else if(s){
     var ini=s.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
-    av.style.background='var(--gold)';av.style.overflow='hidden';av.style.padding='0';
+    av.style.background='var(--gold)';
     av.innerHTML='<span style="font-family:Cinzel,serif;font-size:18px;font-weight:700;color:var(--blue-dark);">'+ini+'</span>';
   } else {
     av.style.background='var(--gold)';av.innerHTML='👥';
   }
-  document.getElementById('sf-first').value=s?(s.FullName.split(' ')[0]||''):'';
-  document.getElementById('sf-last').value=s?(s.FullName.split(' ').slice(1).join(' ')||''):'';
-  document.getElementById('sf-role-input').value=s?s.Role:'';
-  document.getElementById('sf-license').value=s?s.LicenseLevel:'';
-  document.getElementById('sf-email').value=s?s.Email:'';
-  document.getElementById('sf-phone').value=s?s.Phone:'';
-  document.getElementById('sf-location').value=s?s.Location:'';
-  document.getElementById('sf-active-input').value=s?s.Active:'Yes';
-  document.getElementById('sf-passport').value=s?s.PassportCountry:'';
-  document.getElementById('sf-passexp').value=s?s.PassportExpiry:'';
-  document.getElementById('sf-visa').value=s?s.VisaStatus:'';
-  document.getElementById('sf-travel').value=s?s.CanTravel:'Yes';
-  document.getElementById('sf-restrictions').value=s?s.TravelRestrictions:'';
-  document.getElementById('sf-bio').value=s?s.BriefBiography:'';
-  document.getElementById('staff-ov').classList.add('open');
-}
-function closeStaffModal(e){if(!e||e.target===e.currentTarget)document.getElementById('staff-ov').classList.remove('open');}
-
-function editStaff(id){
-  const s=allStaff.find(x=>x._id===id);
-  if(s)openStaffModal(s);
 }
 
 function viewStaff(id){
-  const s=allStaff.find(x=>x._id===id);
-  if(s)openStaffModal(s);
+  var s=allStaff.find(function(x){return x._id===id;});
+  if(!s)return;
+  editingStaffId=s._id;
+  setStaffAvatar(s);
+  document.getElementById('sm-name').textContent=s.FullName;
+  document.getElementById('sm-badges').innerHTML=[
+    s.Role?'<span class="m-badge">'+esc(s.Role)+'</span>':'',
+    s.LicenseLevel?'<span class="m-badge">'+esc(s.LicenseLevel)+'</span>':'',
+    s.Active==='Yes'?'<span class="m-badge">✓ Active</span>':'<span class="m-badge m-badge-red">✗ Inactive</span>',
+    s.CanTravel?'<span class="m-badge '+(s.CanTravel==='No'?'m-badge-red':'')+'">Travel: '+esc(s.CanTravel)+'</span>':'',
+  ].join('');
+  var wa=s.Phone?s.Phone.replace(/[^0-9]/g,''):'';
+  document.getElementById('sm-actions').innerHTML=(function(){
+    var h='';
+    if(s.Email)h+='<a class="m-email-btn" href="#" onclick="event.preventDefault();window.open(\'mailto:'+esc(s.Email)+'\',\'_self\')">✉ Email</a>';
+    if(wa)h+='<a class="m-email-btn" href="https://wa.me/'+wa+'" target="_blank" style="background:#25D366"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> WhatsApp</a>';
+    h+='<button class="m-email-btn" style="background:transparent;border:1px solid var(--gold-border);color:var(--gold);cursor:pointer;margin-left:auto;" onclick="editStaff(\''+s._id+'\')">✏ Edit</button>';
+    return h;
+  })();
+  // View body
+  document.getElementById('sm-body').innerHTML=
+    '<div class="m-section"><div class="m-sec-title">Staff Info</div><div class="m-grid">'
+    +'<div class="m-field"><label>Full Name</label><div class="val">'+esc(s.FullName||'—')+'</div></div>'
+    +'<div class="m-field"><label>Role</label><div class="val">'+esc(s.Role||'—')+'</div></div>'
+    +'<div class="m-field"><label>License Level</label><div class="val">'+esc(s.LicenseLevel||'—')+'</div></div>'
+    +'<div class="m-field"><label>Location</label><div class="val">'+esc(s.Location||'—')+'</div></div>'
+    +'<div class="m-field"><label>Active</label><div class="val">'+esc(s.Active||'—')+'</div></div>'
+    +'</div></div>'
+    +(s.BriefBiography?'<div class="m-section"><div class="m-sec-title">Biography</div><div style="font-size:12px;line-height:1.6;color:var(--cream);">'+esc(s.BriefBiography)+'</div></div>':'')
+    +'<div class="m-section"><div class="m-sec-title">Passport & Travel</div><div class="m-grid">'
+    +'<div class="m-field"><label>Passport Country</label><div class="val">'+esc(s.PassportCountry||'—')+'</div></div>'
+    +'<div class="m-field"><label>Passport Expiry</label><div class="val">'+esc(s.PassportExpiry||'—')+'</div></div>'
+    +'<div class="m-field full"><label>Visa Status</label><div class="val">'+esc(s.VisaStatus||'—')+'</div></div>'
+    +(s.TravelRestrictions?'<div class="m-field full"><label>Travel Restrictions</label><div class="val" style="font-size:12px;line-height:1.6;">'+esc(s.TravelRestrictions)+'</div></div>':'')
+    +'</div></div>'
+    +'<div class="m-section"><div class="m-sec-title">Contact</div><div class="m-grid">'
+    +'<div class="m-field"><label>Email</label><div class="val">'+(s.Email?'<a href="#" onclick="event.preventDefault();window.open(\'mailto:'+esc(s.Email)+'\',\'_self\')" style="color:var(--gold);text-decoration:none">'+esc(s.Email)+'</a>':'—')+'</div></div>'
+    +'<div class="m-field"><label>Phone</label><div class="val">'+(s.Phone?'<a href="https://wa.me/'+wa+'" target="_blank" style="color:var(--gold);text-decoration:none">'+esc(s.Phone)+'</a>':'—')+'</div></div>'
+    +'</div></div>';
+  document.getElementById('staff-ov').classList.add('open');
 }
+
+function openStaffModal(s){
+  if(s&&s._id){viewStaff(s._id);return;}
+  // New staff — go straight to edit form
+  editingStaffId=null;
+  setStaffAvatar(null);
+  document.getElementById('sm-name').textContent='Add Staff';
+  document.getElementById('sm-badges').innerHTML='';
+  document.getElementById('sm-actions').innerHTML='';
+  showStaffEditForm(null);
+  document.getElementById('staff-ov').classList.add('open');
+}
+
+function editStaff(id){
+  var s=allStaff.find(function(x){return x._id===id;});
+  if(!s)return;
+  editingStaffId=s._id;
+  setStaffAvatar(s);
+  document.getElementById('sm-name').textContent='Edit: '+s.FullName;
+  document.getElementById('sm-badges').innerHTML='';
+  document.getElementById('sm-actions').innerHTML='';
+  showStaffEditForm(s);
+}
+
+function showStaffEditForm(s){
+  var roles=['Head Coach','Assistant Coach','GK Coach','Analyst','Team Manager','Physio','Operations'];
+  var licenses=['USSF Grassroots','USSF D','USSF C','USSF B','USSF A','USSF Pro','UEFA C','UEFA B','UEFA A','UEFA Pro','Other','N/A'];
+  var visas=['US Citizen','Permanent Resident','Work Visa (H-1B/O-1)','Student Visa (F-1)','Tourist / B-2 Visa','ESTA / Visa Waiver','Other'];
+  function opt(list,val){return list.map(function(o){return '<option'+(o===val?' selected':'')+'>'+o+'</option>';}).join('');}
+  document.getElementById('sm-body').innerHTML=
+    '<div class="match-form">'
+    +'<div class="mf-field"><label>First Name *</label><input type="text" id="sf-first" value="'+(s?esc(s.FullName.split(' ')[0]||''):'')+'"></div>'
+    +'<div class="mf-field"><label>Last Name *</label><input type="text" id="sf-last" value="'+(s?esc(s.FullName.split(' ').slice(1).join(' ')||''):'')+'"></div>'
+    +'<div class="mf-field"><label>Role *</label><select id="sf-role-input"><option value="">Select…</option>'+opt(roles,s?s.Role:'')+'</select></div>'
+    +'<div class="mf-field"><label>License Level</label><select id="sf-license"><option value="">Select…</option>'+opt(licenses,s?s.LicenseLevel:'')+'</select></div>'
+    +'<div class="mf-field"><label>Email *</label><input type="email" id="sf-email" value="'+(s?esc(s.Email):'')+'"></div>'
+    +'<div class="mf-field"><label>Phone</label><input type="tel" id="sf-phone" value="'+(s?esc(s.Phone):'')+'"></div>'
+    +'<div class="mf-field"><label>Location</label><input type="text" id="sf-location" value="'+(s?esc(s.Location):'')+'"></div>'
+    +'<div class="mf-field"><label>Active</label><select id="sf-active-input"><option value="Yes"'+(s&&s.Active==='Yes'?' selected':(!s?' selected':''))+'>Yes</option><option value="No"'+(s&&s.Active==='No'?' selected':'')+'>No</option></select></div>'
+    +'<div class="mf-field"><label>Passport Country</label><input type="text" id="sf-passport" value="'+(s?esc(s.PassportCountry):'')+'"></div>'
+    +'<div class="mf-field"><label>Passport Expiry</label><input type="text" id="sf-passexp" placeholder="MM/YYYY" value="'+(s?esc(s.PassportExpiry):'')+'"></div>'
+    +'<div class="mf-field"><label>Visa Status</label><select id="sf-visa"><option value="">Select…</option>'+opt(visas,s?s.VisaStatus:'')+'</select></div>'
+    +'<div class="mf-field"><label>Can Travel</label><select id="sf-travel"><option value="Yes"'+(s&&s.CanTravel==='Yes'?' selected':(!s?' selected':''))+'>Yes</option><option value="No"'+(s&&s.CanTravel==='No'?' selected':'')+'>No</option></select></div>'
+    +'<div class="mf-field full"><label>Travel Restrictions</label><textarea id="sf-restrictions" style="resize:vertical;min-height:60px;">'+(s?esc(s.TravelRestrictions):'')+'</textarea></div>'
+    +'<div class="mf-field full"><label>Brief Biography</label><textarea id="sf-bio" style="resize:vertical;min-height:80px;">'+(s?esc(s.BriefBiography):'')+'</textarea></div>'
+    +'<div class="mf-actions">'
+    +'<button class="cancel-btn" onclick="'+(s?'viewStaff(\''+s._id+'\')':'closeStaffModal()')+'">Cancel</button>'
+    +'<button class="save-btn" id="sm-save-btn" onclick="saveStaff()">Save Staff</button>'
+    +'</div></div>';
+}
+
+function closeStaffModal(e){if(!e||e.target===e.currentTarget)document.getElementById('staff-ov').classList.remove('open');}
 
 async function saveStaff(){
   const btn=document.getElementById('sm-save-btn');
@@ -2676,7 +2642,7 @@ async function saveStaff(){
     const h={Authorization:`Bearer ${t}`,'Content-Type':'application/json'};
     const first=document.getElementById('sf-first').value.trim();
     const last=document.getElementById('sf-last').value.trim();
-    if(!first||!last){toast('First and last name required','error');return;}
+    if(!first||!last){toast('First and last name required','error');btn.textContent='Save Staff';btn.disabled=false;return;}
     const fields={
       Title:(first+' '+last).trim(),
       Email:document.getElementById('sf-email').value.trim(),
