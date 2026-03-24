@@ -657,7 +657,7 @@ const msalConfig = {
   auth:{clientId:CLIENT_ID,authority:`https://login.microsoftonline.com/${TENANT_ID}`,redirectUri:window.location.href.split('?')[0].split('#')[0]},
   cache:{cacheLocation:'sessionStorage'}
 };
-const loginReq = {scopes:['Sites.ReadWrite.All','User.Read']};
+const loginReq = {scopes:['Sites.ReadWrite.All','Files.ReadWrite.All','User.Read']};
 const msal_ = new msal.PublicClientApplication(msalConfig);
 
 let all=[],filtered=[],sortCol='FullName',sortAsc=true;
