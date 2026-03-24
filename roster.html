@@ -2100,7 +2100,105 @@ function clearLineup(){
   saveTeamSheet();
 }
 
-function printLineup(){window.print();}
+function printLineup(){
+  if(!tsData[currentTournament]) return;
+  var lines=['A','B','C','D','E'];
+  var pages=[];
+  lines.forEach(function(line){
+    var ld=tsData[currentTournament][line];
+    if(!ld) return;
+    var formation=ld.formation||'2-3-1';
+    var slots=FORMATIONS[formation]?FORMATIONS[formation].slots:FORMATIONS['2-3-1'].slots;
+    var lineup=ld.lineup||{};
+    var playerCount=Object.keys(lineup).length;
+    if(playerCount===0) return; // skip empty lines
+
+    // Build pitch SVG with players
+    var playerDots=slots.map(function(s,i){
+      var pid=lineup[i];
+      var p=pid?all.find(function(x){return x._id===pid;}):null;
+      var name=p?p.FullName.split(' ')[0]:'—';
+      var ini=p?p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase():'+';
+      return '<circle cx="'+s.x+'" cy="'+s.y+'" r="5" fill="'+(p?'#dab751':'rgba(255,255,255,0.3)')+'" stroke="'+(p?'#fff':'rgba(255,255,255,0.3)')+'" stroke-width="0.5"/>'
+        +'<text x="'+s.x+'" y="'+(s.y-7)+'" text-anchor="middle" fill="#fff" font-size="3.5" font-family="sans-serif" font-weight="700">'+esc(name)+'</text>'
+        +'<text x="'+s.x+'" y="'+(s.y+9)+'" text-anchor="middle" fill="rgba(218,183,81,0.9)" font-size="2.8" font-family="sans-serif" font-weight="600">'+s.pos+'</text>';
+    }).join('');
+
+    var pitchSvg='<svg viewBox="0 0 100 154" style="width:100%;max-width:440px;display:block;margin:0 auto;">'
+      +'<defs><linearGradient id="grass'+line+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0%" stop-color="#1a4a15"/><stop offset="50%" stop-color="#266120"/><stop offset="100%" stop-color="#163d10"/>'
+      +'</linearGradient></defs>'
+      +'<rect width="100" height="154" fill="url(#grass'+line+')"/>'
+      +'<rect x="3" y="3" width="94" height="148" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="0.5"/>'
+      +'<line x1="3" y1="77" x2="97" y2="77" stroke="rgba(255,255,255,0.7)" stroke-width="0.5"/>'
+      +'<circle cx="50" cy="77" r="15" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="0.5"/>'
+      +'<circle cx="50" cy="77" r="1" fill="rgba(255,255,255,0.8)"/>'
+      +'<rect x="18" y="3" width="64" height="25" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="0.5"/>'
+      +'<rect x="32" y="3" width="36" height="12" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>'
+      +'<rect x="37" y="0" width="26" height="4" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.6)" stroke-width="0.4"/>'
+      +'<rect x="18" y="126" width="64" height="25" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="0.5"/>'
+      +'<rect x="32" y="139" width="36" height="12" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.4"/>'
+      +'<rect x="37" y="150" width="26" height="4" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.6)" stroke-width="0.4"/>'
+      +playerDots
+      +'</svg>';
+
+    // Build roster table
+    var rosterRows=slots.map(function(s,i){
+      var pid=lineup[i];
+      var p=pid?all.find(function(x){return x._id===pid;}):null;
+      if(!p) return '<tr><td style="padding:6px 10px;border-bottom:1px solid #ddd;color:#999;">'+s.pos+'</td><td style="padding:6px 10px;border-bottom:1px solid #ddd;color:#999;">—</td><td style="padding:6px 10px;border-bottom:1px solid #ddd;color:#999;">—</td><td style="padding:6px 10px;border-bottom:1px solid #ddd;color:#999;">—</td><td style="padding:6px 10px;border-bottom:1px solid #ddd;color:#999;">—</td></tr>';
+      var age=calcAge(p.BirthDate);
+      return '<tr>'
+        +'<td style="padding:6px 10px;border-bottom:1px solid #ddd;font-weight:600;color:#dab751;">'+s.pos+'</td>'
+        +'<td style="padding:6px 10px;border-bottom:1px solid #ddd;font-weight:600;">'+esc(p.FullName)+'</td>'
+        +'<td style="padding:6px 10px;border-bottom:1px solid #ddd;">'+esc(p.PrimaryPosition||'—')+'</td>'
+        +'<td style="padding:6px 10px;border-bottom:1px solid #ddd;">'+(age||'—')+'</td>'
+        +'<td style="padding:6px 10px;border-bottom:1px solid #ddd;">'+esc(p.Height||'—')+'</td>'
+        +'</tr>';
+    }).join('');
+
+    pages.push(
+      '<div class="print-page">'
+      +'<div style="text-align:center;margin-bottom:16px;">'
+      +'<img src="logo.png" style="width:80px;height:80px;object-fit:contain;margin-bottom:8px;" onerror="this.style.display=\'none\'">'
+      +'<div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#1c5575;letter-spacing:3px;">LEGIO FC</div>'
+      +'<div style="font-family:Georgia,serif;font-size:10px;letter-spacing:4px;color:#999;text-transform:uppercase;margin-top:2px;">Est. MMXV</div>'
+      +'</div>'
+      +'<div style="text-align:center;margin-bottom:20px;">'
+      +'<div style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#1c5575;letter-spacing:2px;">'+esc(currentTournament)+'</div>'
+      +'<div style="display:flex;justify-content:center;gap:20px;margin-top:6px;">'
+      +'<span style="font-size:14px;font-weight:600;color:#dab751;letter-spacing:2px;">LINE '+line+'</span>'
+      +'<span style="font-size:14px;color:#666;">Formation: '+formation+'</span>'
+      +'<span style="font-size:14px;color:#666;">Players: '+playerCount+'/7</span>'
+      +'</div></div>'
+      +pitchSvg
+      +'<table style="width:100%;border-collapse:collapse;margin-top:20px;font-size:13px;">'
+      +'<thead><tr style="background:#1c5575;color:#fff;">'
+      +'<th style="padding:8px 10px;text-align:left;font-weight:600;letter-spacing:1px;">SLOT</th>'
+      +'<th style="padding:8px 10px;text-align:left;font-weight:600;letter-spacing:1px;">NAME</th>'
+      +'<th style="padding:8px 10px;text-align:left;font-weight:600;letter-spacing:1px;">POSITION</th>'
+      +'<th style="padding:8px 10px;text-align:left;font-weight:600;letter-spacing:1px;">AGE</th>'
+      +'<th style="padding:8px 10px;text-align:left;font-weight:600;letter-spacing:1px;">HEIGHT</th>'
+      +'</tr></thead><tbody>'+rosterRows+'</tbody></table>'
+      +'</div>'
+    );
+  });
+
+  if(!pages.length){toast('No lines with players to print','error');return;}
+
+  var w=window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>Legio FC — '+esc(currentTournament)+' Team Sheet</title>'
+    +'<style>'
+    +'@page{size:portrait;margin:20mm 15mm;}'
+    +'body{margin:0;padding:0;font-family:-apple-system,sans-serif;color:#222;}'
+    +'.print-page{page-break-after:always;padding:10px 0;}'
+    +'.print-page:last-child{page-break-after:auto;}'
+    +'</style></head><body>'
+    +pages.join('')
+    +'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},500);
+}
 
 
 init();
