@@ -343,7 +343,8 @@
           </div>
           <div class="field full">
             <label>Past Playing Experience <span>*</span></label>
-            <textarea id="pastExperience" placeholder="Describe your playing background — clubs, leagues, levels, achievements…" required></textarea>
+            <textarea id="pastExperience" placeholder="Describe your playing background — clubs, leagues, levels, achievements…" required oninput="document.getElementById('exp-count').textContent=this.value.length"></textarea>
+            <div style="text-align:right;font-size:11px;color:var(--text-faint);margin-top:4px;"><span id="exp-count">0</span> characters</div>
           </div>
           <div class="field full">
             <label>Highlight Reel — Link 1</label>
