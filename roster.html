@@ -2332,21 +2332,58 @@ function printLineup(){
       +playerDots
       +'</svg>';
 
-    // Build roster table
-    var rosterRows=slots.map(function(s,i){
+    // Build photo card grid: Coach + 7 players in 2 rows of 4
+    var cardStyle='style="text-align:center;border:1px solid #ddd;padding:6px;background:#fafafa;"';
+    var imgStyle='style="width:100%;aspect-ratio:1;object-fit:cover;object-position:center 20%;display:block;border:1px solid #ccc;margin-bottom:4px;"';
+    var emptyStyle='style="width:100%;aspect-ratio:1;background:#eee;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#999;border:1px solid #ccc;margin-bottom:4px;"';
+
+    // Coach card (first assigned staff, or head coach)
+    var staffIds=tsStaffMap[currentTournament]||[];
+    var headCoach=null;
+    for(var si=0;si<staffIds.length;si++){
+      var sc=allStaff.find(function(x){return x._id===staffIds[si];});
+      if(sc){headCoach=sc;break;}
+    }
+    var coachCard='<div '+cardStyle+'>';
+    if(headCoach){
+      var cIni=headCoach.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+      coachCard+=headCoach._photoUrl?'<img src="'+headCoach._photoUrl+'" '+imgStyle+'>':'<div '+emptyStyle+'>'+cIni+'</div>';
+      coachCard+='<div style="font-family:Georgia,serif;font-size:9px;font-weight:700;color:#1c5575;">'+esc(headCoach.FullName)+'</div>';
+      coachCard+='<div style="font-size:8px;color:#dab751;letter-spacing:1px;text-transform:uppercase;">'+esc(headCoach.Role||'Coach')+'</div>';
+      coachCard+='<div style="font-size:7px;color:#888;margin-top:1px;">'+esc(headCoach.LicenseLevel||'')+'</div>';
+    } else {
+      coachCard+='<div '+emptyStyle+'>HC</div>';
+      coachCard+='<div style="font-size:9px;color:#999;">No Coach Assigned</div>';
+    }
+    coachCard+='</div>';
+
+    // Player cards by slot order
+    var playerCards=slots.map(function(s,i){
       var pid=lineup[i];
       var p=pid?all.find(function(x){return x._id===pid;}):null;
-      if(!p) return '<tr><td style="padding:5px 8px;border-bottom:1px solid #ddd;color:#999;">'+s.pos+'</td><td colspan="5" style="padding:5px 8px;border-bottom:1px solid #ddd;color:#999;">—</td></tr>';
-      var age=calcAge(p.BirthDate);
-      return '<tr>'
-        +'<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-weight:600;color:#dab751;">'+s.pos+'</td>'
-        +'<td style="padding:5px 8px;border-bottom:1px solid #ddd;font-weight:600;">'+esc(p.FullName)+'</td>'
-        +'<td style="padding:5px 8px;border-bottom:1px solid #ddd;">'+esc(p.PrimaryPosition||'—')+'</td>'
-        +'<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;">'+(age||'—')+'</td>'
-        +'<td style="padding:5px 8px;border-bottom:1px solid #ddd;">'+esc(p.Height||'—')+'</td>'
-        +'<td style="padding:5px 8px;border-bottom:1px solid #ddd;text-align:center;">'+esc(p.DominantFoot||'—')+'</td>'
-        +'</tr>';
-    }).join('');
+      var card='<div '+cardStyle+'>';
+      if(p){
+        var pIni=p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+        card+=p._headshotUrl?'<img src="'+p._headshotUrl+'" '+imgStyle+'>':'<div '+emptyStyle+'>'+pIni+'</div>';
+        card+='<div style="font-family:Georgia,serif;font-size:9px;font-weight:700;color:#1c5575;">'+esc(p.FullName)+'</div>';
+        card+='<div style="font-size:8px;color:#dab751;letter-spacing:1px;text-transform:uppercase;">'+s.pos+'</div>';
+        card+='<div style="font-size:7px;color:#888;margin-top:1px;">'+(calcAge(p.BirthDate)||'—')+'y · '+esc(p.Height||'—')+' · '+esc(p.DominantFoot||'—')+'</div>';
+      } else {
+        card+='<div '+emptyStyle+'>'+s.pos+'</div>';
+        card+='<div style="font-size:9px;color:#999;">'+s.pos+'</div>';
+      }
+      card+='</div>';
+      return card;
+    });
+
+    // Combine: row 1 = coach + first 3 players, row 2 = last 4 players
+    var allCards=[coachCard].concat(playerCards);
+    var rosterGrid='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;">'
+      +allCards.slice(0,4).join('')
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;">'
+      +allCards.slice(4,8).join('')
+      +'</div>';
 
     pages.push(
       '<div class="print-page">'
@@ -2370,17 +2407,7 @@ function printLineup(){
       })()
       +'</div>'
       +'<div class="pp-pitch">'+pitchSvg+'</div>'
-      +'<div class="pp-table">'
-      +'<table>'
-      +'<thead><tr style="background:#1c5575;color:#fff;">'
-      +'<th style="padding:5px 8px;text-align:left;font-weight:600;letter-spacing:1px;">SLOT</th>'
-      +'<th style="padding:5px 8px;text-align:left;font-weight:600;letter-spacing:1px;">NAME</th>'
-      +'<th style="padding:5px 8px;text-align:left;font-weight:600;letter-spacing:1px;">POSITION</th>'
-      +'<th style="padding:5px 8px;text-align:center;font-weight:600;letter-spacing:1px;">AGE</th>'
-      +'<th style="padding:5px 8px;text-align:left;font-weight:600;letter-spacing:1px;">HEIGHT</th>'
-      +'<th style="padding:5px 8px;text-align:center;font-weight:600;letter-spacing:1px;">FOOT</th>'
-      +'</tr></thead><tbody>'+rosterRows+'</tbody></table>'
-      +'</div></div>'
+      +'<div class="pp-table">'+rosterGrid+'</div></div>'
     );
 
     // If saved analysis exists for this line, add analysis page
