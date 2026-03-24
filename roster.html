@@ -1106,18 +1106,20 @@ function renderDashboardMetrics(){
   renderMetricList('metric-age', ageBuckets, 'age');
 }
 
-async function fetchHeadshotUrl(playerName, storedUrl, photoType){
+async function fetchHeadshotUrl(playerName, storedUrl, photoType, folder){
   // photoType: 'headshot' (default) or 'action'
+  // folder: 'PlayerPhotos' (default) or 'StaffPhotos'
   if(!photoType) photoType='headshot';
+  if(!folder) folder='PlayerPhotos';
   // Use stored URL only if it's NOT a SharePoint internal path (those require auth and break img tags)
   if(storedUrl && storedUrl.startsWith('https://') && !storedUrl.includes('.sharepoint.com')){
     return storedUrl.replace(/ /g, '%20');
   }
 
-  // Fetch from PlayerPhotos folder via Graph API, then download as blob to avoid third-party cookie issues
+  // Fetch from folder via Graph API, then download as blob to avoid third-party cookie issues
   try{
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const folderPath='/PlayerPhotos/'+playerName;
+    const folderPath='/'+folder+'/'+playerName;
     const encoded=folderPath.split('/').map(s=>encodeURIComponent(s)).join('/');
     const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:${encoded}:/children`,{headers:h});
     if(!res.ok)return null;
@@ -2468,7 +2470,7 @@ async function loadStaff(){
     // Load photos
     allStaff.forEach(s=>{
       if(!s.FullName)return;
-      fetchHeadshotUrl(s.FullName,s.ProfilePhotoURL).then(url=>{
+      fetchHeadshotUrl(s.FullName,s.ProfilePhotoURL,'headshot','StaffPhotos').then(url=>{
         if(url){s._photoUrl=url;renderStaff();}
       });
     });
