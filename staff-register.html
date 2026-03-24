@@ -53,9 +53,8 @@
     .radio-group{display:flex;gap:16px;margin-top:4px}
     .radio-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-dim)}
     .radio-label input{accent-color:var(--gold);width:16px;height:16px}
-    .file-upload{position:relative;padding:20px;border:2px dashed var(--gold-border);text-align:center;cursor:pointer;transition:all .2s}
+    .file-upload{padding:20px;border:2px dashed var(--gold-border);text-align:center;cursor:pointer;transition:all .2s}
     .file-upload:hover{border-color:var(--gold);background:var(--gold-dim)}
-    .file-upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
     .file-upload .fu-label{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
     .file-upload .fu-hint{font-size:11px;color:var(--text-faint);margin-top:6px}
     .file-preview{margin-top:8px;font-size:11px;color:var(--gold)}
@@ -216,11 +215,11 @@
       <div class="grid">
         <div class="field full">
           <label>Headshot Photo <span>*</span></label>
-          <div class="file-upload">
-            <input type="file" id="headshot" accept="image/*" required onchange="previewFile(this,'headshot-preview')">
-            <div class="fu-label">Click or drag to upload</div>
+          <input type="file" id="headshot" accept="image/*" onchange="previewFile(this,'headshot-preview')" style="display:none;">
+          <label for="headshot" class="file-upload">
+            <div class="fu-label">Tap to upload photo</div>
             <div class="fu-hint">Professional headshot preferred. JPG or PNG.</div>
-          </div>
+          </label>
           <div class="file-preview" id="headshot-preview"></div>
         </div>
       </div>
@@ -254,7 +253,14 @@ document.querySelectorAll('input[name="canTravel"]').forEach(r=>{
 function previewFile(input,previewId){
   const el=document.getElementById(previewId);
   if(input.files&&input.files[0]){
-    el.textContent='✓ '+input.files[0].name+' ('+Math.round(input.files[0].size/1024)+'KB)';
+    var f=input.files[0];
+    el.innerHTML='✓ '+f.name+' ('+Math.round(f.size/1024)+'KB)';
+    // Show thumbnail
+    var reader=new FileReader();
+    reader.onload=function(e){
+      el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-top:8px;"><img src="'+e.target.result+'" style="width:60px;height:60px;object-fit:cover;border:1px solid var(--gold-border);border-radius:4px;"><div><div style="color:var(--gold);">✓ Photo selected</div><div style="font-size:10px;color:var(--text-faint);">'+f.name+' ('+Math.round(f.size/1024)+'KB)</div></div></div>';
+    };
+    reader.readAsDataURL(f);
   }
 }
 
