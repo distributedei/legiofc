@@ -2002,20 +2002,19 @@ function showHoverCard(e,playerId){
     +'</div>'
     +'<div class="hc-footer">Click to open editable card</div>';
   hc.style.display='block';
-  positionHoverCard(e);
-}
-function positionHoverCard(e){
-  var hc=document.getElementById('ts-hover-card');
-  var cardW=380; // matches max-width in CSS
-  // Always place to the left of cursor
-  var x=e.clientX-cardW-30;
-  if(x<10) x=e.clientX+30;
-  var y=e.clientY-100;
+  // Anchor to the right edge of the hovered element
+  var rect=e.currentTarget.getBoundingClientRect();
+  var x=rect.right+12;
+  var y=rect.top;
+  // If no room on right, flip to left
+  if(x+390>window.innerWidth) x=rect.left-390-12;
+  if(x<10) x=10;
   if(y<10) y=10;
   var cardH=hc.offsetHeight||500;
   if(y+cardH>window.innerHeight-10) y=window.innerHeight-cardH-10;
   hc.style.left=x+'px';hc.style.top=y+'px';
 }
+function positionHoverCard(e){/* anchored on show */}
 function moveHoverCard(e){/* position locked on show */}
 function hideHoverCard(){document.getElementById('ts-hover-card').style.display='none';}
 
