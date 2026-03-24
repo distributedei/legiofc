@@ -875,7 +875,7 @@ async function fetchHeadshotUrl(playerName, storedUrl, photoType){
   // Fetch from PlayerPhotos folder via Graph API, then download as blob to avoid third-party cookie issues
   try{
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const folderPath='/Shared Documents/PlayerPhotos/'+playerName;
+    const folderPath='/PlayerPhotos/'+playerName;
     const encoded=folderPath.split('/').map(s=>encodeURIComponent(s)).join('/');
     const res=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:${encoded}:/children`,{headers:h});
     if(!res.ok)return null;
