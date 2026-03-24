@@ -864,13 +864,15 @@ function renderDashboardMetrics(){
   renderMetricList('metric-age', ageBuckets, 'age');
 }
 
-async function fetchHeadshotUrl(playerName, storedUrl){
+async function fetchHeadshotUrl(playerName, storedUrl, photoType){
+  // photoType: 'headshot' (default) or 'action'
+  if(!photoType) photoType='headshot';
   // Use stored URL only if it's NOT a SharePoint internal path (those require auth and break img tags)
   if(storedUrl && storedUrl.startsWith('https://') && !storedUrl.includes('.sharepoint.com')){
     return storedUrl.replace(/ /g, '%20');
   }
 
-  // Fetch from PlayerPhotos folder via Graph API (returns pre-authenticated CDN URL)
+  // Fetch from PlayerPhotos folder via Graph API, then download as blob to avoid third-party cookie issues
   try{
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
     const folderPath='/Shared Documents/PlayerPhotos/'+playerName;
@@ -879,10 +881,18 @@ async function fetchHeadshotUrl(playerName, storedUrl){
     if(!res.ok)return null;
     const data=await res.json();
     const files=data.value||[];
-    const headshot=files.find(f=>f.name.toLowerCase().includes('headshot'));
-    const player=files.find(f=>f.name.toLowerCase().includes('player')||f.name.toLowerCase().includes('action'));
-    const file=headshot||player||files[0];
-    return file?file['@microsoft.graph.downloadUrl']:null;
+    let file;
+    if(photoType==='action'){
+      file=files.find(f=>f.name.toLowerCase().includes('action'))||files.find(f=>f.name.toLowerCase().includes('player'));
+    } else {
+      file=files.find(f=>f.name.toLowerCase().includes('headshot'))||files[0];
+    }
+    if(!file)return null;
+    // Download the file content via Graph API with auth token and create a blob URL
+    const imgRes=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${file.id}/content`,{headers:h});
+    if(!imgRes.ok)return null;
+    const blob=await imgRes.blob();
+    return URL.createObjectURL(blob);
   }catch(e){return null;}
 }
 
@@ -1062,8 +1072,8 @@ function openModal(id){
     });
   }
   // Also fetch player photo URL for modal body
-  if(p.PlayerPhotoURL && !p._playerPhotoUrl){
-    fetchHeadshotUrl(p.FullName+'_action', p.PlayerPhotoURL).then(url=>{
+  if(!p._playerPhotoUrl){
+    fetchHeadshotUrl(p.FullName, p.PlayerPhotoURL, 'action').then(url=>{
       if(url) p._playerPhotoUrl=url;
     });
   }
@@ -1098,8 +1108,8 @@ function renderPlayerView(p){
     ? videoLinks.map(v=>`<a href="${esc(v.url)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(218,183,81,0.08);border:1px solid rgba(218,183,81,0.3);color:var(--gold);font-family:Cinzel,serif;font-size:8px;letter-spacing:1px;text-decoration:none;text-transform:uppercase;transition:all .15s;margin-right:6px;margin-bottom:6px;" onmouseover="this.style.background='rgba(218,183,81,0.2)'" onmouseout="this.style.background='rgba(218,183,81,0.08)'"><svg width="8" height="8" viewBox="0 0 10 10" fill="var(--gold)"><polygon points="0,0 10,5 0,10"/></svg>${v.label}</a>`).join('')
     : '<span style="font-size:12px;color:var(--text-faint);font-style:italic;">No video links on file</span>';
 
-  const headshotUrl = (p._headshotUrl || p.HeadshotURL || '').replace(/ /g,'%20');
-  const playerPhotoUrl = (p._playerPhotoUrl || p.PlayerPhotoURL || '').replace(/ /g,'%20');
+  const headshotUrl = p._headshotUrl || '';
+  const playerPhotoUrl = p._playerPhotoUrl || '';
 
   document.getElementById('m-body').innerHTML=`
     <div class="m-section"><div class="m-sec-title">Player Info</div><div class="m-grid">
