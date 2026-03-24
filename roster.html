@@ -1881,15 +1881,6 @@ function renderPitch(slots){
   var container=document.getElementById('ts-slots');
   var ln=tsCurrentLineup();
 
-  // Get height range across assigned players for relative scaling
-  var assignedPlayers=Object.values(ln).map(function(id){return all.find(function(x){return x._id===id;});}).filter(Boolean);
-  var heights=assignedPlayers.map(function(p){
-    var m=p.Height&&p.Height.match(/\((\d+)cm\)/);return m?parseInt(m[1]):null;
-  }).filter(Boolean);
-  var minH=heights.length?Math.min.apply(null,heights):163;
-  var maxH=heights.length?Math.max.apply(null,heights):196;
-  var hRange=Math.max(maxH-minH,1);
-
   container.innerHTML=slots.map(function(s,i){
     var p=ln[i]?all.find(function(x){return x._id===ln[i];}):null;
     var ini=p?p.FullName.split(' ').filter(Boolean).map(function(n){return n[0];}).join('').slice(0,2).toUpperCase():'+';
@@ -1898,26 +1889,12 @@ function renderPitch(slots){
     // Fixed avatar circle size
     var size=44;var fontSize=13;
 
-    // Height column — vertical bar below avatar representing player height
-    var colHtml='';
-    if(p){
-      var m=p.Height&&p.Height.match(/\((\d+)cm\)/);
-      var cm=m?parseInt(m[1]):null;
-      if(cm){
-        var ratio=(cm-minH)/hRange; // 0=shortest, 1=tallest
-        var colH=Math.round(8+ratio*28); // 8px–36px column
-        var colColor=ratio>0.66?'#4caf50':ratio>0.33?'#dab751':'#64b5f6'; // green=tall, gold=mid, blue=short
-        colHtml='<div style="width:3px;height:'+colH+'px;background:'+colColor+';border-radius:2px;margin-top:2px;margin-bottom:1px;opacity:0.85;" title="'+p.Height+'"></div>';
-      }
-    }
-
     var hoverAttrs=p?' onmouseenter="showHoverCard(event,\''+p._id+'\')" onmousemove="moveHoverCard(event)" onmouseleave="hideHoverCard()"':'';
     var dragAttrs=p?' draggable="true" ondragstart="hideHoverCard();draggedPlayerId=\''+ln[i]+'\';draggedFromSlot='+i+'" ondragend="draggedPlayerId=null;draggedFromSlot=null"':'';
     return '<div class="ts-slot" style="left:'+s.x+'%;top:'+s.y+'%;width:64px;" onclick="slotClick('+i+')"'+hoverAttrs+dragAttrs+' ondragover="event.preventDefault();this.querySelector(\'.ts-slot-photo\').classList.add(\'drag-over\')" ondragleave="this.querySelector(\'.ts-slot-photo\').classList.remove(\'drag-over\')" ondrop="dropOnSlot(event,'+i+')">'
       +'<div class="ts-slot-photo '+(p?'filled':'')+'" id="slot-photo-'+i+'" style="width:'+size+'px;height:'+size+'px;font-size:'+fontSize+'px;">'+photoHtml+'</div>'
       +(p?'<div onclick="event.stopPropagation();removeFromSlot('+i+')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:rgba(156,24,41,0.9);border:1px solid rgba(156,24,41,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;line-height:1;z-index:2;">✕</div>':'')
       +'<div class="ts-slot-shadow" style="width:36px;height:6px;"></div>'
-      +colHtml
       +'<div class="ts-slot-name" style="font-size:7px;max-width:64px;">'+(p?p.FullName.split(' ')[0]:'—')+'</div>'
       +'<div class="ts-slot-pos" style="font-size:6px;">'+s.pos+'</div></div>';
   }).join('');
