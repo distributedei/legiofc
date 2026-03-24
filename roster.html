@@ -1585,6 +1585,16 @@ async function getTeamSheetList(){
     const cols=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/columns`,{headers:h})).json();
     const customCols = cols.value.filter(c=>!c.readOnly).map(c=>({name:c.name,displayName:c.displayName}));
     console.log('TeamSheets columns:',customCols);
+    // Add Analysis column if missing
+    if(!customCols.find(c=>c.name==='Analysis')){
+      try{
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/columns`,{
+          method:'POST',headers:{...h,'Content-Type':'application/json'},
+          body:JSON.stringify({name:'Analysis',text:{allowMultipleValues:false,maxLength:0}})
+        });
+        console.log('Analysis column added to TeamSheets');
+      }catch(e){console.warn('Could not add Analysis column:',e);}
+    }
     return;
   }
   // Create list
@@ -1597,7 +1607,8 @@ async function getTeamSheetList(){
         {name:'Tournament',text:{}},
         {name:'Line',text:{}},
         {name:'Formation',text:{}},
-        {name:'Players',text:{allowMultipleValues:false,maxLength:0}}
+        {name:'Players',text:{allowMultipleValues:false,maxLength:0}},
+        {name:'Analysis',text:{allowMultipleValues:false,maxLength:0}}
       ]
     })
   });
@@ -1632,7 +1643,8 @@ async function saveTeamSheet(){
         Tournament: currentTournament,
         Line: line,
         Formation: lineData.formation || '2-3-1',
-        Players: Object.keys(lineup).length > 0 ? JSON.stringify(lineup) : null
+        Players: Object.keys(lineup).length > 0 ? JSON.stringify(lineup) : null,
+        Analysis: lineData.analysis || null
       };
       const key = `${currentTournament}|${line}`;
       if(tsItemIds[key]){
@@ -1657,7 +1669,7 @@ async function loadTeamSheet(){
   try{
     await getTeamSheetList();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,Tournament,Line,Formation,Players';
+    const fields='Title,Tournament,Line,Formation,Players,Analysis';
     const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items?$expand=fields($select=${fields})&$top=999`,{headers:h})).json();
     if(!res.value||!res.value.length) return;
     tsData={};
@@ -1667,7 +1679,7 @@ async function loadTeamSheet(){
       if(!tsData[f.Tournament]) tsData[f.Tournament]=makeBlankTournament();
       let lineup={};
       try{ lineup=JSON.parse(f.Players||'{}'); }catch(e){}
-      tsData[f.Tournament][f.Line]={lineup, formation: f.Formation||'2-3-1'};
+      tsData[f.Tournament][f.Line]={lineup, formation: f.Formation||'2-3-1', analysis: f.Analysis||''};
       tsItemIds[`${f.Tournament}|${f.Line}`]=item.id;
     });
     if(Object.keys(tsData).length){
@@ -1676,6 +1688,7 @@ async function loadTeamSheet(){
       renderTournamentSelect();
       buildFormation();
       toast('Team sheets loaded ✓','success');
+      updateAnalyzeBtn();
     }
   }catch(e){console.warn('No saved team sheets:',e.message);}
 }
@@ -1711,7 +1724,7 @@ function initTeamSheet(){
 
 function makeBlankTournament(){
   var t={};
-  ['A','B','C','D','E'].forEach(function(l){ t[l]={lineup:{},formation:'2-3-1'}; });
+  ['A','B','C','D','E'].forEach(function(l){ t[l]={lineup:{},formation:'2-3-1',analysis:''}; });
   return t;
 }
 
@@ -1772,6 +1785,7 @@ function switchTournament(){
   updateLineButtons();
   document.getElementById('ts-formation').value=tsCurrentFormation();
   refreshPitch();
+  updateAnalyzeBtn();
 }
 
 function switchLine(line){
@@ -1787,6 +1801,7 @@ function switchLine(line){
   updateLineButtons();
   document.getElementById('ts-formation').value=tsCurrentFormation();
   refreshPitch();
+  updateAnalyzeBtn();
 }
 
 function updateLineButtons(){
@@ -2211,28 +2226,25 @@ function printLineup(){
       +'</div></div>'
     );
 
-    // If analysis panel has content and this is the current line, add analysis page
-    if(line===currentLine){
-      var aiBody=document.getElementById('ai-panel-body');
-      var aiHtml=aiBody?aiBody.innerHTML:'';
-      if(aiHtml && !aiHtml.includes('Analyzing…') && !aiHtml.includes('ANALYZING LINE') && aiHtml.length>100){
-        pages.push(
-          '<div class="print-page analysis">'
-          +'<div class="pp-header">'
-          +'<img src="logo.png" style="width:60px;height:60px;object-fit:contain;margin-bottom:4px;" onerror="this.style.display=\'none\'">'
-          +'<div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#1c5575;letter-spacing:3px;">LEGIO FC</div>'
-          +'<div style="font-family:Georgia,serif;font-size:8px;letter-spacing:4px;color:#999;text-transform:uppercase;margin-top:1px;">Est. MMXV</div>'
-          +'</div>'
-          +'<div class="pp-meta">'
-          +'<div style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:#1c5575;letter-spacing:2px;">'+esc(currentTournament)+' — TACTICAL ANALYSIS</div>'
-          +'<div style="display:flex;justify-content:center;gap:20px;margin-top:3px;">'
-          +'<span style="font-size:11px;font-weight:600;color:#dab751;letter-spacing:2px;">LINE '+line+'</span>'
-          +'<span style="font-size:11px;color:#666;">Formation: '+formation+'</span>'
-          +'</div></div>'
-          +'<div style="font-size:11px;line-height:1.6;color:#333;margin-top:12px;">'+aiHtml.replace(/var\(--gold\)/g,'#dab751').replace(/var\(--cream\)/g,'#222').replace(/var\(--text-faint\)/g,'#888').replace(/var\(--gold-border\)/g,'#ccc').replace(/var\(--blue-dark\)/g,'#1c5575')+'</div>'
-          +'</div>'
-        );
-      }
+    // If saved analysis exists for this line, add analysis page
+    var savedAnalysis=ld.analysis||'';
+    if(savedAnalysis && savedAnalysis.length>100){
+      pages.push(
+        '<div class="print-page analysis">'
+        +'<div class="pp-header">'
+        +'<img src="logo.png" style="width:60px;height:60px;object-fit:contain;margin-bottom:4px;" onerror="this.style.display=\'none\'">'
+        +'<div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#1c5575;letter-spacing:3px;">LEGIO FC</div>'
+        +'<div style="font-family:Georgia,serif;font-size:8px;letter-spacing:4px;color:#999;text-transform:uppercase;margin-top:1px;">Est. MMXV</div>'
+        +'</div>'
+        +'<div class="pp-meta">'
+        +'<div style="font-family:Georgia,serif;font-size:16px;font-weight:700;color:#1c5575;letter-spacing:2px;">'+esc(currentTournament)+' — TACTICAL ANALYSIS</div>'
+        +'<div style="display:flex;justify-content:center;gap:20px;margin-top:3px;">'
+        +'<span style="font-size:11px;font-weight:600;color:#dab751;letter-spacing:2px;">LINE '+line+'</span>'
+        +'<span style="font-size:11px;color:#666;">Formation: '+formation+'</span>'
+        +'</div></div>'
+        +'<div style="font-size:11px;line-height:1.6;color:#333;margin-top:12px;">'+savedAnalysis.replace(/var\(--gold\)/g,'#dab751').replace(/var\(--cream\)/g,'#222').replace(/var\(--text-faint\)/g,'#888').replace(/var\(--gold-border\)/g,'#ccc').replace(/var\(--blue-dark\)/g,'#1c5575')+'</div>'
+        +'</div>'
+      );
     }
   });
 
@@ -2367,14 +2379,49 @@ async function analyzeLineup(){
       .replace(/\n\n/g,'<br><br>')
       .replace(/\n/g,'<br>');
 
-    document.getElementById('ai-panel-body').innerHTML=
+    var analysisHtml=
       '<div style="font-family:Cinzel,serif;font-size:11px;letter-spacing:2px;color:var(--text-faint);margin-bottom:12px;">'+esc(currentTournament)+' — LINE '+currentLine+' ('+f+')</div>'
       +'<div>'+html+'</div>'
-      +'<div style="margin-top:24px;padding-top:12px;border-top:1px solid var(--gold-border);font-size:10px;color:var(--text-faint);">Analysis generated '+new Date().toLocaleTimeString()+' — Claude Sonnet</div>';
+      +'<div style="margin-top:24px;padding-top:12px;border-top:1px solid var(--gold-border);font-size:10px;color:var(--text-faint);">Analysis generated '+new Date().toLocaleString('en-US',{timeZone:'America/New_York'})+' ET — Claude Sonnet</div>';
+
+    document.getElementById('ai-panel-body').innerHTML=analysisHtml;
+
+    // Save to tsData and SharePoint
+    if(tsData[currentTournament] && tsData[currentTournament][currentLine]){
+      tsData[currentTournament][currentLine].analysis=analysisHtml;
+      saveTeamSheet();
+    }
+    updateAnalyzeBtn();
   }catch(e){
     document.getElementById('ai-panel-body').innerHTML='<div style="color:#d07080;padding:20px;">Error: '+esc(e.message)+'</div>';
   }finally{
     btn.textContent='🧠 Analyze';btn.disabled=false;
+  }
+}
+
+function viewSavedAnalysis(){
+  var ld=tsData[currentTournament]&&tsData[currentTournament][currentLine];
+  if(!ld||!ld.analysis){toast('No saved analysis for this line','');return;}
+  document.getElementById('ai-panel').style.display='flex';
+  document.getElementById('ai-panel-body').innerHTML=ld.analysis;
+}
+
+function updateAnalyzeBtn(){
+  var btn=document.getElementById('analyze-btn');
+  if(!btn)return;
+  var ld=tsData[currentTournament]&&tsData[currentTournament][currentLine];
+  var hasAnalysis=ld&&ld.analysis;
+  // Show view button if analysis exists
+  var viewBtn=document.getElementById('view-analysis-btn');
+  if(hasAnalysis&&!viewBtn){
+    var b=document.createElement('button');
+    b.id='view-analysis-btn';
+    b.textContent='📋 View Analysis';
+    b.style.cssText='padding:7px 14px;background:transparent;border:1px solid #6c5ce7;color:#6c5ce7;font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;';
+    b.onclick=viewSavedAnalysis;
+    btn.parentElement.insertBefore(b,btn.nextSibling);
+  } else if(!hasAnalysis&&viewBtn){
+    viewBtn.remove();
   }
 }
 
