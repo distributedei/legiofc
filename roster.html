@@ -711,10 +711,21 @@
 <!-- Analysis Slide-out Panel -->
 <div id="ai-panel" style="display:none;position:fixed;top:0;right:0;width:460px;height:100vh;background:var(--blue-dark);border-left:2px solid var(--gold);z-index:9998;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,0.5);">
   <div style="padding:16px 20px;border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-    <div style="font-family:Cinzel,serif;font-size:14px;letter-spacing:2px;color:var(--gold);">🧠 LINEUP ANALYSIS</div>
+    <div style="font-family:Cinzel,serif;font-size:14px;letter-spacing:2px;color:var(--gold);">🧠 LINEUP INTEL</div>
     <button onclick="closeAiPanel()" style="background:none;border:none;color:var(--text-faint);font-size:20px;cursor:pointer;padding:0 4px;">✕</button>
   </div>
-  <div id="ai-panel-body" style="flex:1;overflow-y:auto;padding:20px;font-family:Inter,sans-serif;font-size:13px;color:var(--cream);line-height:1.7;"></div>
+  <div style="flex:1;overflow-y:auto;">
+    <div id="ai-panel-body" style="padding:20px;font-family:Inter,sans-serif;font-size:13px;color:var(--cream);line-height:1.7;"></div>
+    <!-- Comments Section -->
+    <div style="padding:0 20px 20px;">
+      <div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:2px;color:var(--gold);border-top:1px solid var(--gold-border);padding-top:14px;margin-bottom:10px;">💬 STAFF COMMENTS</div>
+      <div id="ai-comments" style="margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="ai-comment-input" placeholder="Add a comment…" onkeydown="if(event.key==='Enter')postComment()" style="flex:1;padding:8px 10px;background:rgba(22,61,84,0.6);border:1px solid var(--gold-border);color:var(--cream);font-family:Inter,sans-serif;font-size:12px;outline:none;">
+        <button onclick="postComment()" style="padding:8px 14px;background:var(--gold);border:none;color:var(--blue-dark);font-family:Cinzel,serif;font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer;white-space:nowrap;">Post</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1595,6 +1606,16 @@ async function getTeamSheetList(){
         console.log('Analysis column added to TeamSheets');
       }catch(e){console.warn('Could not add Analysis column:',e);}
     }
+    // Add Comments column if missing
+    if(!customCols.find(c=>c.name==='Comments')){
+      try{
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/columns`,{
+          method:'POST',headers:{...h,'Content-Type':'application/json'},
+          body:JSON.stringify({name:'Comments',text:{allowMultipleValues:false,maxLength:0}})
+        });
+        console.log('Comments column added to TeamSheets');
+      }catch(e){console.warn('Could not add Comments column:',e);}
+    }
     return;
   }
   // Create list
@@ -1608,7 +1629,8 @@ async function getTeamSheetList(){
         {name:'Line',text:{}},
         {name:'Formation',text:{}},
         {name:'Players',text:{allowMultipleValues:false,maxLength:0}},
-        {name:'Analysis',text:{allowMultipleValues:false,maxLength:0}}
+        {name:'Analysis',text:{allowMultipleValues:false,maxLength:0}},
+        {name:'Comments',text:{allowMultipleValues:false,maxLength:0}}
       ]
     })
   });
@@ -1644,7 +1666,8 @@ async function saveTeamSheet(){
         Line: line,
         Formation: lineData.formation || '2-3-1',
         Players: Object.keys(lineup).length > 0 ? JSON.stringify(lineup) : null,
-        Analysis: lineData.analysis || null
+        Analysis: lineData.analysis || null,
+        Comments: lineData.comments && lineData.comments.length ? JSON.stringify(lineData.comments) : null
       };
       const key = `${currentTournament}|${line}`;
       if(tsItemIds[key]){
@@ -1669,7 +1692,7 @@ async function loadTeamSheet(){
   try{
     await getTeamSheetList();
     const t=await getToken();const h={Authorization:`Bearer ${t}`};
-    const fields='Title,Tournament,Line,Formation,Players,Analysis';
+    const fields='Title,Tournament,Line,Formation,Players,Analysis,Comments';
     const res=await(await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${teamSheetListId}/items?$expand=fields($select=${fields})&$top=999`,{headers:h})).json();
     if(!res.value||!res.value.length) return;
     tsData={};
@@ -1679,7 +1702,9 @@ async function loadTeamSheet(){
       if(!tsData[f.Tournament]) tsData[f.Tournament]=makeBlankTournament();
       let lineup={};
       try{ lineup=JSON.parse(f.Players||'{}'); }catch(e){}
-      tsData[f.Tournament][f.Line]={lineup, formation: f.Formation||'2-3-1', analysis: f.Analysis||''};
+      let comments=[];
+      try{ comments=JSON.parse(f.Comments||'[]'); }catch(e){}
+      tsData[f.Tournament][f.Line]={lineup, formation: f.Formation||'2-3-1', analysis: f.Analysis||'', comments: comments};
       tsItemIds[`${f.Tournament}|${f.Line}`]=item.id;
     });
     if(Object.keys(tsData).length){
@@ -1724,7 +1749,7 @@ function initTeamSheet(){
 
 function makeBlankTournament(){
   var t={};
-  ['A','B','C','D','E'].forEach(function(l){ t[l]={lineup:{},formation:'2-3-1',analysis:''}; });
+  ['A','B','C','D','E'].forEach(function(l){ t[l]={lineup:{},formation:'2-3-1',analysis:'',comments:[]}; });
   return t;
 }
 
@@ -2369,6 +2394,7 @@ async function analyzeLineup(){
       saveTeamSheet();
     }
     updateAnalyzeBtn();
+    renderComments();
   }catch(e){
     document.getElementById('ai-panel-body').innerHTML='<div style="color:#d07080;padding:20px;">Error: '+esc(e.message)+'</div>';
   }finally{
@@ -2378,26 +2404,67 @@ async function analyzeLineup(){
 
 function viewSavedAnalysis(){
   var ld=tsData[currentTournament]&&tsData[currentTournament][currentLine];
-  if(!ld||!ld.analysis){toast('No saved analysis for this line','');return;}
+  if(!ld){toast('No data for this line','');return;}
   document.getElementById('ai-panel').style.display='flex';
-  document.getElementById('ai-panel-body').innerHTML=ld.analysis;
+  if(ld.analysis){
+    document.getElementById('ai-panel-body').innerHTML=ld.analysis;
+  } else {
+    document.getElementById('ai-panel-body').innerHTML='<div style="color:var(--text-faint);font-style:italic;padding:10px 0;">No AI analysis yet — click 🧠 Analyze to generate one.</div>';
+  }
+  renderComments();
+}
+
+function renderComments(){
+  var el=document.getElementById('ai-comments');
+  if(!el)return;
+  var ld=tsData[currentTournament]&&tsData[currentTournament][currentLine];
+  var comments=(ld&&ld.comments)||[];
+  if(!comments.length){
+    el.innerHTML='<div style="font-size:11px;color:var(--text-faint);font-style:italic;padding:6px 0;">No comments yet.</div>';
+    return;
+  }
+  el.innerHTML=comments.map(function(c,i){
+    var time=c.timestamp?new Date(c.timestamp).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
+    return '<div style="padding:8px 10px;background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);margin-bottom:6px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+      +'<span style="font-family:Cinzel,serif;font-size:10px;font-weight:600;color:var(--gold);letter-spacing:1px;">'+esc(c.author||'Staff')+'</span>'
+      +'<span style="font-size:9px;color:var(--text-faint);">'+time+'</span>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--cream);line-height:1.5;">'+esc(c.text)+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+async function postComment(){
+  var input=document.getElementById('ai-comment-input');
+  var text=input.value.trim();
+  if(!text)return;
+  var ld=tsData[currentTournament]&&tsData[currentTournament][currentLine];
+  if(!ld)return;
+  if(!ld.comments) ld.comments=[];
+  var accounts=msal_.getAllAccounts();
+  var author=accounts.length?(accounts[0].name||accounts[0].username):'Staff';
+  ld.comments.push({author:author, text:text, timestamp:new Date().toISOString()});
+  input.value='';
+  renderComments();
+  saveTeamSheet();
 }
 
 function updateAnalyzeBtn(){
   var btn=document.getElementById('analyze-btn');
   if(!btn)return;
   var ld=tsData[currentTournament]&&tsData[currentTournament][currentLine];
-  var hasAnalysis=ld&&ld.analysis;
-  // Show view button if analysis exists
+  var hasContent=(ld&&ld.analysis)||(ld&&ld.comments&&ld.comments.length);
+  // Show view button if analysis or comments exist
   var viewBtn=document.getElementById('view-analysis-btn');
-  if(hasAnalysis&&!viewBtn){
+  if(hasContent&&!viewBtn){
     var b=document.createElement('button');
     b.id='view-analysis-btn';
-    b.textContent='📋 View Analysis';
+    b.textContent='📋 View Intel';
     b.style.cssText='padding:7px 14px;background:transparent;border:1px solid #6c5ce7;color:#6c5ce7;font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;';
     b.onclick=viewSavedAnalysis;
     btn.parentElement.insertBefore(b,btn.nextSibling);
-  } else if(!hasAnalysis&&viewBtn){
+  } else if(!hasContent&&viewBtn){
     viewBtn.remove();
   }
 }
