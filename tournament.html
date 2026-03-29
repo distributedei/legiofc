@@ -1042,27 +1042,31 @@ function renderBedRow(container, bed, idx) {
 }
 
 /** Get players for a housing team — matches against TeamSheet tournament names */
+const TEAM_MAP = {
+  'leon dallas coed': 'tst mixed 2026',
+  'mama africa men\'s': 'tst men\'s 2026',
+};
+
 function getPlayersForTeam(housingTeam) {
   if (!housingTeam || !Object.keys(teamPlayers).length) {
-    // Fallback to rosterData from Cosmos
     return rosterData.map(p => ({ name: p.fullName || '', position: p.primaryPosition || '' }));
   }
   const ht = housingTeam.toLowerCase();
+  const mappedName = TEAM_MAP[ht];
 
-  // Try exact match first
+  // Try mapped name first
+  if (mappedName) {
+    for (const [tournName, players] of Object.entries(teamPlayers)) {
+      if (tournName.toLowerCase() === mappedName) return players;
+    }
+  }
+
+  // Try exact match
   for (const [tournName, players] of Object.entries(teamPlayers)) {
     if (tournName.toLowerCase() === ht) return players;
   }
-  // Try partial match (tournament name contains housing team or vice versa)
-  for (const [tournName, players] of Object.entries(teamPlayers)) {
-    const tn = tournName.toLowerCase();
-    if (tn.includes(ht) || ht.includes(tn)) return players;
-    // Match on key words
-    const htWords = ht.split(/[\s-]+/).filter(w => w.length > 3);
-    const tnWords = tn.split(/[\s-]+/).filter(w => w.length > 3);
-    if (htWords.some(w => tn.includes(w)) || tnWords.some(w => ht.includes(w))) return players;
-  }
-  // No match — show all players across all teams
+
+  // No match — show all players
   const all = [];
   Object.entries(teamPlayers).forEach(([team, players]) => {
     players.forEach(p => { if (!all.find(a => a.name === p.name)) all.push(p); });
