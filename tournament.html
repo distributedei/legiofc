@@ -433,7 +433,7 @@ async function handleAuth() {
   if (!msalReady) await msalApp.initialize();
   msalReady = true;
   if (currentUser) {
-    msalApp.logoutRedirect();
+    msalApp.logoutRedirect({ postLogoutRedirectUri: window.location.href.split('?')[0].split('#')[0] });
     return;
   }
   try {
@@ -474,7 +474,7 @@ async function checkAuth() {
   } catch (e) { console.error('Redirect error:', e); }
 }
 
-function onSignedIn() {
+async function onSignedIn() {
   document.getElementById('gate-view').style.display = 'none';
   document.getElementById('app-view').style.display = '';
   const displayName = currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || currentUser.username || 'User';
