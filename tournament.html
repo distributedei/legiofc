@@ -412,7 +412,10 @@ const msalConfig = {
 const msalApp = new msal.PublicClientApplication(msalConfig);
 let currentUser = null;
 
+let msalReady = false;
 async function handleAuth() {
+  if (!msalReady) await msalApp.initialize();
+  msalReady = true;
   if (currentUser) {
     msalApp.logoutRedirect();
     return;
@@ -446,6 +449,8 @@ async function getToken(scopes) {
 
 async function checkAuth() {
   try {
+    await msalApp.initialize();
+    msalReady = true;
     const resp = await msalApp.handleRedirectPromise();
     if (resp) { currentUser = resp.account; onSignedIn(); return; }
     const accts = msalApp.getAllAccounts();
