@@ -444,11 +444,28 @@
 
         <!-- ═══ LOGISTICS ═══ -->
         <div class="panel" id="panel-logistics">
+          <!-- VAN RENTALS -->
           <div class="section-head">
-            <div class="section-title">Operations Checklist</div>
-            <button class="add-btn admin-only" onclick="openChecklistModal()">+ Add Item</button>
+            <div class="section-title">Ground Transport</div>
+            <button class="add-btn admin-only" onclick="addVan()">+ Add Van</button>
           </div>
+          <div id="van-content" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:28px"></div>
+
+          <!-- CHECKLIST -->
+          <div class="section-head" style="margin-top:8px">
+            <div class="section-title">Operations Checklist</div>
+          </div>
+          <div id="checklist-progress" style="margin-bottom:12px"></div>
           <div id="checklist-content"></div>
+          <!-- Inline add row -->
+          <div style="display:grid;grid-template-columns:1fr 120px 120px 40px;gap:8px;margin-top:12px;align-items:center" class="admin-only">
+            <input type="text" id="new-check-text" placeholder="New checklist item..." style="padding:8px 10px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:12px">
+            <select id="new-check-cat" style="padding:8px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px">
+              <option>Admin</option><option>Travel</option><option>Housing</option><option>Equipment</option><option>Medical</option><option>Other</option>
+            </select>
+            <input type="date" id="new-check-due" style="padding:8px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:11px">
+            <button onclick="addChecklistInline()" style="padding:8px;background:var(--gold);border:none;color:var(--blue-dark);font-weight:700;cursor:pointer;font-size:14px">+</button>
+          </div>
         </div>
 
         <!-- ═══ USERS (admin only) ═══ -->
@@ -2025,10 +2042,9 @@ function loadChecklist() {
     checklistData = JSON.parse(localStorage.getItem(`legio-checklist-${CONFIG.tournamentId}`) || '[]');
   } catch (e) { checklistData = []; }
   if (!checklistData.length) {
-    // Seed default items for TST 2026
     checklistData = [
       { id: '1', text: 'Confirm tournament registration paid', cat: 'Admin', done: false, due: '2026-04-01' },
-      { id: '2', text: 'Book team housing — Cary, NC', cat: 'Housing', done: false, due: '2026-04-15' },
+      { id: '2', text: 'Book team housing — Cary, NC', cat: 'Housing', done: true, due: '2026-04-15' },
       { id: '3', text: 'Book flights for international players', cat: 'Travel', done: false, due: '2026-05-01' },
       { id: '4', text: 'Order kits from Makers Row', cat: 'Equipment', done: false, due: '2026-04-01' },
       { id: '5', text: 'Collect passport copies from all players', cat: 'Admin', done: false, due: '2026-04-15' },
@@ -2041,6 +2057,7 @@ function loadChecklist() {
     saveChecklist();
   }
   renderChecklist();
+  loadVans();
 }
 
 function saveChecklist() {
@@ -2049,28 +2066,31 @@ function saveChecklist() {
 
 function renderChecklist() {
   const el = document.getElementById('checklist-content');
+  const progEl = document.getElementById('checklist-progress');
   const doneCount = checklistData.filter(c => c.done).length;
   const cats = [...new Set(checklistData.map(c => c.cat))].sort();
+  const isAdmin = currentRole === 'admin';
 
-  let html = `<div style="margin-bottom:20px;padding:16px;background:var(--cream-dim);border:1px solid var(--gold-border)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span style="font-family:Cinzel,serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Progress</span>
-      <span style="font-family:Cinzel,serif;font-size:12px;color:var(--cream)">${doneCount} / ${checklistData.length}</span>
-    </div>
-    <div style="height:6px;background:rgba(218,183,81,0.1);overflow:hidden">
-      <div style="height:100%;width:${checklistData.length ? (doneCount / checklistData.length * 100) : 0}%;background:var(--gold);transition:width .3s"></div>
-    </div>
+  progEl.innerHTML = `<div style="padding:12px 16px;background:var(--cream-dim);border:1px solid var(--gold-border);display:flex;justify-content:space-between;align-items:center">
+    <span style="font-family:Cinzel,serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Progress</span>
+    <span style="font-family:Cinzel,serif;font-size:12px;color:var(--cream)">${doneCount} / ${checklistData.length}</span>
+  </div>
+  <div style="height:6px;background:rgba(218,183,81,0.1);overflow:hidden">
+    <div style="height:100%;width:${checklistData.length ? (doneCount / checklistData.length * 100) : 0}%;background:var(--gold);transition:width .3s"></div>
   </div>`;
 
+  let html = '';
   for (const cat of cats) {
     const items = checklistData.filter(c => c.cat === cat);
     html += `<div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;padding:10px 16px;margin-top:12px">${esc(cat)}</div>`;
     for (const item of items) {
       const overdue = item.due && !item.done && new Date(item.due) < new Date();
-      html += `<div class="check-item" onclick="toggleCheck('${item.id}')">
-        <div class="check-box ${item.done ? 'done' : ''}"></div>
-        <span class="check-text ${item.done ? 'done' : ''}" style="${overdue ? 'color:var(--red)' : ''}">${esc(item.text)}</span>
+      html += `<div class="check-item" style="display:flex;align-items:center;gap:8px">
+        <div class="check-box ${item.done ? 'done' : ''}" onclick="toggleCheck('${item.id}')"></div>
+        <span class="check-text ${item.done ? 'done' : ''}" style="flex:1;${overdue ? 'color:var(--red)' : ''}" onclick="toggleCheck('${item.id}')">${esc(item.text)}</span>
         ${item.due ? `<span class="check-meta" style="${overdue ? 'color:var(--red)' : ''}">${fmtDate(item.due)}</span>` : ''}
+        ${isAdmin ? `<button onclick="event.stopPropagation();editCheckItem('${item.id}')" style="background:none;border:none;color:var(--text-faint);font-size:10px;cursor:pointer;padding:2px 4px">✏</button>
+        <button onclick="event.stopPropagation();deleteCheckItem('${item.id}')" style="background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;padding:2px 4px">✕</button>` : ''}
       </div>`;
     }
   }
@@ -2082,11 +2102,207 @@ function toggleCheck(id) {
   if (item) { item.done = !item.done; saveChecklist(); renderChecklist(); }
 }
 
-function openChecklistModal() {
-  document.getElementById('check-text').value = '';
-  document.getElementById('check-cat').value = 'Admin';
-  document.getElementById('check-due').value = '';
-  document.getElementById('modal-checklist').classList.add('open');
+function addChecklistInline() {
+  const text = document.getElementById('new-check-text').value.trim();
+  if (!text) return;
+  const cat = document.getElementById('new-check-cat').value;
+  const due = document.getElementById('new-check-due').value;
+  checklistData.push({ id: Date.now().toString(), text, cat, done: false, due: due || '' });
+  saveChecklist();
+  renderChecklist();
+  document.getElementById('new-check-text').value = '';
+  document.getElementById('new-check-due').value = '';
+  toast('Item added', 'success');
+}
+
+function deleteCheckItem(id) {
+  if (!confirm('Delete this checklist item?')) return;
+  checklistData = checklistData.filter(c => c.id !== id);
+  saveChecklist();
+  renderChecklist();
+}
+
+function editCheckItem(id) {
+  const item = checklistData.find(c => c.id === id);
+  if (!item) return;
+  const newText = prompt('Edit item:', item.text);
+  if (newText !== null && newText.trim()) {
+    item.text = newText.trim();
+    saveChecklist();
+    renderChecklist();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VAN RENTALS
+// ═══════════════════════════════════════════════════════════════
+let vanData = [];
+
+function loadVans() {
+  try {
+    vanData = JSON.parse(localStorage.getItem(`legio-vans-${CONFIG.tournamentId}`) || '[]');
+  } catch(e) { vanData = []; }
+  if (!vanData.length) {
+    vanData = [
+      { id: 'v1', name: 'Van 1', team: 'Leon Dallas Coed', driver: '', rentalLink: '', rentalConfirm: '', passengers: [] },
+      { id: 'v2', name: 'Van 2', team: 'Leon Dallas Coed', driver: '', rentalLink: '', rentalConfirm: '', passengers: [] },
+      { id: 'v3', name: 'Van 3', team: "Mama Africa Men's", driver: '', rentalLink: '', rentalConfirm: '', passengers: [] },
+      { id: 'v4', name: 'Van 4', team: "Mama Africa Men's", driver: '', rentalLink: '', rentalConfirm: '', passengers: [] },
+      { id: 'v5', name: 'Van 5', team: 'Shared', driver: '', rentalLink: '', rentalConfirm: '', passengers: [] },
+    ];
+    saveVans();
+  }
+  renderVans();
+}
+
+function saveVans() {
+  localStorage.setItem(`legio-vans-${CONFIG.tournamentId}`, JSON.stringify(vanData));
+}
+
+function renderVans() {
+  const el = document.getElementById('van-content');
+  const isAdmin = currentRole === 'admin';
+  const teamColors = { 'Leon Dallas Coed': '#dab751', "Mama Africa Men's": '#7dd893', 'Shared': '#4a90d9' };
+
+  el.innerHTML = vanData.map(v => {
+    const color = teamColors[v.team] || 'var(--gold)';
+    const passengerCount = v.passengers ? v.passengers.length : 0;
+
+    return `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-family:Cinzel,serif;font-size:12px;color:var(--cream);font-weight:600">${esc(v.name)}</div>
+        <span style="font-size:8px;padding:2px 8px;background:rgba(218,183,81,0.1);border:1px solid ${color};color:${color};font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase">${esc(v.team)}</span>
+      </div>
+      <div style="font-size:11px;margin-bottom:4px"><span style="color:var(--text-faint)">Driver:</span> <span style="color:var(--cream)">${esc(v.driver || '— Unassigned —')}</span></div>
+      <div style="font-size:11px;margin-bottom:4px"><span style="color:var(--text-faint)">Passengers:</span> <span style="color:var(--cream)">${passengerCount}</span></div>
+      ${v.passengers && v.passengers.length ? `<div style="margin:6px 0;padding:6px 0;border-top:1px solid var(--gold-border)">
+        ${v.passengers.map(p => `<div style="font-size:10px;color:var(--text-dim);padding:2px 0">• ${esc(p)}</div>`).join('')}
+      </div>` : ''}
+      ${v.rentalLink ? `<div style="font-size:10px;margin-top:6px"><a href="${esc(v.rentalLink)}" target="_blank" style="color:var(--gold);text-decoration:none">View Rental ↗</a></div>` : ''}
+      ${v.rentalConfirm ? `<div style="font-size:9px;color:var(--text-faint);margin-top:2px">Conf: ${esc(v.rentalConfirm)}</div>` : ''}
+      ${isAdmin ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--gold-border);display:flex;gap:6px">
+        <button onclick="editVan('${v.id}')" class="add-btn" style="padding:4px 12px;font-size:8px;flex:1">Edit</button>
+        <button onclick="deleteVan('${v.id}')" style="padding:4px 12px;font-size:8px;background:none;border:1px solid var(--red);color:var(--red);cursor:pointer;font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase">✕</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function addVan() {
+  const id = 'v' + Date.now();
+  vanData.push({ id, name: 'Van ' + (vanData.length + 1), team: 'Shared', driver: '', rentalLink: '', rentalConfirm: '', passengers: [] });
+  saveVans();
+  renderVans();
+  editVan(id);
+}
+
+function deleteVan(id) {
+  if (!confirm('Delete this van?')) return;
+  vanData = vanData.filter(v => v.id !== id);
+  saveVans();
+  renderVans();
+}
+
+function editVan(id) {
+  const v = vanData.find(x => x.id === id);
+  if (!v) return;
+
+  // Get all players for dropdown
+  let allPlayers = [];
+  Object.values(teamPlayers).forEach(players => { players.forEach(p => allPlayers.push(p.name)); });
+  if (!allPlayers.length) rosterData.forEach(p => { if (p.fullName) allPlayers.push(p.fullName); });
+  allPlayers.sort();
+
+  const passengerOpts = allPlayers.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  const currentPassengers = (v.passengers || []).map((p, i) =>
+    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <span style="font-size:11px;color:var(--cream);flex:1">${esc(p)}</span>
+      <button onclick="removeVanPassenger('${id}',${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px">✕</button>
+    </div>`
+  ).join('');
+
+  const html = `<div style="padding:20px;background:var(--blue-dark);border:1px solid var(--gold);position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1000;width:420px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+      <div style="font-family:Cinzel,serif;font-size:12px;color:var(--gold);letter-spacing:2px;text-transform:uppercase">Edit ${esc(v.name)}</div>
+      <button onclick="closeVanEditor()" style="background:none;border:none;color:var(--cream);font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Van Name</label><input type="text" id="ve-name" value="${esc(v.name)}"></div>
+      <div class="form-field"><label>Team</label>
+        <select id="ve-team"><option ${v.team==='Leon Dallas Coed'?'selected':''}>Leon Dallas Coed</option><option ${v.team==="Mama Africa Men's"?'selected':''}>Mama Africa Men's</option><option ${v.team==='Shared'?'selected':''}>Shared</option></select>
+      </div>
+      <div class="form-field full"><label>Driver</label>
+        <select id="ve-driver" style="padding:8px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;width:100%">
+          <option value="">— Select Driver —</option>${passengerOpts}
+        </select>
+      </div>
+      <div class="form-field full"><label>Rental Link</label><input type="url" id="ve-link" value="${esc(v.rentalLink || '')}" placeholder="https://enterprise.com/..."></div>
+      <div class="form-field full"><label>Confirmation #</label><input type="text" id="ve-confirm" value="${esc(v.rentalConfirm || '')}" placeholder="ABC123"></div>
+    </div>
+    <div style="margin-top:12px;font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--gold-border)">Passengers</div>
+    <div id="ve-passengers" style="margin-top:8px">${currentPassengers || '<div style="font-size:11px;color:var(--text-faint)">No passengers assigned</div>'}</div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <select id="ve-add-passenger" style="flex:1;padding:8px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px">
+        <option value="">— Add Passenger —</option>${passengerOpts}
+      </select>
+      <button onclick="addVanPassenger('${id}')" class="add-btn" style="padding:6px 14px;font-size:8px">Add</button>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeVanEditor()" style="padding:8px 20px;background:transparent;border:1px solid var(--gold-border);color:var(--cream);cursor:pointer;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase">Cancel</button>
+      <button onclick="saveVanEdit('${id}')" class="save-btn" style="padding:8px 20px;font-size:9px">Save</button>
+    </div>
+  </div><div id="van-editor-backdrop" onclick="closeVanEditor()" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:999"></div>`;
+
+  // Remove existing editor if any
+  closeVanEditor();
+  const wrapper = document.createElement('div');
+  wrapper.id = 'van-editor-wrapper';
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+
+  // Set driver
+  document.getElementById('ve-driver').value = v.driver || '';
+}
+
+function closeVanEditor() {
+  const el = document.getElementById('van-editor-wrapper');
+  if (el) el.remove();
+}
+
+function saveVanEdit(id) {
+  const v = vanData.find(x => x.id === id);
+  if (!v) return;
+  v.name = document.getElementById('ve-name').value;
+  v.team = document.getElementById('ve-team').value;
+  v.driver = document.getElementById('ve-driver').value;
+  v.rentalLink = document.getElementById('ve-link').value;
+  v.rentalConfirm = document.getElementById('ve-confirm').value;
+  saveVans();
+  closeVanEditor();
+  renderVans();
+  toast('Van saved', 'success');
+}
+
+function addVanPassenger(vanId) {
+  const sel = document.getElementById('ve-add-passenger');
+  const name = sel.value;
+  if (!name) return;
+  const v = vanData.find(x => x.id === vanId);
+  if (!v) return;
+  if (!v.passengers) v.passengers = [];
+  if (v.passengers.includes(name)) { toast('Already in this van', 'info'); return; }
+  v.passengers.push(name);
+  saveVans();
+  // Re-open editor to refresh
+  editVan(vanId);
+}
+
+function removeVanPassenger(vanId, idx) {
+  const v = vanData.find(x => x.id === vanId);
+  if (!v || !v.passengers) return;
+  v.passengers.splice(idx, 1);
+  saveVans();
+  editVan(vanId);
 }
 
 function saveChecklistItem() {
