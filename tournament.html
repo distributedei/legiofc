@@ -94,6 +94,24 @@
     .prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .prof-label{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px}
     .prof-val{font-size:12px;color:var(--cream);margin-top:2px}
+    /* Calendar */
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--gold-border)}
+    .cal-hdr{background:var(--cream-dim);padding:8px;text-align:center;font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+    .cal-day{background:var(--blue-dark);padding:6px 8px;min-height:80px;cursor:pointer;transition:background .15s;position:relative}
+    .cal-day:hover{background:rgba(218,183,81,0.05)}
+    .cal-day.other-month{opacity:.3}
+    .cal-day.today{border:1px solid var(--gold)}
+    .cal-day.selected{background:rgba(218,183,81,0.1);border:1px solid var(--gold)}
+    .cal-day .cal-num{font-size:12px;color:var(--text-dim);font-weight:500;margin-bottom:4px}
+    .cal-day.today .cal-num{color:var(--gold);font-weight:700}
+    .cal-evt{font-size:9px;padding:2px 4px;margin-bottom:2px;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+    .cal-evt-game{background:rgba(218,183,81,0.2);color:var(--gold);border-left:2px solid var(--gold)}
+    .cal-evt-travel{background:rgba(125,216,147,0.15);color:#7dd893;border-left:2px solid #7dd893}
+    .cal-evt-housing{background:rgba(74,144,217,0.15);color:#4a90d9;border-left:2px solid #4a90d9}
+    /* Day timeline */
+    .day-hour{display:grid;grid-template-columns:60px 1fr;border-bottom:1px solid var(--gold-border)}
+    .day-hour-label{padding:8px;font-size:10px;color:var(--text-faint);text-align:right;font-family:Cinzel,serif}
+    .day-hour-slot{padding:4px 8px;min-height:36px;position:relative}
     .ops-table tr:hover td{background:var(--cream-dim)}
 
     /* ── CARDS ── */
@@ -279,12 +297,24 @@
         <!-- ═══ SCHEDULE ═══ -->
         <div class="panel" id="panel-schedule">
           <div class="section-head">
-            <div class="section-title">Game Schedule</div>
-            <button class="add-btn admin-only" onclick="openScheduleModal()">+ Add Game</button>
+            <div class="section-title" id="sched-title">Schedule</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="add-btn" onclick="schedBack()" style="padding:6px 12px;font-size:10px">◀</button>
+              <button class="add-btn" onclick="schedToday()" style="padding:6px 12px;font-size:10px">Today</button>
+              <button class="add-btn" onclick="schedForward()" style="padding:6px 12px;font-size:10px">▶</button>
+              <select id="sched-view-toggle" onchange="renderSchedule()" style="padding:6px 10px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:10px;font-family:Cinzel,serif;letter-spacing:1px;cursor:pointer">
+                <option value="month">Month</option>
+                <option value="list">List</option>
+              </select>
+              <button class="add-btn admin-only" onclick="openScheduleModal()">+ Add Event</button>
+            </div>
           </div>
-          <div id="schedule-content">
-            <div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No games scheduled</div></div>
-          </div>
+          <!-- Calendar Month Grid -->
+          <div id="sched-calendar" style="margin-bottom:16px"></div>
+          <!-- Day Detail (24hr timeline) -->
+          <div id="sched-day-detail" style="display:none"></div>
+          <!-- List View -->
+          <div id="schedule-content"></div>
         </div>
 
         <!-- ═══ HOUSING ═══ -->
@@ -1103,9 +1133,225 @@ function updateCountdown(target) {
 // ═══════════════════════════════════════════════════════════════
 // SCHEDULE
 // ═══════════════════════════════════════════════════════════════
+// Calendar state
+let schedMonth = null; // Date object for current month view
+let schedSelectedDay = null; // YYYY-MM-DD
+
+function schedInit() {
+  const t = tournament || {};
+  // Default to tournament start month, or current month
+  if (t.startDate) {
+    schedMonth = new Date(t.startDate + 'T00:00:00');
+  } else {
+    schedMonth = new Date();
+  }
+  schedMonth.setDate(1);
+}
+
+function schedBack() {
+  if (!schedMonth) schedInit();
+  schedMonth.setMonth(schedMonth.getMonth() - 1);
+  renderSchedule();
+}
+function schedForward() {
+  if (!schedMonth) schedInit();
+  schedMonth.setMonth(schedMonth.getMonth() + 1);
+  renderSchedule();
+}
+function schedToday() {
+  schedMonth = new Date(); schedMonth.setDate(1);
+  schedSelectedDay = new Date().toISOString().split('T')[0];
+  renderSchedule();
+}
+
 function renderSchedule() {
+  if (!schedMonth) schedInit();
   document.getElementById('badge-schedule').textContent = scheduleData.length;
-  const el = document.getElementById('schedule-content');
+
+  const view = document.getElementById('sched-view-toggle').value;
+  const calEl = document.getElementById('sched-calendar');
+  const dayEl = document.getElementById('sched-day-detail');
+  const listEl = document.getElementById('schedule-content');
+
+  if (view === 'list') {
+    calEl.style.display = 'none';
+    dayEl.style.display = 'none';
+    listEl.style.display = '';
+    renderScheduleList(listEl);
+    document.getElementById('sched-title').textContent = 'Schedule';
+    return;
+  }
+
+  // Month view
+  calEl.style.display = '';
+  listEl.style.display = 'none';
+  renderCalendarMonth(calEl);
+  document.getElementById('sched-title').textContent = schedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  // Day detail
+  if (schedSelectedDay) {
+    dayEl.style.display = '';
+    renderDayTimeline(dayEl, schedSelectedDay);
+  } else {
+    dayEl.style.display = 'none';
+  }
+}
+
+function renderCalendarMonth(el) {
+  const year = schedMonth.getFullYear();
+  const month = schedMonth.getMonth();
+  const today = new Date().toISOString().split('T')[0];
+
+  // Build event map by date
+  const eventMap = {};
+  scheduleData.forEach(g => {
+    if (!g.date) return;
+    if (!eventMap[g.date]) eventMap[g.date] = [];
+    eventMap[g.date].push(g);
+  });
+  // Add housing check-in/out as events
+  housingData.forEach(h => {
+    if (h.checkin) {
+      if (!eventMap[h.checkin]) eventMap[h.checkin] = [];
+      eventMap[h.checkin].push({ _type: 'housing', _label: 'Check-in: ' + (h.name || '').substring(0, 25), _team: h.team });
+    }
+    if (h.checkout) {
+      if (!eventMap[h.checkout]) eventMap[h.checkout] = [];
+      eventMap[h.checkout].push({ _type: 'housing', _label: 'Check-out: ' + (h.name || '').substring(0, 25), _team: h.team });
+    }
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+
+  let html = '<div class="cal-grid">';
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(d => {
+    html += `<div class="cal-hdr">${d}</div>`;
+  });
+
+  // Previous month days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrev - i;
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    html += `<div class="cal-day other-month" onclick="selectDay('${dateStr}')"><div class="cal-num">${d}</div></div>`;
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isToday = dateStr === today;
+    const isSelected = dateStr === schedSelectedDay;
+    const events = eventMap[dateStr] || [];
+
+    html += `<div class="cal-day${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" onclick="selectDay('${dateStr}')">
+      <div class="cal-num">${d}</div>`;
+
+    events.slice(0, 3).forEach(evt => {
+      if (evt._type === 'housing') {
+        html += `<div class="cal-evt cal-evt-housing">${esc(evt._label)}</div>`;
+      } else {
+        const label = evt.time ? evt.time + ' ' : '';
+        html += `<div class="cal-evt cal-evt-game">${esc(label)}vs ${esc(evt.opponent || 'TBD')}</div>`;
+      }
+    });
+    if (events.length > 3) html += `<div style="font-size:8px;color:var(--text-faint)">+${events.length - 3} more</div>`;
+    html += '</div>';
+  }
+
+  // Fill remaining cells
+  const totalCells = firstDay + daysInMonth;
+  const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let d = 1; d <= remaining; d++) {
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    html += `<div class="cal-day other-month" onclick="selectDay('${dateStr}')"><div class="cal-num">${d}</div></div>`;
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function selectDay(dateStr) {
+  schedSelectedDay = dateStr;
+  // If selected day is in a different month, navigate to it
+  const [y, m] = dateStr.split('-').map(Number);
+  if (y !== schedMonth.getFullYear() || m - 1 !== schedMonth.getMonth()) {
+    schedMonth = new Date(y, m - 1, 1);
+  }
+  renderSchedule();
+}
+
+function renderDayTimeline(el, dateStr) {
+  const dayDate = new Date(dateStr + 'T00:00:00');
+  const dayLabel = dayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Collect events for this day
+  const dayEvents = scheduleData.filter(g => g.date === dateStr);
+  const dayHousingIn = housingData.filter(h => h.checkin === dateStr);
+  const dayHousingOut = housingData.filter(h => h.checkout === dateStr);
+
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-family:Cinzel,serif;font-size:12px;color:var(--gold);letter-spacing:2px;text-transform:uppercase">${esc(dayLabel)}</div>
+    <button class="add-btn admin-only" onclick="openScheduleModal({date:'${dateStr}'})" style="padding:4px 12px;font-size:8px">+ Add Event</button>
+  </div>`;
+
+  // 24-hour timeline
+  html += '<div style="border:1px solid var(--gold-border);background:rgba(22,61,84,0.3)">';
+  for (let h = 6; h <= 23; h++) {
+    const hourStr = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
+    const hourEvents = [];
+
+    // Match games to this hour
+    dayEvents.forEach(g => {
+      if (!g.time) return;
+      const gHour = parseInt(g.time.split(':')[0]);
+      if (gHour === h) hourEvents.push(g);
+    });
+
+    // Housing events at common times
+    if (h === 16) { // 4 PM check-in
+      dayHousingIn.forEach(hi => {
+        hourEvents.push({ _type: 'housing-in', _label: 'Check-in: ' + hi.name, _addr: hi.address });
+      });
+    }
+    if (h === 10) { // 10 AM check-out
+      dayHousingOut.forEach(ho => {
+        hourEvents.push({ _type: 'housing-out', _label: 'Check-out: ' + ho.name });
+      });
+    }
+
+    html += `<div class="day-hour">
+      <div class="day-hour-label">${hourStr}</div>
+      <div class="day-hour-slot">`;
+
+    hourEvents.forEach(evt => {
+      if (evt._type === 'housing-in' || evt._type === 'housing-out') {
+        const cls = evt._type === 'housing-in' ? 'cal-evt-housing' : 'cal-evt-travel';
+        html += `<div class="cal-evt ${cls}" style="padding:6px 8px;font-size:10px;margin:2px 0">${esc(evt._label)}</div>`;
+      } else {
+        html += `<div class="cal-evt cal-evt-game" style="padding:6px 8px;font-size:10px;margin:2px 0;cursor:pointer" onclick="editScheduleItem('${evt.id}')">
+          ${esc(evt.time || '')} — Legio FC vs ${esc(evt.opponent || 'TBD')} · ${esc(evt.stage || '')} · ${esc(evt.venue || '')}
+        </div>`;
+      }
+    });
+
+    html += '</div></div>';
+  }
+  html += '</div>';
+
+  // Summary below timeline
+  if (!dayEvents.length && !dayHousingIn.length && !dayHousingOut.length) {
+    html += '<div style="text-align:center;padding:16px;font-size:11px;color:var(--text-faint)">No events scheduled for this day</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function renderScheduleList(el) {
   if (!scheduleData.length) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No games scheduled</div></div>';
     return;
@@ -1128,9 +1374,9 @@ function renderSchedule() {
 }
 
 function openScheduleModal(data) {
-  editingScheduleId = data ? data.id : null;
-  document.getElementById('sched-modal-title').textContent = data ? 'Edit Game' : 'Add Game';
-  document.getElementById('sched-del-btn').style.display = data ? '' : 'none';
+  editingScheduleId = data && data.id ? data.id : null;
+  document.getElementById('sched-modal-title').textContent = editingScheduleId ? 'Edit Event' : 'Add Event';
+  document.getElementById('sched-del-btn').style.display = editingScheduleId ? '' : 'none';
   document.getElementById('sched-date').value = data ? data.date || '' : '';
   document.getElementById('sched-time').value = data ? data.time || '' : '';
   document.getElementById('sched-opponent').value = data ? data.opponent || '' : '';
