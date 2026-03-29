@@ -675,9 +675,21 @@ async function loadAllData() {
 // ═══════════════════════════════════════════════════════════════
 let spSiteId = null;
 
+async function getSpToken() {
+  // SharePoint always needs org tenant token
+  const accts = msalOrg.getAllAccounts();
+  if (!accts.length) throw new Error('Staff sign-in required for SharePoint');
+  try {
+    const r = await msalOrg.acquireTokenSilent({ scopes: ['Sites.Read.All'], account: accts[0] });
+    return r.accessToken;
+  } catch (e) {
+    await msalOrg.acquireTokenRedirect({ scopes: ['Sites.Read.All'], account: accts[0] });
+  }
+}
+
 async function getSpSite() {
   if (spSiteId) return spSiteId;
-  const token = await getToken(['Sites.Read.All']);
+  const token = await getSpToken();
   const h = { Authorization: 'Bearer ' + token };
   const site = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${CONFIG.spSiteHost}`, { headers: h })).json();
   spSiteId = site.id;
@@ -687,7 +699,7 @@ async function getSpSite() {
 async function loadTeamPlayersFromSharePoint() {
   toast('Loading team sheets from SharePoint...', 'info');
   const sId = await getSpSite();
-  const token = await getToken(['Sites.Read.All']);
+  const token = await getSpToken();
   const h = { Authorization: 'Bearer ' + token };
 
   // Find lists
@@ -1187,7 +1199,7 @@ async function syncRosterFromSharePoint() {
   }
   toast('Syncing roster from SharePoint...', 'info');
   try {
-    const token = await getToken(['Sites.Read.All']);
+    const token = await getSpToken();
     const h = { Authorization: 'Bearer ' + token };
 
     // Get site
