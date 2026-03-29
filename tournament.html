@@ -145,7 +145,7 @@
     .empty-text{font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase}
 
     /* ── SIGN-IN GATE ── */
-    .gate{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:24px}
+    .gate{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;width:100%;gap:24px;text-align:center}
     .gate-logo{width:100px;height:100px}
     .gate-logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 20px rgba(0,0,0,.4))}
     .gate-title{font-family:'Cinzel',serif;font-size:22px;font-weight:600;color:var(--cream);letter-spacing:2px}
@@ -205,15 +205,15 @@
     </nav>
 
     <!-- SIGN-IN GATE -->
-    <div class="content" id="gate-view" style="display:flex">
+    <div class="content" id="gate-view" style="display:flex;align-items:center;justify-content:center">
       <div class="gate">
         <div class="gate-logo"><img src="logo.png" alt="Legio FC"></div>
         <div class="gate-title">Tournament Operations</div>
         <div class="gate-sub">Manage tournament logistics, housing, schedules, and rosters.</div>
         <div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:8px">
-          <button class="gate-btn" onclick="handleStaffAuth()" style="min-width:280px">Staff Sign In</button>
-          <button class="gate-btn" onclick="handleExtAuth()" style="min-width:280px;background:transparent;border:2px solid var(--gold);color:var(--gold)">Player / Coach Sign In</button>
-          <div style="font-size:10px;color:var(--text-faint);margin-top:4px">Staff: use your @legiofc.com account · Players: use any email</div>
+          <button class="gate-btn" onclick="handleStaffAuth()" style="min-width:280px">Staff & Coaches</button>
+          <button class="gate-btn" onclick="handleExtAuth()" style="min-width:280px;background:transparent;border:2px solid var(--gold);color:var(--gold)">Players</button>
+          <div style="font-size:10px;color:var(--text-faint);margin-top:4px">Staff & Coaches: @legiofc.com account · Players: any email</div>
         </div>
       </div>
     </div>
