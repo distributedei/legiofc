@@ -335,9 +335,6 @@
           <!-- Arrivals (staff only) -->
           <div id="overview-arrivals" class="staff-only" style="margin-top:16px"></div>
 
-          <!-- Roster Preview -->
-          <div id="overview-roster-preview" style="margin-top:16px"></div>
-
           <!-- Housing Summary -->
           <div id="overview-housing" style="margin-top:16px"></div>
         </div>
@@ -492,6 +489,10 @@
             <div class="form-field"><label>Shirt Size</label>
               <select id="prof-shirt"><option value="">—</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
             </div>
+            <div class="form-field"><label>Arrival Airport</label>
+              <select id="prof-airport"><option value="">—</option><option>RDU — Raleigh-Durham</option><option>CLT — Charlotte</option><option>GSO — Greensboro</option><option>RIC — Richmond</option><option>Local — Driving</option><option>Other</option></select>
+            </div>
+            <div class="form-field"><label>Arrival Date</label><input type="date" id="prof-arrival-date"></div>
             <div class="form-field full"><label>Medical Info / Things We Should Know</label><textarea id="prof-medical" rows="2" placeholder="Allergies, medications, conditions..."></textarea></div>
             <div class="form-field full"><label>Notes / Special Requests</label><textarea id="prof-notes" rows="2" placeholder="Anything else..."></textarea></div>
           </div>
@@ -1427,7 +1428,7 @@ function renderOverviewContent() {
     const arrivals = filteredPlayers.map(p => {
       const location = [p.currentLocation, p.country].filter(Boolean).join(', ');
       const canTravel = p.canTravel || '';
-      return { name: p.name, location, canTravel, position: p.position || '' };
+      return { name: p.name, email: p.email || '', location, canTravel, position: p.position || '' };
     }).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
     const needTravel = arrivals.filter(a => a.canTravel.toLowerCase().startsWith('yes'));
@@ -1449,36 +1450,34 @@ function renderOverviewContent() {
       </div>
     </div>`;
 
-    arrHtml += `<table class="ops-table" style="font-size:11px"><thead><tr><th>Name</th><th>Position</th><th>Traveling From</th><th>Travel Status</th></tr></thead><tbody>`;
+    arrHtml += `<table class="ops-table" style="font-size:11px"><thead><tr><th>Name</th><th>Position</th><th>Traveling From</th><th>Airport</th><th>Arrival Date</th><th>Travel Status</th></tr></thead><tbody>`;
     arrivals.forEach(a => {
       const travelColor = a.canTravel.toLowerCase().startsWith('yes') ? 'var(--green)' : a.canTravel.toLowerCase() === 'no' ? 'var(--red)' : 'var(--text-dim)';
-      arrHtml += `<tr>
+      arrHtml += `<tr id="arr-${esc((a.email||a.name).replace(/[^a-z0-9]/gi,''))}">
         <td style="font-weight:500">${esc(a.name)}</td>
         <td style="color:var(--text-dim)">${esc(a.position)}</td>
         <td style="color:var(--text-dim)">${esc(a.location || '—')}</td>
+        <td class="arr-airport" style="color:var(--text-faint)">—</td>
+        <td class="arr-date" style="color:var(--text-faint)">—</td>
         <td style="color:${travelColor};font-weight:500">${esc(a.canTravel || '—')}</td>
       </tr>`;
     });
     arrHtml += '</tbody></table>';
     document.getElementById('overview-arrivals').innerHTML = arrHtml;
-  }
 
-  // Roster Preview
-  if (isStaff) {
-    let rosterHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Roster — ${esc(isAllTeams ? 'All Teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter))} <span style="color:var(--text-dim);font-family:Inter,sans-serif;letter-spacing:0;text-transform:none">${filteredPlayers.length} players</span></div>`;
-    rosterHtml += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
-    filteredPlayers.slice(0, 30).forEach(p => {
-      const ini = (p.name||'').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
-      rosterHtml += `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(22,61,84,0.4);border:1px solid var(--gold-border);cursor:pointer" onclick="switchTab('roster')">
-        <div style="width:24px;height:24px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:8px;font-weight:700;color:var(--blue-dark)">${esc(ini)}</div>
-        <div style="font-size:10px;color:var(--cream)">${esc(p.name)}</div>
-      </div>`;
+    // Async load arrival info from Cosmos users
+    arrivals.forEach(a => {
+      if (!a.email) return;
+      api(`users?email=${encodeURIComponent(a.email.toLowerCase())}`).then(user => {
+        const rowId = 'arr-' + (a.email||a.name).replace(/[^a-z0-9]/gi,'');
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        const airportCell = row.querySelector('.arr-airport');
+        const dateCell = row.querySelector('.arr-date');
+        if (airportCell && user.arrivalAirport) airportCell.textContent = user.arrivalAirport;
+        if (dateCell && user.arrivalDate) dateCell.textContent = fmtDate(user.arrivalDate);
+      }).catch(() => {});
     });
-    if (filteredPlayers.length > 30) rosterHtml += `<div style="font-size:10px;color:var(--text-faint);padding:8px">+${filteredPlayers.length - 30} more</div>`;
-    rosterHtml += '</div>';
-    document.getElementById('overview-roster-preview').innerHTML = rosterHtml;
-  } else {
-    document.getElementById('overview-roster-preview').innerHTML = '';
   }
 
   // Housing progress (staff only)
@@ -3229,6 +3228,8 @@ async function loadProfile() {
     document.getElementById('prof-emergency').value = user.emergencyContact || '';
     document.getElementById('prof-dietary').value = user.dietary || '';
     document.getElementById('prof-shirt').value = user.shirtSize || '';
+    document.getElementById('prof-airport').value = user.arrivalAirport || '';
+    document.getElementById('prof-arrival-date').value = user.arrivalDate || '';
     document.getElementById('prof-medical').value = user.medical || '';
     document.getElementById('prof-notes').value = user.profileNotes || '';
   } catch(e) {
@@ -3246,6 +3247,8 @@ async function saveProfile() {
     emergencyContact: document.getElementById('prof-emergency').value,
     dietary: document.getElementById('prof-dietary').value,
     shirtSize: document.getElementById('prof-shirt').value,
+    arrivalAirport: document.getElementById('prof-airport').value,
+    arrivalDate: document.getElementById('prof-arrival-date').value,
     medical: document.getElementById('prof-medical').value,
     profileNotes: document.getElementById('prof-notes').value,
     team: playerTeamName,
