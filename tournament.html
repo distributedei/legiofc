@@ -12,6 +12,11 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    .leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+    .leaflet-container{overflow:hidden}
+    .leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+    .leaflet-popup-content-wrapper{background:white;color:#333;border-radius:6px;box-shadow:0 3px 14px rgba(0,0,0,.3)}
+    .leaflet-popup-tip{background:white}
     :root{
       --blue:#1c5575;--blue-dark:#163d54;--blue-mid:#1e6085;
       --gold:#dab751;--gold-bright:#e3ba24;
