@@ -78,6 +78,13 @@
     .ops-table{width:100%;border-collapse:collapse;font-size:13px}
     .ops-table th{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;text-align:left;padding:12px 14px;border-bottom:1px solid var(--gold-border);background:var(--cream-dim);position:sticky;top:0;z-index:2}
     .ops-table td{padding:12px 14px;border-bottom:1px solid rgba(218,183,81,0.06);color:var(--text);vertical-align:middle}
+    .player-card{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(22,61,84,0.4);border:1px solid var(--gold-border);min-width:220px;flex:0 0 auto;transition:all .15s}
+    .player-card:hover{background:rgba(218,183,81,0.08);border-color:var(--gold)}
+    .player-card .pc-avatar{width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:14px;font-weight:700;color:var(--blue-dark);flex-shrink:0;border:2px solid var(--gold)}
+    .player-card .pc-info{min-width:0;flex:1}
+    .player-card .pc-name{font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .player-card .pc-pos{font-size:10px;color:var(--text-faint)}
+    .player-card .pc-house{font-size:9px;color:var(--gold);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .ops-table tr:hover td{background:var(--cream-dim)}
 
     /* ── CARDS ── */
@@ -287,11 +294,14 @@
         <div class="panel" id="panel-roster">
           <div class="section-head">
             <div class="section-title">Tournament Roster</div>
-            <button class="add-btn staff-only" onclick="syncRosterFromSharePoint()">↻ Sync from SharePoint</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="roster-team-select" onchange="renderRoster()" style="padding:6px 12px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px;font-family:Cinzel,serif;letter-spacing:1px;cursor:pointer">
+                <option value="all">All Teams</option>
+              </select>
+            </div>
           </div>
-          <div id="roster-content">
-            <div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">No players loaded</div></div>
-          </div>
+          <div id="roster-count" style="font-size:11px;color:var(--text-dim);margin-bottom:16px"></div>
+          <div id="roster-content"></div>
         </div>
 
         <!-- ═══ LOGISTICS ═══ -->
@@ -1223,86 +1233,77 @@ async function deleteHousingItem() {
 // ROSTER
 // ═══════════════════════════════════════════════════════════════
 function renderRoster() {
-  // Use teamPlayers from SharePoint TeamSheets (live lineup data)
-  const teams = Object.keys(teamPlayers);
-  const totalPlayers = teams.reduce((s, t) => s + teamPlayers[t].length, 0);
-  document.getElementById('badge-roster').textContent = totalPlayers || rosterData.length;
-  const el = document.getElementById('roster-content');
-
-  // If teamPlayers loaded, use that (grouped by team)
-  if (totalPlayers) {
-    let html = '';
-    teams.forEach(team => {
-      const players = teamPlayers[team];
-      const housingTeam = Object.entries(TEAM_MAP).find(([k, v]) => v === team.toLowerCase());
-      const displayTeam = housingTeam ? housingTeam[0].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : team;
-
-      html += `<div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
-
-      // Find housing assignment for each player
-      const teamHousing = housingData.filter(h => {
-        const ht = (h.team || '').toLowerCase();
-        const dt = displayTeam.toLowerCase();
-        return ht === dt || ht.includes(dt) || dt.includes(ht);
-      });
-
-      html += `<table class="ops-table">
-        <thead><tr><th>Name</th><th>Position</th><th>Housing</th></tr></thead>
-        <tbody>${players.map(p => {
-          // Find which property this player is assigned to
-          let housingName = '—';
-          for (const h of teamHousing) {
-            if (h.beds && h.beds.some(b => b.assigned === p.name)) {
-              housingName = h.name;
-              break;
-            }
-          }
-          return `<tr>
-            <td style="font-weight:500">${esc(p.name)}</td>
-            <td>${esc(p.position || '—')}</td>
-            <td style="font-size:11px;color:${housingName === '—' ? 'var(--text-faint)' : 'var(--text-dim)'}">${esc(housingName)}</td>
-          </tr>`;
-        }).join('')}</tbody></table>`;
+  // Build team list from teamPlayers (SharePoint) or rosterData (Cosmos)
+  let teams = {};
+  if (Object.keys(teamPlayers).length) {
+    teams = teamPlayers;
+  } else if (rosterData.length) {
+    rosterData.forEach(p => {
+      const t = p.team || 'Unassigned';
+      if (!teams[t]) teams[t] = [];
+      teams[t].push({ name: p.fullName || '', position: p.primaryPosition || '', email: p.email || '' });
     });
-    el.innerHTML = html;
-    return;
   }
 
-  // Fallback — Cosmos rosterData (for external auth users)
-  if (!rosterData.length) {
+  const teamNames = Object.keys(teams);
+  const totalPlayers = teamNames.reduce((s, t) => s + teams[t].length, 0);
+  document.getElementById('badge-roster').textContent = totalPlayers;
+
+  // Populate dropdown
+  const sel = document.getElementById('roster-team-select');
+  const current = sel.value;
+  sel.innerHTML = '<option value="all">All Teams</option>' + teamNames.map(t =>
+    `<option value="${esc(t)}" ${current === t ? 'selected' : ''}>${esc(t)} (${teams[t].length})</option>`
+  ).join('');
+
+  const el = document.getElementById('roster-content');
+  const countEl = document.getElementById('roster-count');
+
+  if (!totalPlayers) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">No players loaded</div></div>';
+    countEl.textContent = '';
     return;
   }
 
-  // Group by team field from Cosmos
-  const teamGroups = {};
-  rosterData.forEach(p => {
-    const team = p.team || 'Unassigned';
-    if (!teamGroups[team]) teamGroups[team] = [];
-    teamGroups[team].push(p);
+  const filter = sel.value;
+  const teamsToShow = filter === 'all' ? teamNames : [filter];
+  let shownCount = 0;
+  let html = '';
+
+  teamsToShow.forEach(team => {
+    const players = teams[team] || [];
+    if (!players.length) return;
+    shownCount += players.length;
+
+    // Team header
+    html += `<div style="width:100%;font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
+
+    // Player cards
+    players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    players.forEach(p => {
+      const initials = (p.name || '').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+      // Find housing assignment
+      let housingName = '';
+      for (const h of housingData) {
+        if (h.beds && h.beds.some(b => b.assigned === p.name)) {
+          housingName = h.name; break;
+        }
+      }
+
+      html += `<div class="player-card">
+        <div class="pc-avatar">${esc(initials)}</div>
+        <div class="pc-info">
+          <div class="pc-name">${esc(p.name)}</div>
+          <div class="pc-pos">${esc(p.position || '—')}</div>
+          ${housingName ? `<div class="pc-house">🏠 ${esc(housingName)}</div>` : ''}
+        </div>
+      </div>`;
+    });
   });
 
-  let html = '';
-  Object.entries(teamGroups).forEach(([team, players]) => {
-    players.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
-    html += `<div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
-    html += `<table class="ops-table">
-      <thead><tr><th>Name</th><th>Position</th><th>Housing</th></tr></thead>
-      <tbody>${players.map(p => {
-        let housingName = '—';
-        for (const h of housingData) {
-          if (h.beds && h.beds.some(b => b.assigned === (p.fullName || ''))) {
-            housingName = h.name; break;
-          }
-        }
-        return `<tr>
-          <td style="font-weight:500">${esc(p.fullName || '')}</td>
-          <td>${esc(p.primaryPosition || '')}</td>
-          <td style="font-size:11px;color:${housingName === '—' ? 'var(--text-faint)' : 'var(--text-dim)'}">${esc(housingName)}</td>
-        </tr>`;
-      }).join('')}</tbody></table>`;
-  });
   el.innerHTML = html;
+  countEl.textContent = `${shownCount} player${shownCount !== 1 ? 's' : ''}`;
 }
 
 async function syncRosterFromSharePoint() {
