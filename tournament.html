@@ -1376,7 +1376,6 @@ function renderRoster() {
 
   const teamNames = Object.keys(teams);
   const totalPlayers = teamNames.reduce((s, t) => s + teams[t].length, 0);
-  document.getElementById('badge-roster').textContent = totalPlayers;
 
   // Populate dropdown
   const sel = document.getElementById('roster-team-select');
@@ -1451,6 +1450,7 @@ function renderRoster() {
 
   el.innerHTML = html;
   countEl.textContent = `${shownCount} player${shownCount !== 1 ? 's' : ''}`;
+  document.getElementById('badge-roster').textContent = shownCount;
 }
 
 async function syncRosterFromSharePoint() {
