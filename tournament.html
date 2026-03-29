@@ -853,7 +853,7 @@ function renderHousing() {
       }
 
       const vrboHtml = h.vrboLink ? `<div class="card-row"><span class="card-label">VRBO</span><span class="card-val"><a href="${esc(h.vrboLink)}" target="_blank" style="color:var(--gold);text-decoration:none;font-size:11px">View Property ↗</a></span></div>` : '';
-      const directionsHtml = h.address ? `<div class="card-row"><span class="card-label">Directions</span><span class="card-val"><a href="https://www.google.com/maps/dir/${encodeURIComponent('201 Soccer Park Dr, Cary, NC 27511')}/${encodeURIComponent(h.address)}" target="_blank" style="color:var(--green);text-decoration:none;font-size:11px">From WakeMed ↗</a></span></div>` : '';
+      const directionsHtml = h.address ? `<div class="card-row"><span class="card-label">Directions</span><span class="card-val"><a href="https://www.google.com/maps/dir/${encodeURIComponent('101 Soccer Park Dr, Cary, NC 27511')}/${encodeURIComponent(h.address)}" target="_blank" style="color:var(--green);text-decoration:none;font-size:11px">From WakeMed ↗</a></span></div>` : '';
 
       return `<div class="ops-card" onclick="editHousingItem('${h.id}')" style="cursor:pointer">
         <div class="card-header">
@@ -880,7 +880,7 @@ function renderHousingMap(filtered) {
   const btnContainer = document.getElementById('map-buttons');
   if (!filtered || !filtered.length) { btnContainer.innerHTML = ''; return; }
 
-  const WAKEMED_ADDR = '201 Soccer Park Dr, Cary, NC 27511';
+  const WAKEMED_ADDR = '101 Soccer Park Dr, Cary, NC 27511';
   const teams = [...new Set(filtered.map(h => h.team || 'Unassigned'))];
   let btns = `<a href="https://www.google.com/maps/dir/${encodeURIComponent(WAKEMED_ADDR)}/${filtered.filter(h=>h.address).map(h => encodeURIComponent(h.address)).join('/')}" target="_blank" class="add-btn" style="padding:6px 14px;font-size:8px;text-decoration:none;display:inline-block">📍 All Properties Route</a>`;
 
