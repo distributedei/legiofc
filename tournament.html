@@ -1012,21 +1012,31 @@ function openHousingModal(data) {
   // Render beds
   const bedsEl = document.getElementById('house-beds');
   const beds = (data && data.beds) ? data.beds : [];
+  currentBedData = beds.map(b => ({...b}));
   bedsEl.innerHTML = '';
   beds.forEach((b, i) => renderBedRow(bedsEl, b, i));
 
   document.getElementById('modal-housing').classList.add('open');
 }
 
+let currentBedData = []; // temp store for dedup across renders
+
 function renderBedRow(container, bed, idx) {
-  // Get players for this property's team from SharePoint team sheets
   let players = getPlayersForTeam(editingPropertyTeam);
 
-  // Build player options
-  const playerOpts = players.map(p => {
-    const label = p.position ? `${p.name} (${p.position})` : p.name;
-    return `<option value="${esc(p.name)}" ${(bed.assigned||'') === p.name ? 'selected' : ''}>${esc(label)}</option>`;
-  }).join('');
+  // Collect already-assigned players from currentBedData (except this bed)
+  const assignedNames = new Set();
+  currentBedData.forEach((b, i) => {
+    if (i !== idx && b.assigned) assignedNames.add(b.assigned);
+  });
+
+  const teamLabel = editingPropertyTeam || '';
+  const playerOpts = players
+    .filter(p => !assignedNames.has(p.name) || (bed.assigned || '') === p.name)
+    .map(p => {
+      const label = teamLabel ? `${p.name} — ${teamLabel}` : p.name;
+      return `<option value="${esc(p.name)}" ${(bed.assigned||'') === p.name ? 'selected' : ''}>${esc(label)}</option>`;
+    }).join('');
 
   const row = document.createElement('div');
   row.className = 'bed-row';
@@ -1045,11 +1055,11 @@ function renderBedRow(container, bed, idx) {
       <option value="Queen Sofa" ${bed.type==='Queen Sofa'?'selected':''}>Queen Sofa</option>
       <option value="Double Sofa" ${bed.type==='Double Sofa'?'selected':''}>Double Sofa</option>
     </select>
-    <select class="bed-assigned" style="padding:8px 10px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;cursor:pointer">
+    <select class="bed-assigned" onchange="refreshBedDropdowns()" style="padding:8px 10px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;cursor:pointer">
       <option value="">— Unassigned —</option>
       ${playerOpts}
     </select>
-    <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:0">✕</button>`;
+    <button type="button" onclick="this.parentElement.remove();setTimeout(refreshBedDropdowns,50)" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:0">✕</button>`;
   container.appendChild(row);
 }
 
@@ -1088,18 +1098,25 @@ function getPlayersForTeam(housingTeam) {
 
 function addBedRow() {
   const container = document.getElementById('house-beds');
-  const idx = container.children.length;
   editingPropertyTeam = document.getElementById('house-team').value;
-  renderBedRow(container, { room: '', type: 'Queen', assigned: '' }, idx);
+  const newBed = { room: '', type: 'Queen', assigned: '' };
+  currentBedData.push(newBed);
+  renderBedRow(container, newBed, currentBedData.length - 1);
 }
 
 function onTeamChange() {
   editingPropertyTeam = document.getElementById('house-team').value;
-  // Refresh all bed dropdowns with new team's players
   const container = document.getElementById('house-beds');
-  const currentBeds = collectBeds();
+  currentBedData = collectBeds();
   container.innerHTML = '';
-  currentBeds.forEach((b, i) => renderBedRow(container, b, i));
+  currentBedData.forEach((b, i) => renderBedRow(container, b, i));
+}
+
+function refreshBedDropdowns() {
+  const container = document.getElementById('house-beds');
+  currentBedData = collectBeds();
+  container.innerHTML = '';
+  currentBedData.forEach((b, i) => renderBedRow(container, b, i));
 }
 
 function collectBeds() {
