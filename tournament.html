@@ -740,6 +740,8 @@ async function loadTeamPlayersFromSharePoint() {
     rosterUrl = res['@odata.nextLink'] || null;
   }
 
+  console.log(`IDCampRoster: ${Object.keys(playerMap).length} players loaded`);
+
   // Load all team sheets
   const tsFields = 'Title,Tournament,Line,Players';
   const tsRes = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists/${tsList.id}/items?$expand=fields($select=${tsFields})&$top=999`, { headers: h })).json();
@@ -754,10 +756,14 @@ async function loadTeamPlayersFromSharePoint() {
     let lineup = {};
     try { lineup = JSON.parse(f.Players || '{}'); } catch(e) {}
 
+    console.log(`TeamSheet: ${f.Tournament} | Line ${f.Line} | ${Object.keys(lineup).length} slots | IDs:`, Object.values(lineup));
+
     // Collect unique players across all slots
     Object.values(lineup).forEach(pid => {
       if (pid && playerMap[pid]) {
         teamPlayers[f.Tournament][pid] = playerMap[pid];
+      } else if (pid) {
+        console.warn(`Player ID ${pid} not found in IDCampRoster`);
       }
     });
   });
