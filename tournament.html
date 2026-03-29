@@ -344,24 +344,38 @@
 
   <!-- ═══ HOUSING MODAL ═══ -->
   <div class="modal-overlay" id="modal-housing">
-    <div class="modal">
+    <div class="modal" style="width:640px;max-height:92vh">
       <div class="modal-head">
         <div class="modal-title" id="house-modal-title">Add Property</div>
         <button class="modal-close" onclick="closeModal('housing')">&times;</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="overflow-y:auto;max-height:70vh">
         <div class="form-grid">
           <div class="form-field full"><label>Property Name</label><input type="text" id="house-name" placeholder="Hilton Garden Inn Cary"></div>
           <div class="form-field full"><label>Address</label><input type="text" id="house-address" placeholder="Full street address"></div>
+          <div class="form-field full"><label>VRBO Link</label><input type="url" id="house-vrbo" placeholder="https://www.vrbo.com/12345"></div>
           <div class="form-field"><label>Check-In</label><input type="date" id="house-checkin"></div>
           <div class="form-field"><label>Check-Out</label><input type="date" id="house-checkout"></div>
           <div class="form-field"><label>Rooms</label><input type="number" id="house-rooms" placeholder="2" min="1"></div>
+          <div class="form-field"><label>Bathrooms</label><input type="text" id="house-bath" placeholder="2.5"></div>
           <div class="form-field"><label>Cost / Night</label><input type="text" id="house-cost" placeholder="$149"></div>
-          <div class="form-field"><label>Confirmation #</label><input type="text" id="house-confirm" placeholder="ABC123"></div>
           <div class="form-field"><label>Status</label>
             <select id="house-status"><option value="Confirmed">Confirmed</option><option value="Pending">Pending</option><option value="Cancelled">Cancelled</option></select>
           </div>
-          <div class="form-field full"><label>Room Assignments (one per line)</label><textarea id="house-occupants" rows="4" placeholder="Room 101: Sean, Jaafar&#10;Room 102: Player A, Player B"></textarea></div>
+          <div class="form-field"><label>Confirmation #</label><input type="text" id="house-confirm" placeholder="ABC123"></div>
+          <div class="form-field"><label>Team</label>
+            <select id="house-team"><option value="">— Select —</option><option value="Leon Dallas Coed">Leon Dallas Coed</option><option value="Mama Africa Men's">Mama Africa Men's</option></select>
+          </div>
+        </div>
+        <!-- BED ASSIGNMENTS -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--gold-border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <label style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Bed Assignments</label>
+            <button type="button" class="add-btn" onclick="addBedRow()" style="padding:4px 12px;font-size:8px">+ Add Bed</button>
+          </div>
+          <div id="house-beds"></div>
+        </div>
+        <div class="form-grid" style="margin-top:16px">
           <div class="form-field full"><label>Notes</label><textarea id="house-notes" rows="2" placeholder="Pool access, parking info..."></textarea></div>
         </div>
       </div>
@@ -861,15 +875,69 @@ function openHousingModal(data) {
   document.getElementById('house-del-btn').style.display = data ? '' : 'none';
   document.getElementById('house-name').value = data ? data.name || '' : '';
   document.getElementById('house-address').value = data ? data.address || '' : '';
+  document.getElementById('house-vrbo').value = data ? data.vrboLink || '' : '';
   document.getElementById('house-checkin').value = data ? data.checkin || '' : '';
   document.getElementById('house-checkout').value = data ? data.checkout || '' : '';
   document.getElementById('house-rooms').value = data ? data.rooms || '' : '';
-  document.getElementById('house-cost').value = data ? data.cost || '' : '';
+  document.getElementById('house-bath').value = data ? data.bathrooms || '' : '';
+  document.getElementById('house-cost').value = data ? data.costPerNight || data.cost || '' : '';
   document.getElementById('house-confirm').value = data ? data.confirmation || '' : '';
   document.getElementById('house-status').value = data ? data.status || 'Pending' : 'Pending';
-  document.getElementById('house-occupants').value = data ? data.occupants || '' : '';
+  document.getElementById('house-team').value = data ? data.team || '' : '';
   document.getElementById('house-notes').value = data ? data.notes || '' : '';
+
+  // Render beds
+  const bedsEl = document.getElementById('house-beds');
+  const beds = (data && data.beds) ? data.beds : [];
+  bedsEl.innerHTML = '';
+  beds.forEach((b, i) => renderBedRow(bedsEl, b, i));
+
   document.getElementById('modal-housing').classList.add('open');
+}
+
+function renderBedRow(container, bed, idx) {
+  // Build player options from rosterData
+  const playerOpts = rosterData.map(p => `<option value="${esc(p.fullName)}" ${(bed.assigned||'') === p.fullName ? 'selected' : ''}>${esc(p.fullName)}</option>`).join('');
+
+  const row = document.createElement('div');
+  row.className = 'bed-row';
+  row.dataset.idx = idx;
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1.5fr 30px;gap:8px;align-items:center;margin-bottom:8px';
+  row.innerHTML = `
+    <input type="text" class="bed-room" value="${esc(bed.room || '')}" placeholder="Room" style="padding:8px 10px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:12px">
+    <select class="bed-type" style="padding:8px 10px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;cursor:pointer">
+      <option value="King" ${bed.type==='King'?'selected':''}>King</option>
+      <option value="Queen" ${bed.type==='Queen'?'selected':''}>Queen</option>
+      <option value="Double" ${bed.type==='Double'?'selected':''}>Double</option>
+      <option value="Twin" ${bed.type==='Twin'?'selected':''}>Twin</option>
+      <option value="Bunk" ${bed.type==='Bunk'?'selected':''}>Bunk</option>
+      <option value="Double Bunk" ${bed.type==='Double Bunk'?'selected':''}>Double Bunk</option>
+      <option value="Sofa" ${bed.type==='Sofa'?'selected':''}>Sofa</option>
+      <option value="Queen Sofa" ${bed.type==='Queen Sofa'?'selected':''}>Queen Sofa</option>
+      <option value="Double Sofa" ${bed.type==='Double Sofa'?'selected':''}>Double Sofa</option>
+    </select>
+    <select class="bed-assigned" style="padding:8px 10px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;cursor:pointer">
+      <option value="">— Unassigned —</option>
+      ${playerOpts}
+    </select>
+    <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:0">✕</button>`;
+  container.appendChild(row);
+}
+
+function addBedRow() {
+  const container = document.getElementById('house-beds');
+  const idx = container.children.length;
+  renderBedRow(container, { room: '', type: 'Queen', assigned: '' }, idx);
+}
+
+function collectBeds() {
+  const rows = document.querySelectorAll('#house-beds .bed-row');
+  return Array.from(rows).map(row => ({
+    id: 'b' + Math.random().toString(36).substr(2, 5),
+    room: row.querySelector('.bed-room').value,
+    type: row.querySelector('.bed-type').value,
+    assigned: row.querySelector('.bed-assigned').value,
+  }));
 }
 
 function editHousingItem(id) {
@@ -883,13 +951,16 @@ async function saveHousingItem() {
     tournamentId: CONFIG.tournamentId,
     name: document.getElementById('house-name').value,
     address: document.getElementById('house-address').value,
+    vrboLink: document.getElementById('house-vrbo').value,
     checkin: document.getElementById('house-checkin').value,
     checkout: document.getElementById('house-checkout').value,
     rooms: document.getElementById('house-rooms').value,
-    cost: document.getElementById('house-cost').value,
+    bathrooms: document.getElementById('house-bath').value,
+    costPerNight: document.getElementById('house-cost').value,
     confirmation: document.getElementById('house-confirm').value,
     status: document.getElementById('house-status').value,
-    occupants: document.getElementById('house-occupants').value,
+    team: document.getElementById('house-team').value,
+    beds: collectBeds(),
     notes: document.getElementById('house-notes').value,
   };
   try {
