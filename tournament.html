@@ -764,26 +764,46 @@ function showStaffInstructions() {
 
 function updateTeamFilter() {
   const allCb = document.querySelector('.team-filter-cb[value="all"]');
-  const teamCbs = document.querySelectorAll('.team-filter-cb:not([value="all"])');
+  const teamCbs = Array.from(document.querySelectorAll('.team-filter-cb:not([value="all"])'));
   
-  if (allCb && allCb.checked) {
-    teamCbs.forEach(cb => cb.checked = true);
+  // If "All" just changed
+  if (document.activeElement === allCb) {
+    teamCbs.forEach(cb => cb.checked = allCb.checked);
+  } else {
+    // A team checkbox changed — update "All" state
+    if (allCb) allCb.checked = teamCbs.every(cb => cb.checked);
   }
-  const allTeamsChecked = Array.from(teamCbs).every(cb => cb.checked);
-  if (allCb) allCb.checked = allTeamsChecked;
   
-  renderOverview();
+  renderOverviewContent();
 }
 
 function toggleTeamCheckbox(teamName) {
   const allCb = document.querySelector('.team-filter-cb[value="all"]');
-  const teamCbs = document.querySelectorAll('.team-filter-cb:not([value="all"])');
+  const teamCbs = Array.from(document.querySelectorAll('.team-filter-cb:not([value="all"])'));
   
-  // Uncheck "All", uncheck all teams, then check only clicked team
   if (allCb) allCb.checked = false;
   teamCbs.forEach(cb => cb.checked = (cb.value === teamName));
   
-  renderOverview();
+  renderOverviewContent();
+}
+
+function buildTeamCheckboxes() {
+  const isStaff = currentRole === 'admin' || currentRole === 'staff';
+  const checkContainer = document.getElementById('overview-team-checks');
+  if (!checkContainer || !isStaff) return;
+  const teamNames = Object.keys(teamPlayers);
+  if (!teamNames.length) return;
+  // Only build once — don't clobber checked state
+  if (checkContainer.dataset.built && checkContainer.dataset.teams === teamNames.join(',')) return;
+
+  let checkHtml = '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Teams</span>';
+  checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="all" checked onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> All</label>`;
+  teamNames.forEach(tn => {
+    checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="${esc(tn)}" checked onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> ${esc(tn)}</label>`;
+  });
+  checkContainer.innerHTML = checkHtml;
+  checkContainer.dataset.built = '1';
+  checkContainer.dataset.teams = teamNames.join(',');
 }
 
 function getActiveTeamNames() {
@@ -1289,22 +1309,16 @@ function renderOverview() {
     window._cdInterval = setInterval(() => updateCountdown(target), 60000);
   }
 
-  // Team filter checkboxes (staff only)
-  const checkContainer = document.getElementById('overview-team-checks');
-  if (checkContainer && isStaff) {
-    const teamNames = Object.keys(teamPlayers);
-    // Preserve current checked state
-    const wasChecked = {};
-    document.querySelectorAll('.team-filter-cb').forEach(cb => { wasChecked[cb.value] = cb.checked; });
-    const hasExisting = Object.keys(wasChecked).length > 0;
+  // Build checkboxes once
+  buildTeamCheckboxes();
 
-    let checkHtml = '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Teams</span>';
-    checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="all" ${hasExisting ? (wasChecked['all'] ? 'checked' : '') : 'checked'} onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> All</label>`;
-    teamNames.forEach(tn => {
-      checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="${esc(tn)}" ${hasExisting ? (wasChecked[tn] ? 'checked' : '') : 'checked'} onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> ${esc(tn)}</label>`;
-    });
-    checkContainer.innerHTML = checkHtml;
-  }
+  // Render data
+  renderOverviewContent();
+}
+
+function renderOverviewContent() {
+  const t = tournament || {};
+  const isStaff = currentRole === 'admin' || currentRole === 'staff';
 
   // Get checked teams
   const checkedTeams = [];
