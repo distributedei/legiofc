@@ -246,9 +246,26 @@
         <div class="gate-title">Tournament Operations</div>
         <div class="gate-sub">Manage tournament logistics, housing, schedules, and rosters.</div>
         <div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:8px">
-          <button class="gate-btn" onclick="handleStaffAuth()" style="min-width:280px">Staff & Coaches</button>
+          <button class="gate-btn" onclick="showStaffInstructions()" style="min-width:280px">Staff & Coaches</button>
           <button class="gate-btn" onclick="showPlayerInstructions()" style="min-width:280px;background:transparent;border:2px solid var(--gold);color:var(--gold)">Player Sign In</button>
           <div style="font-size:10px;color:var(--text-faint);margin-top:4px">Staff & Coaches: @legiofc.com account · Players: use your personal email</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAFF INSTRUCTIONS MODAL -->
+    <div id="staff-instructions" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center">
+      <div style="background:var(--blue-dark);border:1px solid var(--gold);max-width:440px;width:90%;padding:32px;text-align:center">
+        <img src="logo.png" alt="Legio FC" style="width:60px;height:60px;margin-bottom:16px">
+        <div style="font-family:Cinzel,serif;font-size:16px;color:var(--cream);font-weight:600;margin-bottom:16px">Staff & Coaches Portal</div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.7;margin-bottom:20px;text-align:left">
+          <div style="margin-bottom:12px"><strong style="color:var(--gold)">Access restricted</strong> to authorized staff and coaching personnel with a <strong style="color:var(--cream)">@legiofc.com</strong> Microsoft account.</div>
+          <div style="margin-bottom:12px">You'll be redirected to Microsoft to sign in with your organization credentials.</div>
+          <div><strong style="color:var(--cream)">Don't have an account?</strong> Contact your tournament director to get set up with a legiofc.com email.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="gate-btn" onclick="document.getElementById('staff-instructions').style.display='none';handleStaffAuth()" style="min-width:240px">Continue to Microsoft Sign In</button>
+          <button onclick="document.getElementById('staff-instructions').style.display='none'" style="padding:8px;background:none;border:none;color:var(--text-faint);cursor:pointer;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase">Cancel</button>
         </div>
       </div>
     </div>
@@ -737,6 +754,10 @@ async function handleExtAuth() {
 
 function showPlayerInstructions() {
   document.getElementById('player-instructions').style.display = 'flex';
+}
+
+function showStaffInstructions() {
+  document.getElementById('staff-instructions').style.display = 'flex';
 }
 
 function handleSignOut() {
