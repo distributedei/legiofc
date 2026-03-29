@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html><head><title>Seed Housing</title></head>
+<body style="font-family:monospace;background:#163d54;color:#f8f6f1;padding:40px">
+<h2>Legio FC — Seed Housing Data</h2>
+<button onclick="seed()" style="padding:12px 24px;font-size:16px;cursor:pointer">Run Seed</button>
+<pre id="log"></pre>
+<script>
+const API = 'https://legiofc-api-hshtangwcydsb7ap.eastus-01.azurewebsites.net/api';
+const TID = 'tst-2026';
+
+const houses = [
+  // ═══ LEON DALLAS COED ═══
+  {
+    id:'h-dallas-1', tournamentId:TID, team:'Leon Dallas Coed',
+    name:'Cozy 4bd Home - NC State & Airport nearby - BBQ',
+    address:'Cary, NC (near NC State & Airport)',
+    vrboId:'47575', vrboLink:'https://www.vrbo.com/47575',
+    costPerNight:'$521', rooms:4, bathrooms:'2.5',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'Queen',assigned:''},
+      {id:'b2',room:'Bedroom 2',type:'Queen',assigned:''},
+      {id:'b3',room:'Bedroom 3',type:'Double',assigned:''},
+      {id:'b4',room:'Bedroom 4',type:'Queen',assigned:''},
+      {id:'b5',room:'Bedroom 4',type:'Queen',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'Barbecue grill, outdoor space, washer/dryer, parking'
+  },
+  {
+    id:'h-dallas-2', tournamentId:TID, team:'Leon Dallas Coed',
+    name:'Modern 4BR Home with Game Room & Outdoor Firepit',
+    address:'Cary, NC (near WakeMed Raleigh Hospital)',
+    vrboId:'2085565', vrboLink:'https://www.vrbo.com/2085565',
+    costPerNight:'$252', rooms:4, bathrooms:'3',
+    beds:[
+      {id:'b1',room:'Living Room',type:'Twin',assigned:''},
+      {id:'b2',room:'Living Room',type:'Twin',assigned:''},
+      {id:'b3',room:'Bedroom 1',type:'Queen',assigned:''},
+      {id:'b4',room:'Bedroom 2',type:'King',assigned:''},
+      {id:'b5',room:'Bedroom 3',type:'Queen',assigned:''},
+      {id:'b6',room:'Bedroom 4',type:'Queen',assigned:''},
+      {id:'b7',room:'Guest Suite',type:'Queen',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'2500 sq ft, game room, firepit, open floor plan'
+  },
+  {
+    id:'h-dallas-3', tournamentId:TID, team:'Leon Dallas Coed',
+    name:'Renovated 4BR Retreat in Quiet Cul-de-sac, USA Baseball',
+    address:'Cary, NC (near Fred G Bond Metro Park)',
+    vrboId:'3421637', vrboLink:'https://www.vrbo.com/3421637',
+    costPerNight:'$318', rooms:4, bathrooms:'2.5',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'Queen',assigned:''},
+      {id:'b2',room:'Bedroom 2',type:'Queen',assigned:''},
+      {id:'b3',room:'Bedroom 3',type:'Queen',assigned:''},
+      {id:'b4',room:'Bedroom 4',type:'Double',assigned:''},
+      {id:'b5',room:'Bedroom 4',type:'Double',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'1800 sq ft, quiet cul-de-sac, near Koka Booth Amphitheater'
+  },
+  {
+    id:'h-dallas-4', tournamentId:TID, team:'Leon Dallas Coed',
+    name:'Mulberry on Athens - 5BR curated stay in Raleigh/Cary',
+    address:'Raleigh/Cary, NC (near Lake Johnson)',
+    vrboId:'4610535', vrboLink:'https://www.vrbo.com/4610535',
+    costPerNight:'$459', rooms:5, bathrooms:'3.5',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'Queen',assigned:''},
+      {id:'b2',room:'Bedroom 1',type:'Queen',assigned:''},
+      {id:'b3',room:'Bedroom 2',type:'King',assigned:''},
+      {id:'b4',room:'Bedroom 3',type:'King',assigned:''},
+      {id:'b5',room:'Bedroom 4',type:'Queen',assigned:''},
+      {id:'b6',room:'Bedroom 5',type:'King',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'Near Lake Johnson, NC State, J.S. Dorton Arena'
+  },
+  {
+    id:'h-dallas-5', tournamentId:TID, team:'Leon Dallas Coed',
+    name:'3BR Sleeps 10 w/King Beds, Artful Design & Central',
+    address:'Raleigh, NC (near NC State / J.S. Dorton Arena)',
+    vrboId:'4079577', vrboLink:'https://www.vrbo.com/4079577',
+    costPerNight:'$204', rooms:3, bathrooms:'2.5',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'King',assigned:''},
+      {id:'b2',room:'Bedroom 1',type:'King',assigned:''},
+      {id:'b3',room:'Bedroom 2',type:'King',assigned:''},
+      {id:'b4',room:'Bedroom 2',type:'King',assigned:''},
+      {id:'b5',room:'Bedroom 3',type:'Double Bunk',assigned:''},
+      {id:'b6',room:'Bedroom 3',type:'Double Bunk',assigned:''},
+      {id:'b7',room:'Bedroom 3',type:'Double Bunk',assigned:''},
+      {id:'b8',room:'Living Room',type:'Queen Sofa',assigned:''},
+      {id:'b9',room:'Living Room',type:'Queen',assigned:''},
+      {id:'b10',room:'Living Room',type:'Queen',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'1800 sq ft, artful design, central location'
+  },
+  // ═══ MAMA AFRICA MEN'S ═══
+  {
+    id:'h-mama-1', tournamentId:TID, team:'Mama Africa Men\'s',
+    name:'Modern Home Near NCSU and Downtown',
+    address:'Raleigh, NC (near Lake Johnson & NCSU)',
+    vrboId:'4735577', vrboLink:'https://www.vrbo.com/4735577',
+    costPerNight:'$453', rooms:5, bathrooms:'3.5',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'King',assigned:''},
+      {id:'b2',room:'Bedroom 2',type:'Queen',assigned:''},
+      {id:'b3',room:'Bedroom 3',type:'Bunk',assigned:''},
+      {id:'b4',room:'Bedroom 3',type:'Bunk',assigned:''},
+      {id:'b5',room:'Bedroom 4',type:'Queen',assigned:''},
+      {id:'b6',room:'Bedroom 5',type:'King',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'2750 sq ft, BBQ grill, outdoor space, near Carolina Pines Dog Park'
+  },
+  {
+    id:'h-mama-2', tournamentId:TID, team:'Mama Africa Men\'s',
+    name:'Mighty Mansion w/3,300 SF - 8 Beds Great for Groups',
+    address:'Raleigh, NC (near Lake Johnson & NCSU)',
+    vrboId:'1703742', vrboLink:'https://www.vrbo.com/1703742',
+    costPerNight:'$505', rooms:6, bathrooms:'3.5',
+    beds:[
+      {id:'b1',room:'Downstairs Bedroom',type:'Queen',assigned:''},
+      {id:'b2',room:'Main Floor Bedroom',type:'Double',assigned:''},
+      {id:'b3',room:'Main Floor Bedroom',type:'Double',assigned:''},
+      {id:'b4',room:'Master Bedroom',type:'King',assigned:''},
+      {id:'b5',room:'Upstairs Bedroom 1',type:'Queen',assigned:''},
+      {id:'b6',room:'Upstairs Bedroom 1',type:'Queen',assigned:''},
+      {id:'b7',room:'Upstairs Bedroom 2',type:'Queen',assigned:''},
+      {id:'b8',room:'Upstairs Bedroom 3',type:'Queen',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'3300 sq ft, 6BR, coffee maker, near Carolina Pines Dog Park'
+  },
+  {
+    id:'h-mama-3', tournamentId:TID, team:'Mama Africa Men\'s',
+    name:'The Maple Marvel - Near NC State Campus & Downtown',
+    address:'Raleigh, NC (near Lake Johnson & NCSU)',
+    vrboId:'4637645', vrboLink:'https://www.vrbo.com/4637645',
+    costPerNight:'$414', rooms:5, bathrooms:'3',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'Bunk',assigned:''},
+      {id:'b2',room:'Bedroom 1',type:'Bunk',assigned:''},
+      {id:'b3',room:'Bedroom 2',type:'King',assigned:''},
+      {id:'b4',room:'Bedroom 3',type:'King',assigned:''},
+      {id:'b5',room:'Bedroom 4',type:'Queen',assigned:''},
+      {id:'b6',room:'Bedroom 5',type:'Queen',assigned:''},
+      {id:'b7',room:'Living Room',type:'Double Sofa',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'2750 sq ft, pet friendly, BBQ grill, near Carolina Pines Dog Park'
+  },
+  {
+    id:'h-mama-4', tournamentId:TID, team:'Mama Africa Men\'s',
+    name:'3BR Townhouse | King Bed | Garage | Near NC State (Unit 1)',
+    address:'Raleigh, NC (near Carolina Pines Dog Park & NCSU)',
+    vrboId:'475547', vrboLink:'https://www.vrbo.com/475547',
+    costPerNight:'$188', rooms:3, bathrooms:'4',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'King',assigned:''},
+      {id:'b2',room:'Bedroom 2',type:'Double',assigned:''},
+      {id:'b3',room:'Bedroom 2',type:'Double',assigned:''},
+      {id:'b4',room:'Bedroom 3',type:'Double',assigned:''},
+      {id:'b5',room:'Bedroom 3',type:'Double',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'1700 sq ft, garage parking, internet, pet friendly'
+  },
+  {
+    id:'h-mama-5', tournamentId:TID, team:'Mama Africa Men\'s',
+    name:'3BR Townhouse | King Bed | Garage | Near NC State (Unit 2)',
+    address:'Raleigh, NC (near Carolina Pines Dog Park & NCSU)',
+    vrboId:'475547', vrboLink:'https://www.vrbo.com/475547',
+    costPerNight:'$188', rooms:3, bathrooms:'4',
+    beds:[
+      {id:'b1',room:'Bedroom 1',type:'King',assigned:''},
+      {id:'b2',room:'Bedroom 2',type:'Double',assigned:''},
+      {id:'b3',room:'Bedroom 2',type:'Double',assigned:''},
+      {id:'b4',room:'Bedroom 3',type:'Double',assigned:''},
+      {id:'b5',room:'Bedroom 3',type:'Double',assigned:''}
+    ],
+    status:'Pending', checkin:'2026-05-24', checkout:'2026-06-02',
+    notes:'1700 sq ft, garage parking, internet, pet friendly'
+  }
+];
+
+async function seed() {
+  const log = document.getElementById('log');
+  log.textContent = 'Seeding 10 housing records...\n\n';
+
+  // First delete the existing test housing
+  try {
+    const existing = await (await fetch(API+'/housing?tournamentId='+TID)).json();
+    for (const h of existing) {
+      await fetch(API+'/housing?id='+h.id+'&tournamentId='+TID, {method:'DELETE'});
+      log.textContent += '✗ Deleted old: ' + h.name + '\n';
+    }
+  } catch(e) { log.textContent += 'No existing records to clean\n'; }
+
+  log.textContent += '\n';
+
+  for (const h of houses) {
+    h.createdAt = new Date().toISOString();
+    h.updatedAt = new Date().toISOString();
+    try {
+      const res = await fetch(API+'/housing', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(h)
+      });
+      const data = await res.json();
+      log.textContent += '✓ ' + h.team + ' — ' + h.name + ' (' + h.beds.length + ' beds)\n';
+    } catch(e) {
+      log.textContent += '✗ FAILED: ' + h.name + ' — ' + e.message + '\n';
+    }
+  }
+  log.textContent += '\n═══════════════════════════\nDone! Go to tournament.html and check the Housing tab.\n';
+}
+</script>
+</body>
+</html>

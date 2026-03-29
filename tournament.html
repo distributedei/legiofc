@@ -784,24 +784,75 @@ function renderHousing() {
     el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏠</div><div class="empty-text">No properties added</div></div>';
     return;
   }
-  el.innerHTML = housingData.map(h => {
-    const statusClass = h.status === 'Confirmed' ? 'badge-confirmed' : h.status === 'Pending' ? 'badge-pending' : 'badge-open';
-    const occupants = (h.occupants || '').split('\n').filter(Boolean);
-    const nights = h.checkin && h.checkout ? Math.ceil((new Date(h.checkout) - new Date(h.checkin)) / 86400000) : '—';
-    return `<div class="ops-card" onclick="editHousingItem('${h.id}')" style="cursor:pointer">
-      <div class="card-header">
-        <div><div class="card-title">${esc(h.name)}</div><div class="card-subtitle">${esc(h.address || '')}</div></div>
-        <span class="card-badge ${statusClass}">${esc(h.status || 'Open')}</span>
-      </div>
-      <div class="card-row"><span class="card-label">Check-in</span><span class="card-val">${fmtDate(h.checkin)}</span></div>
-      <div class="card-row"><span class="card-label">Check-out</span><span class="card-val">${fmtDate(h.checkout)}</span></div>
-      <div class="card-row"><span class="card-label">Rooms</span><span class="card-val">${h.rooms || '—'}</span></div>
-      <div class="card-row"><span class="card-label">Nights</span><span class="card-val">${nights}</span></div>
-      <div class="card-row"><span class="card-label">Cost</span><span class="card-val">${esc(h.cost || '—')}</span></div>
-      <div class="card-row"><span class="card-label">Confirmation</span><span class="card-val" style="font-family:monospace;font-size:11px">${esc(h.confirmation || '—')}</span></div>
-      ${occupants.length ? `<div class="card-occupants">${occupants.map(o => `<div class="occupant"><span class="occupant-dot"></span>${esc(o)}</div>`).join('')}</div>` : ''}
-    </div>`;
-  }).join('');
+
+  // For players — only show properties where they're assigned to a bed
+  const userEmail = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || currentUser.username || '').toLowerCase() : '';
+  let filtered = housingData;
+  if (currentRole === 'player' || currentRole === 'viewer') {
+    filtered = housingData.filter(h => {
+      if (!h.beds || !h.beds.length) return false;
+      return h.beds.some(b => (b.assigned || '').toLowerCase() === userEmail);
+    });
+    if (!filtered.length) {
+      el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏠</div><div class="empty-text">No housing assigned to you yet</div></div>';
+      return;
+    }
+  }
+
+  // Group by team for admin/staff view
+  const teams = [...new Set(filtered.map(h => h.team || 'Unassigned'))];
+  let html = '';
+
+  for (const team of teams) {
+    const teamHouses = filtered.filter(h => (h.team || 'Unassigned') === team);
+    const totalBeds = teamHouses.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
+    const assignedBeds = teamHouses.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
+
+    if (currentRole === 'admin' || currentRole === 'staff') {
+      html += `<div style="grid-column:1/-1;font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-top:16px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${assignedBeds}/${totalBeds} beds assigned · ${teamHouses.length} properties</span></div>`;
+    }
+
+    html += teamHouses.map(h => {
+      const statusClass = h.status === 'Confirmed' ? 'badge-confirmed' : h.status === 'Pending' ? 'badge-pending' : 'badge-open';
+      const nights = h.checkin && h.checkout ? Math.ceil((new Date(h.checkout) - new Date(h.checkin)) / 86400000) : '—';
+      const beds = h.beds || [];
+      const bedCount = beds.length;
+      const assignedCount = beds.filter(b => b.assigned).length;
+      const costDisplay = h.costPerNight || h.cost || '—';
+
+      let bedHtml = '';
+      if (beds.length) {
+        bedHtml = `<div class="card-occupants" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gold-border)">
+          <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:var(--gold);margin-bottom:8px;text-transform:uppercase">Beds (${assignedCount}/${bedCount} assigned)</div>
+          ${beds.map((b, i) => {
+            const isMe = userEmail && (b.assigned || '').toLowerCase() === userEmail;
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;${isMe ? 'background:rgba(218,183,81,0.08);padding:4px 6px;margin:0 -6px;' : ''}">
+              <span style="color:var(--text-dim)">${esc(b.room)} — ${esc(b.type)}</span>
+              <span style="color:${b.assigned ? 'var(--cream)' : 'var(--text-faint)'};font-weight:${b.assigned ? '500' : '300'}">${b.assigned ? esc(b.assigned) : '—'}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }
+
+      const vrboHtml = h.vrboLink ? `<div class="card-row"><span class="card-label">VRBO</span><span class="card-val"><a href="${esc(h.vrboLink)}" target="_blank" style="color:var(--gold);text-decoration:none;font-size:11px">View Property ↗</a></span></div>` : '';
+
+      return `<div class="ops-card" onclick="editHousingItem('${h.id}')" style="cursor:pointer">
+        <div class="card-header">
+          <div><div class="card-title">${esc(h.name)}</div><div class="card-subtitle">${esc(h.address || '')}</div></div>
+          <span class="card-badge ${statusClass}">${esc(h.status || 'Open')}</span>
+        </div>
+        <div class="card-row"><span class="card-label">Check-in</span><span class="card-val">${fmtDate(h.checkin)}</span></div>
+        <div class="card-row"><span class="card-label">Check-out</span><span class="card-val">${fmtDate(h.checkout)}</span></div>
+        <div class="card-row"><span class="card-label">Rooms / Bath</span><span class="card-val">${h.rooms || '—'} BR / ${h.bathrooms || '—'} BA</span></div>
+        <div class="card-row"><span class="card-label">Beds</span><span class="card-val">${bedCount} (${assignedCount} assigned)</span></div>
+        <div class="card-row"><span class="card-label">Nights</span><span class="card-val">${nights}</span></div>
+        <div class="card-row"><span class="card-label">Cost</span><span class="card-val">${esc(costDisplay)}/night</span></div>
+        ${vrboHtml}
+        ${bedHtml}
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
 }
 
 function openHousingModal(data) {
