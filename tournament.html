@@ -275,7 +275,7 @@
             <button class="add-btn admin-only" onclick="openHousingModal()">+ Add Property</button>
           </div>
           <div style="margin-bottom:16px">
-            <iframe id="housing-map-iframe" width="100%" height="300" frameborder="0" style="border:1px solid var(--gold-border);display:none" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe id="housing-map-iframe" src="housing-map.html" width="100%" height="340" frameborder="0" style="border:1px solid var(--gold-border)" allowfullscreen loading="lazy"></iframe>
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap" id="map-buttons"></div>
           </div>
           <div class="card-grid" id="housing-content">
@@ -876,34 +876,22 @@ function renderHousing() {
   renderHousingMap(filtered);
 }
 
-// ── Housing Map (Google Maps) ──
-const WAKEMED_ADDR = '201 Soccer Park Dr, Cary, NC 27511';
-
 function renderHousingMap(filtered) {
-  const iframe = document.getElementById('housing-map-iframe');
   const btnContainer = document.getElementById('map-buttons');
-  if (!filtered || !filtered.length) { iframe.style.display = 'none'; btnContainer.innerHTML = ''; return; }
+  if (!filtered || !filtered.length) { btnContainer.innerHTML = ''; return; }
 
-  // Embed Google Maps centered on WakeMed Soccer Park
-  iframe.style.display = '';
-  iframe.src = 'https://maps.google.com/maps?q=WakeMed+Soccer+Park+201+Soccer+Park+Dr+Cary+NC+27511&t=m&z=11&output=embed';
-
-  // Team-specific "View All" direction buttons
+  const WAKEMED_ADDR = '201 Soccer Park Dr, Cary, NC 27511';
   const teams = [...new Set(filtered.map(h => h.team || 'Unassigned'))];
-  let btns = `<a href="https://www.google.com/maps/dir/${encodeURIComponent(WAKEMED_ADDR)}/${filtered.map(h => encodeURIComponent(h.address || '')).join('/')}" target="_blank" class="add-btn" style="padding:6px 14px;font-size:8px;text-decoration:none;display:inline-block">📍 All Properties → Google Maps</a>`;
+  let btns = `<a href="https://www.google.com/maps/dir/${encodeURIComponent(WAKEMED_ADDR)}/${filtered.filter(h=>h.address).map(h => encodeURIComponent(h.address)).join('/')}" target="_blank" class="add-btn" style="padding:6px 14px;font-size:8px;text-decoration:none;display:inline-block">📍 All Properties Route</a>`;
 
   for (const team of teams) {
     const teamHouses = filtered.filter(h => (h.team || 'Unassigned') === team && h.address);
     if (teamHouses.length) {
       const route = teamHouses.map(h => encodeURIComponent(h.address)).join('/');
-      btns += ` <a href="https://www.google.com/maps/dir/${encodeURIComponent(WAKEMED_ADDR)}/${route}" target="_blank" class="add-btn" style="padding:6px 14px;font-size:8px;text-decoration:none;display:inline-block">${esc(team)} Route →</a>`;
+      btns += ` <a href="https://www.google.com/maps/dir/${encodeURIComponent(WAKEMED_ADDR)}/${route}" target="_blank" class="add-btn" style="padding:6px 14px;font-size:8px;text-decoration:none;display:inline-block">${esc(team)} Route</a>`;
     }
   }
   btnContainer.innerHTML = btns;
-}
-
-function googleMapsDirections(address) {
-  window.open(`https://www.google.com/maps/dir/${encodeURIComponent(WAKEMED_ADDR)}/${encodeURIComponent(address)}`, '_blank');
 }
 
 function openHousingModal(data) {
