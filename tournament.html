@@ -485,22 +485,49 @@
 
   <!-- ═══ SCHEDULE MODAL ═══ -->
   <div class="modal-overlay" id="modal-schedule">
-    <div class="modal">
+    <div class="modal" style="width:560px">
       <div class="modal-head">
-        <div class="modal-title" id="sched-modal-title">Add Game</div>
+        <div class="modal-title" id="sched-modal-title">Add Event</div>
         <button class="modal-close" onclick="closeModal('schedule')">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
+          <div class="form-field"><label>Event Type</label>
+            <select id="sched-type" onchange="toggleGameFields()">
+              <option value="Game">⚽ Game</option>
+              <option value="Training">🏃 Training</option>
+              <option value="Meal">🍽 Meal</option>
+              <option value="Meeting">📋 Team Meeting</option>
+              <option value="Media">📸 Media / Press</option>
+              <option value="Travel">🚐 Travel / Transit</option>
+              <option value="Recovery">💤 Recovery / Rest</option>
+              <option value="Warmup">🔥 Warmup</option>
+              <option value="Social">🎉 Social Event</option>
+              <option value="Other">📌 Other</option>
+            </select>
+          </div>
+          <div class="form-field"><label>Team</label>
+            <select id="sched-team">
+              <option value="All">All Teams</option>
+              <option value="Leon Dallas Coed">Leon Dallas Coed</option>
+              <option value="Mama Africa Men's">Mama Africa Men's</option>
+              <option value="Staff Only">Staff Only</option>
+            </select>
+          </div>
           <div class="form-field"><label>Date</label><input type="date" id="sched-date"></div>
           <div class="form-field"><label>Time</label><input type="time" id="sched-time"></div>
-          <div class="form-field"><label>Opponent</label><input type="text" id="sched-opponent" placeholder="Team name"></div>
-          <div class="form-field"><label>Stage</label>
-            <select id="sched-stage"><option value="Group">Group Stage</option><option value="R16">Round of 16</option><option value="QF">Quarter-Final</option><option value="SF">Semi-Final</option><option value="F">Final</option><option value="Friendly">Friendly</option></select>
+          <div class="form-field"><label>End Time</label><input type="time" id="sched-endtime"></div>
+          <div class="form-field"><label>Location</label><input type="text" id="sched-venue" placeholder="WakeMed Soccer Park — Field 3"></div>
+          <div class="form-field full"><label>Title / Description</label><input type="text" id="sched-title" placeholder="e.g. Team breakfast, Media day photos, Warmup session"></div>
+          <!-- Game-specific fields -->
+          <div id="game-fields" class="form-field full" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-field"><label>Opponent</label><input type="text" id="sched-opponent" placeholder="Team name"></div>
+            <div class="form-field"><label>Stage</label>
+              <select id="sched-stage"><option value="Group">Group Stage</option><option value="R16">Round of 16</option><option value="QF">Quarter-Final</option><option value="SF">Semi-Final</option><option value="F">Final</option><option value="Friendly">Friendly</option></select>
+            </div>
+            <div class="form-field"><label>Result</label><input type="text" id="sched-result" placeholder="e.g. 3-1 W"></div>
           </div>
-          <div class="form-field"><label>Venue / Field</label><input type="text" id="sched-venue" placeholder="WakeMed Soccer Park — Field 3"></div>
-          <div class="form-field"><label>Result</label><input type="text" id="sched-result" placeholder="e.g. 3-1 W"></div>
-          <div class="form-field full"><label>Notes</label><textarea id="sched-notes" rows="2" placeholder="Lineup notes, conditions..."></textarea></div>
+          <div class="form-field full"><label>Notes</label><textarea id="sched-notes" rows="2" placeholder="Details, instructions..."></textarea></div>
         </div>
       </div>
       <div class="modal-foot">
@@ -1150,7 +1177,38 @@ function updateCountdown(target) {
 // ═══════════════════════════════════════════════════════════════
 // SCHEDULE
 // ═══════════════════════════════════════════════════════════════
-// Calendar state
+// Event type config
+const EVENT_TYPES = {
+  'Game':     { icon:'⚽', color:'#dab751', bg:'rgba(218,183,81,0.2)' },
+  'Training': { icon:'🏃', color:'#7dd893', bg:'rgba(125,216,147,0.15)' },
+  'Meal':     { icon:'🍽', color:'#e8a849', bg:'rgba(232,168,73,0.15)' },
+  'Meeting':  { icon:'📋', color:'#4a90d9', bg:'rgba(74,144,217,0.15)' },
+  'Media':    { icon:'📸', color:'#d474d4', bg:'rgba(212,116,212,0.15)' },
+  'Travel':   { icon:'🚐', color:'#4ad4c9', bg:'rgba(74,212,201,0.15)' },
+  'Recovery': { icon:'💤', color:'#8a8aaa', bg:'rgba(138,138,170,0.15)' },
+  'Warmup':   { icon:'🔥', color:'#e87a5a', bg:'rgba(232,122,90,0.15)' },
+  'Social':   { icon:'🎉', color:'#d4a74a', bg:'rgba(212,167,74,0.15)' },
+  'Other':    { icon:'📌', color:'#aaa', bg:'rgba(170,170,170,0.1)' },
+};
+
+function getPlayerTeamForSchedule() {
+  // Returns player's team name for filtering schedule events
+  if (currentRole === 'admin' || currentRole === 'staff') return null; // see everything
+  const pTeam = getPlayerTeam();
+  if (!pTeam) return null;
+  // Map SharePoint team name to housing team name
+  const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === pTeam.toLowerCase());
+  return mapped ? mapped[0].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : pTeam;
+}
+
+function filterScheduleForUser(events) {
+  const playerTeam = getPlayerTeamForSchedule();
+  if (!playerTeam) return events; // staff sees all
+  return events.filter(e => {
+    const team = (e.team || 'All');
+    return team === 'All' || team.toLowerCase() === playerTeam.toLowerCase();
+  });
+}
 let schedMonth = null; // Date object for current month view
 let schedSelectedDay = null; // YYYY-MM-DD
 
@@ -1183,7 +1241,8 @@ function schedToday() {
 
 function renderSchedule() {
   if (!schedMonth) schedInit();
-  document.getElementById('badge-schedule').textContent = scheduleData.length;
+  const filteredEvents = filterScheduleForUser(scheduleData);
+  document.getElementById('badge-schedule').textContent = filteredEvents.length;
 
   const view = document.getElementById('sched-view-toggle').value;
   const calEl = document.getElementById('sched-calendar');
@@ -1219,22 +1278,25 @@ function renderCalendarMonth(el) {
   const month = schedMonth.getMonth();
   const today = new Date().toISOString().split('T')[0];
 
+  // Filter events for this user
+  const filtered = filterScheduleForUser(scheduleData);
+
   // Build event map by date
   const eventMap = {};
-  scheduleData.forEach(g => {
+  filtered.forEach(g => {
     if (!g.date) return;
     if (!eventMap[g.date]) eventMap[g.date] = [];
     eventMap[g.date].push(g);
   });
-  // Add housing check-in/out as events
+  // Add housing check-in/out
   housingData.forEach(h => {
     if (h.checkin) {
       if (!eventMap[h.checkin]) eventMap[h.checkin] = [];
-      eventMap[h.checkin].push({ _type: 'housing', _label: 'Check-in: ' + (h.name || '').substring(0, 25), _team: h.team });
+      eventMap[h.checkin].push({ _type: 'housing', _label: 'Check-in: ' + (h.name || '').substring(0, 20), type: 'Travel' });
     }
     if (h.checkout) {
       if (!eventMap[h.checkout]) eventMap[h.checkout] = [];
-      eventMap[h.checkout].push({ _type: 'housing', _label: 'Check-out: ' + (h.name || '').substring(0, 25), _team: h.team });
+      eventMap[h.checkout].push({ _type: 'housing', _label: 'Check-out: ' + (h.name || '').substring(0, 20), type: 'Travel' });
     }
   });
 
@@ -1247,7 +1309,6 @@ function renderCalendarMonth(el) {
     html += `<div class="cal-hdr">${d}</div>`;
   });
 
-  // Previous month days
   for (let i = firstDay - 1; i >= 0; i--) {
     const d = daysInPrev - i;
     const prevMonth = month === 0 ? 11 : month - 1;
@@ -1256,7 +1317,6 @@ function renderCalendarMonth(el) {
     html += `<div class="cal-day other-month" onclick="selectDay('${dateStr}')"><div class="cal-num">${d}</div></div>`;
   }
 
-  // Current month days
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const isToday = dateStr === today;
@@ -1267,18 +1327,19 @@ function renderCalendarMonth(el) {
       <div class="cal-num">${d}</div>`;
 
     events.slice(0, 3).forEach(evt => {
+      const et = EVENT_TYPES[evt.type] || EVENT_TYPES['Other'];
       if (evt._type === 'housing') {
-        html += `<div class="cal-evt cal-evt-housing">${esc(evt._label)}</div>`;
+        html += `<div class="cal-evt" style="background:${et.bg};color:${et.color};border-left:2px solid ${et.color}">${esc(evt._label)}</div>`;
       } else {
-        const label = evt.time ? evt.time + ' ' : '';
-        html += `<div class="cal-evt cal-evt-game">${esc(label)}vs ${esc(evt.opponent || 'TBD')}</div>`;
+        const label = (evt.time ? evt.time.substring(0,5) + ' ' : '') + (evt.type === 'Game' ? 'vs ' + (evt.opponent || 'TBD') : (evt.title || evt.type));
+        const teamTag = evt.team && evt.team !== 'All' ? ` · ${evt.team.split(' ')[0]}` : '';
+        html += `<div class="cal-evt" style="background:${et.bg};color:${et.color};border-left:2px solid ${et.color}">${et.icon} ${esc(label.substring(0,22))}${teamTag}</div>`;
       }
     });
     if (events.length > 3) html += `<div style="font-size:8px;color:var(--text-faint)">+${events.length - 3} more</div>`;
     html += '</div>';
   }
 
-  // Fill remaining cells
   const totalCells = firstDay + daysInMonth;
   const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
   for (let d = 1; d <= remaining; d++) {
@@ -1306,8 +1367,8 @@ function renderDayTimeline(el, dateStr) {
   const dayDate = new Date(dateStr + 'T00:00:00');
   const dayLabel = dayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
-  // Collect events for this day
-  const dayEvents = scheduleData.filter(g => g.date === dateStr);
+  const filtered = filterScheduleForUser(scheduleData);
+  const dayEvents = filtered.filter(g => g.date === dateStr);
   const dayHousingIn = housingData.filter(h => h.checkin === dateStr);
   const dayHousingOut = housingData.filter(h => h.checkout === dateStr);
 
@@ -1316,42 +1377,43 @@ function renderDayTimeline(el, dateStr) {
     <button class="add-btn admin-only" onclick="openScheduleModal({date:'${dateStr}'})" style="padding:4px 12px;font-size:8px">+ Add Event</button>
   </div>`;
 
-  // 24-hour timeline
   html += '<div style="border:1px solid var(--gold-border);background:rgba(22,61,84,0.3)">';
   for (let h = 6; h <= 23; h++) {
     const hourStr = h === 0 ? '12 AM' : h < 12 ? h + ' AM' : h === 12 ? '12 PM' : (h - 12) + ' PM';
     const hourEvents = [];
 
-    // Match games to this hour
     dayEvents.forEach(g => {
       if (!g.time) return;
       const gHour = parseInt(g.time.split(':')[0]);
       if (gHour === h) hourEvents.push(g);
     });
 
-    // Housing events at common times
-    if (h === 16) { // 4 PM check-in
-      dayHousingIn.forEach(hi => {
-        hourEvents.push({ _type: 'housing-in', _label: 'Check-in: ' + hi.name, _addr: hi.address });
-      });
-    }
-    if (h === 10) { // 10 AM check-out
-      dayHousingOut.forEach(ho => {
-        hourEvents.push({ _type: 'housing-out', _label: 'Check-out: ' + ho.name });
-      });
-    }
+    if (h === 16) dayHousingIn.forEach(hi => hourEvents.push({ _type:'housing-in', type:'Travel', title:'Check-in: '+hi.name, venue:hi.address }));
+    if (h === 10) dayHousingOut.forEach(ho => hourEvents.push({ _type:'housing-out', type:'Travel', title:'Check-out: '+ho.name }));
 
     html += `<div class="day-hour">
       <div class="day-hour-label">${hourStr}</div>
       <div class="day-hour-slot">`;
 
     hourEvents.forEach(evt => {
-      if (evt._type === 'housing-in' || evt._type === 'housing-out') {
-        const cls = evt._type === 'housing-in' ? 'cal-evt-housing' : 'cal-evt-travel';
-        html += `<div class="cal-evt ${cls}" style="padding:6px 8px;font-size:10px;margin:2px 0">${esc(evt._label)}</div>`;
+      const et = EVENT_TYPES[evt.type] || EVENT_TYPES['Other'];
+      const isAdmin = currentRole === 'admin';
+      const teamTag = evt.team && evt.team !== 'All' ? `<span style="font-size:8px;margin-left:6px;opacity:.7">${esc(evt.team)}</span>` : '';
+      const timeRange = evt.time ? evt.time.substring(0,5) + (evt.endTime ? '–'+evt.endTime.substring(0,5) : '') : '';
+
+      if (evt.type === 'Game') {
+        html += `<div style="background:${et.bg};border-left:3px solid ${et.color};color:${et.color};padding:8px 10px;margin:2px 0;font-size:11px;cursor:${isAdmin?'pointer':'default'}"
+          ${isAdmin && evt.id ? `onclick="editScheduleItem('${evt.id}')"` : ''}>
+          <div style="font-weight:600">${et.icon} ${esc(timeRange)} — Legio FC vs ${esc(evt.opponent||'TBD')}</div>
+          <div style="font-size:10px;opacity:.8">${esc(evt.stage||'')} · ${esc(evt.venue||'')}${teamTag}</div>
+          ${evt.result ? `<div style="font-size:10px;font-weight:700;margin-top:2px">${esc(evt.result)}</div>` : ''}
+        </div>`;
       } else {
-        html += `<div class="cal-evt cal-evt-game" style="padding:6px 8px;font-size:10px;margin:2px 0;cursor:pointer" onclick="editScheduleItem('${evt.id}')">
-          ${esc(evt.time || '')} — Legio FC vs ${esc(evt.opponent || 'TBD')} · ${esc(evt.stage || '')} · ${esc(evt.venue || '')}
+        html += `<div style="background:${et.bg};border-left:3px solid ${et.color};color:${et.color};padding:8px 10px;margin:2px 0;font-size:11px;cursor:${isAdmin && evt.id?'pointer':'default'}"
+          ${isAdmin && evt.id ? `onclick="editScheduleItem('${evt.id}')"` : ''}>
+          <div style="font-weight:500">${et.icon} ${esc(timeRange)} ${esc(evt.title||evt.type)}</div>
+          ${evt.venue ? `<div style="font-size:10px;opacity:.8">${esc(evt.venue)}${teamTag}</div>` : (teamTag ? `<div style="font-size:10px;opacity:.8">${teamTag}</div>` : '')}
+          ${evt.notes ? `<div style="font-size:9px;opacity:.6;margin-top:2px">${esc(evt.notes)}</div>` : ''}
         </div>`;
       }
     });
@@ -1360,7 +1422,6 @@ function renderDayTimeline(el, dateStr) {
   }
   html += '</div>';
 
-  // Summary below timeline
   if (!dayEvents.length && !dayHousingIn.length && !dayHousingOut.length) {
     html += '<div style="text-align:center;padding:16px;font-size:11px;color:var(--text-faint)">No events scheduled for this day</div>';
   }
@@ -1369,22 +1430,25 @@ function renderDayTimeline(el, dateStr) {
 }
 
 function renderScheduleList(el) {
-  if (!scheduleData.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No games scheduled</div></div>';
+  const filtered = filterScheduleForUser(scheduleData);
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No events scheduled</div></div>';
     return;
   }
-  const sorted = [...scheduleData].sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || ''));
+  const sorted = [...filtered].sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || ''));
   el.innerHTML = `<table class="ops-table">
-    <thead><tr><th>Date</th><th>Time</th><th>Opponent</th><th>Stage</th><th>Venue</th><th>Result</th><th></th></tr></thead>
+    <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Event</th><th>Team</th><th>Location</th><th></th></tr></thead>
     <tbody>${sorted.map(g => {
+      const et = EVENT_TYPES[g.type] || EVENT_TYPES['Other'];
+      const label = g.type === 'Game' ? `vs ${esc(g.opponent || 'TBD')}` : esc(g.title || g.type);
       const resultColor = (g.result || '').includes('W') ? 'var(--green)' : (g.result || '').includes('L') ? 'var(--red)' : 'var(--text)';
       return `<tr onclick="editScheduleItem('${g.id}')" style="cursor:pointer">
         <td>${fmtDate(g.date)}</td>
-        <td>${g.time || '—'}</td>
-        <td style="font-weight:500">Legio FC vs ${esc(g.opponent || '—')}</td>
-        <td>${esc(g.stage || '—')}</td>
+        <td>${g.time ? g.time.substring(0,5) : '—'}${g.endTime ? '–'+g.endTime.substring(0,5) : ''}</td>
+        <td style="color:${et.color}">${et.icon} ${esc(g.type||'')}</td>
+        <td style="font-weight:500">${label}${g.result ? ` <span style="color:${resultColor};font-family:Cinzel,serif;font-size:10px">${esc(g.result)}</span>` : ''}</td>
+        <td style="font-size:10px;color:var(--text-dim)">${esc(g.team || 'All')}</td>
         <td style="font-size:11px;color:var(--text-dim)">${esc(g.venue || '—')}</td>
-        <td style="font-family:Cinzel,serif;font-weight:700;color:${resultColor}">${esc(g.result || '—')}</td>
         <td style="text-align:right"><span style="color:var(--text-faint);font-size:11px">✏</span></td>
       </tr>`;
     }).join('')}</tbody></table>`;
@@ -1394,14 +1458,24 @@ function openScheduleModal(data) {
   editingScheduleId = data && data.id ? data.id : null;
   document.getElementById('sched-modal-title').textContent = editingScheduleId ? 'Edit Event' : 'Add Event';
   document.getElementById('sched-del-btn').style.display = editingScheduleId ? '' : 'none';
+  document.getElementById('sched-type').value = data ? data.type || 'Game' : 'Game';
+  document.getElementById('sched-team').value = data ? data.team || 'All' : 'All';
   document.getElementById('sched-date').value = data ? data.date || '' : '';
   document.getElementById('sched-time').value = data ? data.time || '' : '';
+  document.getElementById('sched-endtime').value = data ? data.endTime || '' : '';
+  document.getElementById('sched-venue').value = data ? data.venue || '' : 'WakeMed Soccer Park';
+  document.getElementById('sched-title').value = data ? data.title || '' : '';
   document.getElementById('sched-opponent').value = data ? data.opponent || '' : '';
   document.getElementById('sched-stage').value = data ? data.stage || 'Group' : 'Group';
-  document.getElementById('sched-venue').value = data ? data.venue || '' : 'WakeMed Soccer Park';
   document.getElementById('sched-result').value = data ? data.result || '' : '';
   document.getElementById('sched-notes').value = data ? data.notes || '' : '';
+  toggleGameFields();
   document.getElementById('modal-schedule').classList.add('open');
+}
+
+function toggleGameFields() {
+  const type = document.getElementById('sched-type').value;
+  document.getElementById('game-fields').style.display = type === 'Game' ? 'grid' : 'none';
 }
 
 function editScheduleItem(id) {
@@ -1413,11 +1487,15 @@ function editScheduleItem(id) {
 async function saveScheduleItem() {
   const obj = {
     tournamentId: CONFIG.tournamentId,
+    type: document.getElementById('sched-type').value,
+    team: document.getElementById('sched-team').value,
     date: document.getElementById('sched-date').value,
     time: document.getElementById('sched-time').value,
+    endTime: document.getElementById('sched-endtime').value,
+    venue: document.getElementById('sched-venue').value,
+    title: document.getElementById('sched-title').value,
     opponent: document.getElementById('sched-opponent').value,
     stage: document.getElementById('sched-stage').value,
-    venue: document.getElementById('sched-venue').value,
     result: document.getElementById('sched-result').value,
     notes: document.getElementById('sched-notes').value,
   };
@@ -1435,12 +1513,12 @@ async function saveScheduleItem() {
     renderSchedule();
     renderOverview();
     closeModal('schedule');
-    toast('Game saved', 'success');
+    toast('Event saved', 'success');
   } catch (e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
 async function deleteScheduleItem() {
-  if (!editingScheduleId || !confirm('Delete this game?')) return;
+  if (!editingScheduleId || !confirm('Delete this event?')) return;
   try {
     await api(`schedule?id=${editingScheduleId}&tournamentId=${CONFIG.tournamentId}`, 'DELETE');
     scheduleData = scheduleData.filter(g => g.id !== editingScheduleId);
