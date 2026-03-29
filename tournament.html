@@ -56,7 +56,7 @@
 
     /* ── CONTENT ── */
     .content{flex:1;overflow-y:auto;padding:28px}
-    .panel{display:none;max-height:calc(100vh - 130px);overflow-y:auto;padding-bottom:120px;scrollbar-width:thin;scrollbar-color:var(--gold-border) transparent}
+    .panel{display:none;max-height:calc(100vh - 130px);overflow-y:auto;padding-bottom:200px;scrollbar-width:thin;scrollbar-color:var(--gold-border) transparent}
     .panel::-webkit-scrollbar{width:6px}
     .panel::-webkit-scrollbar-track{background:transparent}
     .panel::-webkit-scrollbar-thumb{background:var(--gold-border);border-radius:3px}
@@ -388,7 +388,6 @@
               <select id="prof-shirt"><option value="">—</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
             </div>
             <div class="form-field full"><label>Medical Info / Things We Should Know</label><textarea id="prof-medical" rows="2" placeholder="Allergies, medications, conditions..."></textarea></div>
-            <div class="form-field full"><label>Highlight Reel Link</label><input type="url" id="prof-highlight" placeholder="https://youtube.com/..."></div>
             <div class="form-field full"><label>Notes / Special Requests</label><textarea id="prof-notes" rows="2" placeholder="Anything else..."></textarea></div>
           </div>
         </div>
@@ -1689,12 +1688,32 @@ async function loadProfile() {
 
   // Find full player record — first from teamPlayers (SharePoint), then rosterData (Cosmos)
   let p = null;
+  // Try exact match on email or name
   for (const [team, players] of Object.entries(teamPlayers)) {
     p = players.find(x => (x.email || '').toLowerCase() === email || (x.name || '').toLowerCase() === nameLower);
     if (p) { p._team = team; break; }
   }
+  // Try partial name match (first name or last name)
+  if (!p && nameLower) {
+    const nameParts = nameLower.split(' ').filter(Boolean);
+    for (const [team, players] of Object.entries(teamPlayers)) {
+      p = players.find(x => {
+        const pn = (x.name || '').toLowerCase();
+        return nameParts.some(part => part.length > 2 && pn.includes(part));
+      });
+      if (p) { p._team = team; break; }
+    }
+  }
+  // Fallback to Cosmos rosterData
   if (!p) {
-    const rMatch = rosterData.find(x => (x.email || '').toLowerCase() === email || (x.fullName || '').toLowerCase() === nameLower);
+    let rMatch = rosterData.find(x => (x.email || '').toLowerCase() === email || (x.fullName || '').toLowerCase() === nameLower);
+    if (!rMatch && nameLower) {
+      const nameParts = nameLower.split(' ').filter(Boolean);
+      rMatch = rosterData.find(x => {
+        const fn = (x.fullName || '').toLowerCase();
+        return nameParts.some(part => part.length > 2 && fn.includes(part));
+      });
+    }
     if (rMatch) p = { name: rMatch.fullName, position: rMatch.primaryPosition, secondaryPosition: rMatch.secondaryPosition,
       email: rMatch.email, phone: rMatch.phone, gender: rMatch.gender, birthDate: rMatch.birthDate,
       currentLocation: rMatch.currentLocation, country: rMatch.country, currentTeam: rMatch.currentTeam,
@@ -1757,7 +1776,6 @@ async function loadProfile() {
     document.getElementById('prof-dietary').value = user.dietary || '';
     document.getElementById('prof-shirt').value = user.shirtSize || '';
     document.getElementById('prof-medical').value = user.medical || '';
-    document.getElementById('prof-highlight').value = user.highlightReel || '';
     document.getElementById('prof-notes').value = user.profileNotes || '';
   } catch(e) {
     playerProfile = null;
@@ -1775,7 +1793,6 @@ async function saveProfile() {
     dietary: document.getElementById('prof-dietary').value,
     shirtSize: document.getElementById('prof-shirt').value,
     medical: document.getElementById('prof-medical').value,
-    highlightReel: document.getElementById('prof-highlight').value,
     profileNotes: document.getElementById('prof-notes').value,
     team: playerTeamName,
   };
