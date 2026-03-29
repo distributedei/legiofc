@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
     :root{
@@ -274,6 +276,7 @@
             <div class="section-title">Housing & Accommodations</div>
             <button class="add-btn admin-only" onclick="openHousingModal()">+ Add Property</button>
           </div>
+          <div id="housing-map" style="height:320px;border:1px solid var(--gold-border);margin-bottom:20px;background:var(--cream-dim);display:none"></div>
           <div class="card-grid" id="housing-content">
             <div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏠</div><div class="empty-text">No properties added</div></div>
           </div>
@@ -867,6 +870,94 @@ function renderHousing() {
     }).join('');
   }
   el.innerHTML = html;
+  renderHousingMap(filtered);
+}
+
+// ── Housing Map ──
+let housingMap = null;
+let housingMarkers = [];
+
+// Approximate coords for known properties (keyed by id)
+const PROPERTY_COORDS = {
+  'h-dallas-1': [35.793, -78.733],  // Cary, near NC State & Airport
+  'h-dallas-2': [35.801, -78.702],  // Cary, near WakeMed Raleigh Hospital
+  'h-dallas-3': [35.797, -78.797],  // Cary, near Fred G Bond Metro Park
+  'h-dallas-4': [35.742, -78.712],  // Raleigh/Cary, near Lake Johnson
+  'h-dallas-5': [35.781, -78.653],  // Raleigh, near NC State / Dorton Arena
+  'h-mama-1':   [35.758, -78.698],  // Raleigh, near Lake Johnson & NCSU
+  'h-mama-2':   [35.752, -78.691],  // Raleigh, near Lake Johnson & NCSU
+  'h-mama-3':   [35.762, -78.684],  // Raleigh, near Lake Johnson & NCSU
+  'h-mama-4':   [35.770, -78.672],  // Raleigh, near Carolina Pines Dog Park
+  'h-mama-5':   [35.771, -78.673],  // Raleigh, near Carolina Pines Dog Park
+};
+
+const WAKEMED = [35.735, -78.743]; // WakeMed Soccer Park
+
+function renderHousingMap(filtered) {
+  const mapEl = document.getElementById('housing-map');
+  if (!filtered || !filtered.length) { mapEl.style.display = 'none'; return; }
+
+  mapEl.style.display = '';
+
+  // Init or reset map
+  if (housingMap) { housingMap.remove(); housingMap = null; }
+  housingMap = L.map('housing-map', { scrollWheelZoom: true }).setView([35.770, -78.720], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 18
+  }).addTo(housingMap);
+
+  // WakeMed Soccer Park marker
+  const venueIcon = L.divIcon({
+    className: '',
+    html: '<div style="background:var(--gold);color:var(--blue-dark);font-family:Cinzel,serif;font-size:9px;font-weight:700;padding:4px 8px;border-radius:3px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3)">⚽ WakeMed Soccer Park</div>',
+    iconSize: [0, 0], iconAnchor: [80, 30]
+  });
+  L.marker(WAKEMED, { icon: venueIcon }).addTo(housingMap);
+
+  // Team colors
+  const teamColors = { 'Leon Dallas Coed': '#dab751', "Mama Africa Men's": '#7dd893' };
+
+  housingMarkers = [];
+  filtered.forEach(h => {
+    const coords = PROPERTY_COORDS[h.id];
+    if (!coords) return;
+    const color = teamColors[h.team] || '#dab751';
+    const beds = h.beds ? h.beds.length : 0;
+    const assigned = h.beds ? h.beds.filter(b => b.assigned).length : 0;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:28px;height:28px;background:${color};border:2px solid #163d54;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:11px;font-weight:700;color:#163d54;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer">${beds}</div>`,
+      iconSize: [28, 28], iconAnchor: [14, 14]
+    });
+
+    const marker = L.marker(coords, { icon }).addTo(housingMap);
+    const vrboLink = h.vrboLink ? `<br><a href="${h.vrboLink}" target="_blank" style="color:#dab751">View on VRBO ↗</a>` : '';
+    const addressLink = h.address ? `<br><a href="https://www.google.com/maps/search/${encodeURIComponent(h.address)}" target="_blank" style="color:#7dd893">Directions ↗</a>` : '';
+
+    marker.bindPopup(`
+      <div style="font-family:Inter,sans-serif;min-width:200px">
+        <div style="font-family:Cinzel,serif;font-size:12px;font-weight:600;margin-bottom:4px">${h.name}</div>
+        <div style="font-size:11px;color:#666;margin-bottom:6px">${h.address || ''}</div>
+        <div style="font-size:11px"><b>${h.team || ''}</b></div>
+        <div style="font-size:11px">${beds} beds (${assigned} assigned) · ${h.costPerNight || h.cost || '—'}/night</div>
+        <div style="font-size:11px">${fmtDate(h.checkin)} – ${fmtDate(h.checkout)}</div>
+        ${vrboLink}${addressLink}
+        <br><a href="#" onclick="event.preventDefault();housingMap.closePopup();editHousingItem('${h.id}')" style="color:#dab751;font-weight:600">Open Property Card →</a>
+      </div>
+    `);
+    housingMarkers.push(marker);
+  });
+
+  // Fit bounds
+  if (housingMarkers.length) {
+    const group = L.featureGroup(housingMarkers.concat([L.marker(WAKEMED)]));
+    housingMap.fitBounds(group.getBounds().pad(0.1));
+  }
+
+  // Fix map rendering after tab switch
+  setTimeout(() => housingMap.invalidateSize(), 200);
 }
 
 function openHousingModal(data) {
@@ -1187,6 +1278,7 @@ function switchTab(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   if (name === 'users' && currentRole === 'admin') loadUsers();
+  if (name === 'housing' && housingMap) setTimeout(() => housingMap.invalidateSize(), 100);
 }
 
 function closeModal(name) {
