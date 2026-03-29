@@ -7,6 +7,10 @@
 <style>
 html,body{margin:0;padding:0;height:100%;overflow:hidden}
 #map{width:100%;height:100%}
+.venue-label{background:#dab751;color:#163d54;font-family:Arial,sans-serif;font-size:11px;font-weight:700;border:none;box-shadow:0 2px 8px rgba(0,0,0,.4);padding:4px 8px;border-radius:4px}
+.venue-label::before{border-top-color:#dab751}
+.airport-label{background:#4a90d9;color:#fff;font-family:Arial,sans-serif;font-size:10px;font-weight:700;border:none;box-shadow:0 2px 8px rgba(0,0,0,.4);padding:4px 8px;border-radius:4px}
+.airport-label::before{border-top-color:#4a90d9}
 </style>
 </head>
 <body>
@@ -31,28 +35,28 @@ const properties = [
 
 const map = L.map('map').setView([35.760, -78.740], 12);
 
+// Fix Leaflet default icon path
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+});
+
 L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
   subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google'
 }).addTo(map);
 
-// WakeMed marker
-L.marker(WAKEMED, {
-  icon: L.divIcon({
-    className:'',
-    html:'<div style="background:#dab751;color:#163d54;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4)">⚽ WakeMed Soccer Park</div>',
-    iconSize:[0,0], iconAnchor:[90,35]
-  })
-}).addTo(map).bindPopup('<b>WakeMed Soccer Park</b><br>101 Soccer Park Dr, Cary, NC 27511<br><a href="https://www.google.com/maps/search/WakeMed+Soccer+Park+101+Soccer+Park+Dr+Cary+NC" target="_blank">Open in Google Maps ↗</a>');
+// WakeMed marker — default pin + permanent label
+var wakemarker = L.marker(WAKEMED).addTo(map);
+wakemarker.bindTooltip('⚽ WakeMed Soccer Park', {permanent:true, direction:'top', offset:[0,-10], className:'venue-label'});
+wakemarker.bindPopup('<b>WakeMed Soccer Park</b><br>101 Soccer Park Dr, Cary, NC 27511<br><a href="https://www.google.com/maps/search/WakeMed+Soccer+Park+101+Soccer+Park+Dr+Cary+NC" target="_blank">Open in Google Maps ↗</a>');
 
-// RDU Airport
+// RDU Airport — default pin + permanent label
 var RDU = [35.8772, -78.7934];
-L.marker(RDU, {
-  icon: L.divIcon({
-    className:'',
-    html:'<div style="background:#4a90d9;color:#fff;font-family:Arial,sans-serif;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4)">✈ RDU Airport</div>',
-    iconSize:[0,0], iconAnchor:[55,35]
-  })
-}).addTo(map).bindPopup('<b>RDU International Airport</b><br>2400 John Brantley Blvd, Morrisville, NC 27560<br><a href="https://www.google.com/maps/dir/RDU+Airport/101+Soccer+Park+Dr+Cary+NC+27511" target="_blank">Directions to WakeMed ↗</a>');
+var rdumarker = L.marker(RDU).addTo(map);
+rdumarker.bindTooltip('✈ RDU Airport', {permanent:true, direction:'top', offset:[0,-10], className:'airport-label'});
+rdumarker.bindPopup('<b>RDU International Airport</b><br>2400 John Brantley Blvd, Morrisville, NC 27560<br><a href="https://www.google.com/maps/dir/RDU+Airport/101+Soccer+Park+Dr+Cary+NC+27511" target="_blank">Directions to WakeMed ↗</a>');
 
 const allMarkers = [L.marker(WAKEMED), L.marker(RDU)];
 
