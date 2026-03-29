@@ -314,7 +314,10 @@
               <div class="hero-title" id="tourn-title">—</div>
               <div class="hero-subtitle" id="tourn-subtitle">—</div>
             </div>
-            <div class="countdown" id="countdown" style="flex-shrink:0"></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
+              <div class="countdown" id="countdown"></div>
+              <button class="add-btn admin-only" onclick="openTournamentIntake()" style="padding:4px 14px;font-size:8px">✏ Edit Tournament</button>
+            </div>
           </div>
 
           <!-- Team Selector (staff only) -->
@@ -687,6 +690,48 @@
     </div>
   </div>
 
+  <!-- ═══ TOURNAMENT INTAKE MODAL ═══ -->
+  <div class="modal-overlay" id="modal-tournament-intake">
+    <div class="modal" style="width:600px;max-height:90vh">
+      <div class="modal-head">
+        <div class="modal-title">Tournament Setup</div>
+        <button class="modal-close" onclick="closeModal('tournament-intake')">&times;</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;max-height:70vh">
+        <div class="form-grid">
+          <div class="form-field full"><label>Tournament Name</label><input type="text" id="ti-name" placeholder="The Soccer Tournament 2026"></div>
+          <div class="form-field"><label>Short Name</label><input type="text" id="ti-short" placeholder="TST 2026"></div>
+          <div class="form-field"><label>Format</label>
+            <select id="ti-format"><option>7v7</option><option>11v11</option><option>5v5</option><option>Futsal</option></select>
+          </div>
+          <div class="form-field full"><label>Venue</label><input type="text" id="ti-venue" placeholder="WakeMed Soccer Park"></div>
+          <div class="form-field"><label>City</label><input type="text" id="ti-city" placeholder="Cary"></div>
+          <div class="form-field"><label>State</label><input type="text" id="ti-state" placeholder="NC"></div>
+          <div class="form-field"><label>Start Date</label><input type="date" id="ti-start"></div>
+          <div class="form-field"><label>End Date</label><input type="date" id="ti-end"></div>
+          <div class="form-field"><label>Registration Deadline</label><input type="date" id="ti-deadline"></div>
+          <div class="form-field"><label>Status</label>
+            <select id="ti-status"><option>Planning</option><option>Confirmed</option><option>Active</option><option>Complete</option></select>
+          </div>
+          <div class="form-field full"><label>Arrival Airport</label><input type="text" id="ti-airport" placeholder="RDU — Raleigh-Durham International"></div>
+        </div>
+        <!-- Team Assignment -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--gold-border)">
+          <div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px">Teams in This Tournament</div>
+          <div style="font-size:10px;color:var(--text-faint);margin-bottom:10px">Select which teams from the Staff Portal are competing in this tournament</div>
+          <div id="ti-teams-list" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <div class="form-grid" style="margin-top:16px">
+          <div class="form-field full"><label>Notes</label><textarea id="ti-notes" rows="2" placeholder="Prize structure, rules, special instructions..."></textarea></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="cancel-btn" onclick="closeModal('tournament-intake')">Cancel</button>
+        <button class="save-btn" onclick="saveTournamentIntake()">Save Tournament</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
@@ -792,9 +837,13 @@ function buildTeamCheckboxes() {
   const isStaff = currentRole === 'admin' || currentRole === 'staff';
   const checkContainer = document.getElementById('overview-team-checks');
   if (!checkContainer || !isStaff) return;
-  const teamNames = Object.keys(teamPlayers);
+  
+  // Only show teams assigned to this tournament
+  const allTeams = Object.keys(teamPlayers);
+  const tournamentTeams = (tournament && tournament.teams && tournament.teams.length) ? tournament.teams : allTeams;
+  const teamNames = allTeams.filter(t => tournamentTeams.includes(t));
   if (!teamNames.length) return;
-  // Only build once — don't clobber checked state
+  
   if (checkContainer.dataset.built && checkContainer.dataset.teams === teamNames.join(',')) return;
 
   let checkHtml = '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Teams</span>';
@@ -1288,6 +1337,83 @@ async function loadTeamPlayersFromSharePoint() {
   } catch(e) { console.warn('Cosmos player cache failed:', e.message); }
 
   toast(`${totalPlayers} players loaded from ${teamCount} team sheets`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOURNAMENT INTAKE
+// ═══════════════════════════════════════════════════════════════
+function openTournamentIntake() {
+  const t = tournament || {};
+  document.getElementById('ti-name').value = t.name || '';
+  document.getElementById('ti-short').value = t.shortName || '';
+  document.getElementById('ti-format').value = t.format || '7v7';
+  document.getElementById('ti-venue').value = t.venue || '';
+  document.getElementById('ti-city').value = t.city || '';
+  document.getElementById('ti-state').value = t.state || '';
+  document.getElementById('ti-start').value = t.startDate || '';
+  document.getElementById('ti-end').value = t.endDate || '';
+  document.getElementById('ti-deadline').value = t.registrationDeadline || '';
+  document.getElementById('ti-status').value = t.status || 'Planning';
+  document.getElementById('ti-airport').value = t.arrivalAirport || 'RDU — Raleigh-Durham International';
+  document.getElementById('ti-notes').value = t.notes || '';
+
+  // Build team checkboxes from all available teams in SharePoint
+  const allTeams = Object.keys(teamPlayers);
+  const assignedTeams = t.teams || allTeams; // default: all teams assigned
+  const el = document.getElementById('ti-teams-list');
+  if (allTeams.length) {
+    el.innerHTML = allTeams.map(tn => {
+      const checked = assignedTeams.includes(tn) ? 'checked' : '';
+      const count = (teamPlayers[tn] || []).length;
+      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(22,61,84,0.4);border:1px solid var(--gold-border);cursor:pointer">
+        <input type="checkbox" class="ti-team-cb" value="${esc(tn)}" ${checked} style="accent-color:var(--gold);cursor:pointer;width:16px;height:16px">
+        <div style="flex:1">
+          <div style="font-size:12px;color:var(--cream);font-weight:500">${esc(tn)}</div>
+          <div style="font-size:10px;color:var(--text-faint)">${count} players</div>
+        </div>
+      </label>`;
+    }).join('');
+  } else {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-faint)">No teams found — sync from Staff Portal first</div>';
+  }
+
+  document.getElementById('modal-tournament-intake').classList.add('open');
+}
+
+async function saveTournamentIntake() {
+  const selectedTeams = Array.from(document.querySelectorAll('.ti-team-cb:checked')).map(cb => cb.value);
+
+  const obj = {
+    id: CONFIG.tournamentId,
+    name: document.getElementById('ti-name').value,
+    shortName: document.getElementById('ti-short').value,
+    format: document.getElementById('ti-format').value,
+    venue: document.getElementById('ti-venue').value,
+    city: document.getElementById('ti-city').value,
+    state: document.getElementById('ti-state').value,
+    startDate: document.getElementById('ti-start').value,
+    endDate: document.getElementById('ti-end').value,
+    registrationDeadline: document.getElementById('ti-deadline').value,
+    status: document.getElementById('ti-status').value,
+    arrivalAirport: document.getElementById('ti-airport').value,
+    notes: document.getElementById('ti-notes').value,
+    teams: selectedTeams,
+  };
+
+  try {
+    if (tournament && tournament.id) {
+      tournament = await api('tournaments', 'PUT', { ...tournament, ...obj });
+    } else {
+      tournament = await api('tournaments', 'POST', obj);
+    }
+    closeModal('tournament-intake');
+    // Rebuild checkboxes with new team list
+    const checkContainer = document.getElementById('overview-team-checks');
+    if (checkContainer) { checkContainer.dataset.built = ''; checkContainer.dataset.teams = ''; }
+    populateDynamicTeamOptions();
+    renderOverview();
+    toast('Tournament saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════
