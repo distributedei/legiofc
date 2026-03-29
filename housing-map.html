@@ -28,8 +28,8 @@ const properties = {
 };
 
 const map = L.map('map').setView([35.760, -78.740], 12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution:'© OpenStreetMap', maxZoom:18
+L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+  subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google'
 }).addTo(map);
 
 // WakeMed marker
