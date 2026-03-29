@@ -514,13 +514,16 @@
               <option value="Other">📌 Other</option>
             </select>
           </div>
-          <div class="form-field"><label>Team</label>
-            <select id="sched-team">
-              <option value="All">All Teams</option>
+          <div class="form-field"><label>Assigned To</label>
+            <select id="sched-team" multiple size="5" style="min-height:80px">
+              <option value="All" selected>Everyone</option>
               <option value="Leon Dallas Coed">Leon Dallas Coed</option>
               <option value="Mama Africa Men's">Mama Africa Men's</option>
               <option value="Staff Only">Staff Only</option>
+              <option value="Coaches">Coaches</option>
+              <option value="Players Only">Players Only</option>
             </select>
+            <div style="font-size:9px;color:var(--text-faint);margin-top:4px">Hold Ctrl/Cmd to select multiple</div>
           </div>
           <div class="form-field"><label>Date</label><input type="date" id="sched-date"></div>
           <div class="form-field"><label>Time</label><input type="time" id="sched-time"></div>
@@ -1256,8 +1259,10 @@ function filterScheduleForUser(events) {
   const playerTeam = getPlayerTeamForSchedule();
   if (!playerTeam) return events; // staff sees all
   return events.filter(e => {
-    const team = (e.team || 'All');
-    return team === 'All' || team.toLowerCase() === playerTeam.toLowerCase();
+    const teams = (e.team || 'All').split(',').map(t => t.trim().toLowerCase());
+    if (teams.includes('all') || teams.includes('everyone')) return true;
+    if (teams.includes('players only')) return true;
+    return teams.includes(playerTeam.toLowerCase());
   });
 }
 let schedMonth = null; // Date object for current month view
@@ -1383,8 +1388,8 @@ function renderCalendarMonth(el) {
         html += `<div class="cal-evt" style="background:${et.bg};color:${et.color};border-left:2px solid ${et.color}">${esc(evt._label)}</div>`;
       } else {
         const label = (evt.time ? evt.time.substring(0,5) + ' ' : '') + (evt.type === 'Game' ? 'vs ' + (evt.opponent || 'TBD') : (evt.title || evt.type));
-        const teamTag = evt.team && evt.team !== 'All' ? ` · ${evt.team.split(' ')[0]}` : '';
-        html += `<div class="cal-evt" style="background:${et.bg};color:${et.color};border-left:2px solid ${et.color}">${et.icon} ${esc(label.substring(0,22))}${teamTag}</div>`;
+        const teamTag = evt.team && evt.team !== 'All' ? ` · ${evt.team.split(',')[0].split(' ')[0]}` : '';
+        html += `<div class="cal-evt" onclick="event.stopPropagation();openEventFromCal('${evt.id}')" style="background:${et.bg};color:${et.color};border-left:2px solid ${et.color};cursor:pointer">${et.icon} ${esc(label.substring(0,22))}${teamTag}</div>`;
       }
     });
     if (events.length > 3) html += `<div style="font-size:8px;color:var(--text-faint)">+${events.length - 3} more</div>`;
@@ -1444,26 +1449,25 @@ function renderDayTimeline(el, dateStr) {
 
     html += `<div class="day-hour">
       <div class="day-hour-label">${hourStr}</div>
-      <div class="day-hour-slot">`;
+      <div class="day-hour-slot" onclick="onHourClick('${dateStr}',${h})" style="cursor:pointer">`;
 
     hourEvents.forEach(evt => {
       const et = EVENT_TYPES[evt.type] || EVENT_TYPES['Other'];
       const isAdmin = currentRole === 'admin';
-      const teamTag = evt.team && evt.team !== 'All' ? `<span style="font-size:8px;margin-left:6px;opacity:.7">${esc(evt.team)}</span>` : '';
+      const teamTags = (evt.team || 'All').split(',').map(t => t.trim()).filter(t => t !== 'All');
+      const teamLabel = teamTags.length ? `<span style="font-size:8px;margin-left:6px;opacity:.7">${teamTags.join(', ')}</span>` : '';
       const timeRange = evt.time ? evt.time.substring(0,5) + (evt.endTime ? '–'+evt.endTime.substring(0,5) : '') : '';
 
       if (evt.type === 'Game') {
-        html += `<div style="background:${et.bg};border-left:3px solid ${et.color};color:${et.color};padding:8px 10px;margin:2px 0;font-size:11px;cursor:${isAdmin?'pointer':'default'}"
-          ${isAdmin && evt.id ? `onclick="editScheduleItem('${evt.id}')"` : ''}>
+        html += `<div onclick="event.stopPropagation();openEventFromCal('${evt.id}')" style="background:${et.bg};border-left:3px solid ${et.color};color:${et.color};padding:8px 10px;margin:2px 0;font-size:11px;cursor:pointer">
           <div style="font-weight:600">${et.icon} ${esc(timeRange)} — Legio FC vs ${esc(evt.opponent||'TBD')}</div>
-          <div style="font-size:10px;opacity:.8">${esc(evt.stage||'')} · ${esc(evt.venue||'')}${teamTag}</div>
+          <div style="font-size:10px;opacity:.8">${esc(evt.stage||'')} · ${esc(evt.venue||'')}${teamLabel}</div>
           ${evt.result ? `<div style="font-size:10px;font-weight:700;margin-top:2px">${esc(evt.result)}</div>` : ''}
         </div>`;
       } else {
-        html += `<div style="background:${et.bg};border-left:3px solid ${et.color};color:${et.color};padding:8px 10px;margin:2px 0;font-size:11px;cursor:${isAdmin && evt.id?'pointer':'default'}"
-          ${isAdmin && evt.id ? `onclick="editScheduleItem('${evt.id}')"` : ''}>
+        html += `<div onclick="event.stopPropagation();openEventFromCal('${evt.id || ''}')" style="background:${et.bg};border-left:3px solid ${et.color};color:${et.color};padding:8px 10px;margin:2px 0;font-size:11px;cursor:pointer">
           <div style="font-weight:500">${et.icon} ${esc(timeRange)} ${esc(evt.title||evt.type)}</div>
-          ${evt.venue ? `<div style="font-size:10px;opacity:.8">${esc(evt.venue)}${teamTag}</div>` : (teamTag ? `<div style="font-size:10px;opacity:.8">${teamTag}</div>` : '')}
+          ${evt.venue ? `<div style="font-size:10px;opacity:.8">${esc(evt.venue)}${teamLabel}</div>` : (teamLabel ? `<div style="font-size:10px;opacity:.8">${teamLabel}</div>` : '')}
           ${evt.notes ? `<div style="font-size:9px;opacity:.6;margin-top:2px">${esc(evt.notes)}</div>` : ''}
         </div>`;
       }
@@ -1493,12 +1497,12 @@ function renderScheduleList(el) {
       const et = EVENT_TYPES[g.type] || EVENT_TYPES['Other'];
       const label = g.type === 'Game' ? `vs ${esc(g.opponent || 'TBD')}` : esc(g.title || g.type);
       const resultColor = (g.result || '').includes('W') ? 'var(--green)' : (g.result || '').includes('L') ? 'var(--red)' : 'var(--text)';
-      return `<tr onclick="editScheduleItem('${g.id}')" style="cursor:pointer">
+      return `<tr onclick="openEventFromCal('${g.id}')" style="cursor:pointer">
         <td>${fmtDate(g.date)}</td>
         <td>${g.time ? g.time.substring(0,5) : '—'}${g.endTime ? '–'+g.endTime.substring(0,5) : ''}</td>
         <td style="color:${et.color}">${et.icon} ${esc(g.type||'')}</td>
         <td style="font-weight:500">${label}${g.result ? ` <span style="color:${resultColor};font-family:Cinzel,serif;font-size:10px">${esc(g.result)}</span>` : ''}</td>
-        <td style="font-size:10px;color:var(--text-dim)">${esc(g.team || 'All')}</td>
+        <td style="font-size:10px;color:var(--text-dim)">${esc((g.team || 'All').split(',').map(t=>t.trim()).join(', '))}</td>
         <td style="font-size:11px;color:var(--text-dim)">${esc(g.venue || '—')}</td>
         <td style="text-align:right"><span style="color:var(--text-faint);font-size:11px">✏</span></td>
       </tr>`;
@@ -1509,8 +1513,7 @@ function openScheduleModal(data) {
   editingScheduleId = data && data.id ? data.id : null;
   document.getElementById('sched-modal-title').textContent = editingScheduleId ? 'Edit Event' : 'Add Event';
   document.getElementById('sched-del-btn').style.display = editingScheduleId ? '' : 'none';
-  document.getElementById('sched-type').value = data ? data.type || 'Game' : 'Game';
-  document.getElementById('sched-team').value = data ? data.team || 'All' : 'All';
+  document.getElementById('sched-type').value = data ? data.type || 'Game' : 'Other';
   document.getElementById('sched-date').value = data ? data.date || '' : '';
   document.getElementById('sched-time').value = data ? data.time || '' : '';
   document.getElementById('sched-endtime').value = data ? data.endTime || '' : '';
@@ -1520,6 +1523,14 @@ function openScheduleModal(data) {
   document.getElementById('sched-stage').value = data ? data.stage || 'Group' : 'Group';
   document.getElementById('sched-result').value = data ? data.result || '' : '';
   document.getElementById('sched-notes').value = data ? data.notes || '' : '';
+
+  // Handle multi-select team assignment
+  const teamSel = document.getElementById('sched-team');
+  const assignedTeams = data && data.team ? (Array.isArray(data.team) ? data.team : data.team.split(',').map(s=>s.trim())) : ['All'];
+  Array.from(teamSel.options).forEach(opt => {
+    opt.selected = assignedTeams.includes(opt.value);
+  });
+
   toggleGameFields();
   document.getElementById('modal-schedule').classList.add('open');
 }
@@ -1535,11 +1546,59 @@ function editScheduleItem(id) {
   if (item) openScheduleModal(item);
 }
 
+function openEventFromCal(id) {
+  if (!id) return;
+  const item = scheduleData.find(g => g.id === id);
+  if (!item) return;
+
+  if (currentRole === 'admin') {
+    // Admin can edit
+    openScheduleModal(item);
+  } else {
+    // Everyone else sees a read-only detail view
+    const et = EVENT_TYPES[item.type] || EVENT_TYPES['Other'];
+    const teams = (item.team || 'All').split(',').map(t => t.trim());
+    const timeRange = item.time ? item.time.substring(0,5) + (item.endTime ? ' – '+item.endTime.substring(0,5) : '') : '—';
+
+    let html = `<div style="padding:24px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span style="font-size:24px">${et.icon}</span>
+        <div>
+          <div style="font-family:Cinzel,serif;font-size:14px;color:var(--cream);font-weight:600">${esc(item.type === 'Game' ? 'Legio FC vs '+(item.opponent||'TBD') : (item.title || item.type))}</div>
+          <div style="font-size:10px;color:${et.color};margin-top:2px">${esc(item.type)}</div>
+        </div>
+      </div>
+      <div class="prof-grid">
+        <div><span class="prof-label">Date</span><div class="prof-val">${fmtDate(item.date)}</div></div>
+        <div><span class="prof-label">Time</span><div class="prof-val">${esc(timeRange)}</div></div>
+        <div><span class="prof-label">Location</span><div class="prof-val">${esc(item.venue || '—')}</div></div>
+        <div><span class="prof-label">Assigned To</span><div class="prof-val">${teams.map(t => esc(t)).join(', ')}</div></div>
+        ${item.type === 'Game' ? `<div><span class="prof-label">Stage</span><div class="prof-val">${esc(item.stage || '—')}</div></div>
+        ${item.result ? `<div><span class="prof-label">Result</span><div class="prof-val" style="font-weight:700">${esc(item.result)}</div></div>` : ''}` : ''}
+        ${item.notes ? `<div style="grid-column:1/-1"><span class="prof-label">Notes</span><div class="prof-val">${esc(item.notes)}</div></div>` : ''}
+      </div>
+    </div>`;
+
+    document.getElementById('pm-body').innerHTML = html;
+    document.getElementById('pm-avatar').textContent = et.icon;
+    document.getElementById('pm-avatar').style.fontSize = '24px';
+    document.getElementById('pm-name').textContent = item.type === 'Game' ? 'Game Details' : (item.title || item.type);
+    document.getElementById('pm-badges').innerHTML = teams.map(t => `<span class="prof-badge">${esc(t)}</span>`).join('');
+    document.getElementById('modal-player').classList.add('open');
+  }
+}
+
+function onHourClick(dateStr, hour) {
+  if (currentRole !== 'admin') return; // only admin can create events
+  const time = String(hour).padStart(2, '0') + ':00';
+  openScheduleModal({ date: dateStr, time: time });
+}
+
 async function saveScheduleItem() {
   const obj = {
     tournamentId: CONFIG.tournamentId,
     type: document.getElementById('sched-type').value,
-    team: document.getElementById('sched-team').value,
+    team: Array.from(document.getElementById('sched-team').selectedOptions).map(o => o.value).join(','),
     date: document.getElementById('sched-date').value,
     time: document.getElementById('sched-time').value,
     endTime: document.getElementById('sched-endtime').value,
