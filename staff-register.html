@@ -98,7 +98,7 @@
     <div class="form-sub">Complete this form to register as coaching or support staff for Legio FC. All fields marked with * are required.</div>
   </div>
 
-  <form id="staff-form">
+  <form id="staff-form" onsubmit="return false;">
 
     <!-- Personal Info -->
     <div class="section">
@@ -225,7 +225,7 @@
       </div>
     </div>
 
-    <button type="button" class="submit-btn" id="submit-btn" onclick="submitForm()">Submit Registration</button>
+    <button type="button" class="submit-btn" id="submit-btn">Submit Registration</button>
     <pre id="debug-out" style="display:none;margin-top:16px;padding:12px;background:rgba(156,24,41,0.1);border:1px solid rgba(156,24,41,0.3);color:#d07080;font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;"></pre>
   </form>
 
@@ -282,11 +282,12 @@ async function fileToBase64(file){
 
 async function submitForm(){
   var dbg=document.getElementById('debug-out');
-  dbg.style.display='none';dbg.textContent='';
+  dbg.style.display='block';dbg.textContent='Step 1: Button tapped...';
   const btn=document.getElementById('submit-btn');
 
   try{
   // Validate fields
+  dbg.textContent+='\\nStep 2: Reading fields...';
   const first=document.getElementById('firstName').value.trim();
   const last=document.getElementById('lastName').value.trim();
   const email=document.getElementById('email').value.trim();
@@ -296,7 +297,7 @@ async function submitForm(){
 
   if(!first||!last||!email||!location||!role){
     toast('Please fill in all required fields.',true);
-    dbg.style.display='block';dbg.textContent='Missing: '+(first?'':'FirstName ')+(last?'':'LastName ')+(email?'':'Email ')+(location?'':'Location ')+(role?'':'Role');
+    dbg.textContent+='\\nMissing: '+(first?'':'FirstName ')+(last?'':'LastName ')+(email?'':'Email ')+(location?'':'Location ')+(role?'':'Role');
     return;
   }
 
@@ -307,8 +308,12 @@ async function submitForm(){
     var headshotB64='';
     var headshotExt='';
     if(headshot){
+      dbg.textContent+='\\nStep 3: Converting photo ('+Math.round(headshot.size/1024)+'KB)...';
       headshotB64=await fileToBase64(headshot);
       headshotExt=headshot.name.split('.').pop().toLowerCase();
+      dbg.textContent+=' done ('+Math.round(headshotB64.length/1024)+'KB base64)';
+    } else {
+      dbg.textContent+='\\nStep 3: No photo selected';
     }
 
     var canTravelEl=document.querySelector('input[name="canTravel"]:checked');
@@ -333,13 +338,16 @@ async function submitForm(){
       SubmittedDate:      new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'})).toISOString(),
     };
 
-    dbg.style.display='block';dbg.textContent='Sending to Power Automate... payload size: '+Math.round(JSON.stringify(payload).length/1024)+'KB';
+    var payloadSize=Math.round(JSON.stringify(payload).length/1024);
+    dbg.textContent+='\\nStep 4: Sending to Power Automate ('+payloadSize+'KB)...';
 
     const res=await fetch(FLOW_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
     });
+
+    dbg.textContent+='\\nStep 5: Response status '+res.status;
 
     if(res.ok||res.status===202){
       dbg.style.display='none';
@@ -350,19 +358,21 @@ async function submitForm(){
     } else {
       var errText='';
       try{errText=await res.text();}catch(x){}
-      dbg.style.display='block';
-      dbg.textContent='Status: '+res.status+'\n'+errText;
+      dbg.textContent+='\\n'+errText;
       throw new Error('Server error: '+res.status);
     }
 
   }catch(e){
-    dbg.style.display='block';
-    dbg.textContent=(dbg.textContent||'')+'\nError: '+e.message+'\n'+(e.stack||'');
+    dbg.textContent+='\\nERROR: '+e.message;
     toast('Error: '+e.message,true);
     btn.textContent='SUBMIT REGISTRATION';
     btn.disabled=false;
   }
 }
+
+// Attach event listener (more reliable than onclick on mobile)
+document.getElementById('submit-btn').addEventListener('click',submitForm);
+document.getElementById('submit-btn').addEventListener('touchend',function(e){e.preventDefault();submitForm();});
 </script>
 </body>
 </html>
