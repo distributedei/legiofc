@@ -308,10 +308,28 @@
               <select id="roster-team-select" onchange="renderRoster()" style="padding:6px 12px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px;font-family:Cinzel,serif;letter-spacing:1px;cursor:pointer">
                 <option value="all">All Teams</option>
               </select>
+              <button class="add-btn staff-only" onclick="syncRosterFromSharePoint()">↻ Sync</button>
             </div>
           </div>
-          <div id="roster-count" style="font-size:11px;color:var(--text-dim);margin-bottom:16px"></div>
+          <div id="roster-count" style="font-size:11px;color:var(--text-dim);margin-bottom:12px"></div>
           <div id="roster-content"></div>
+        </div>
+
+        <!-- ═══ PLAYER DETAIL MODAL ═══ -->
+        <div class="modal-overlay" id="modal-player">
+          <div class="modal" style="width:600px;max-height:90vh">
+            <div class="modal-head">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div id="pm-avatar" style="width:50px;height:50px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:18px;font-weight:700;color:var(--blue-dark);border:2px solid var(--gold);flex-shrink:0"></div>
+                <div>
+                  <div class="modal-title" id="pm-name"></div>
+                  <div id="pm-badges" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"></div>
+                </div>
+              </div>
+              <button class="modal-close" onclick="closeModal('player')">&times;</button>
+            </div>
+            <div class="modal-body" style="overflow-y:auto;max-height:70vh" id="pm-body"></div>
+          </div>
         </div>
 
         <!-- ═══ MY PROFILE (players only) ═══ -->
@@ -1366,19 +1384,25 @@ function renderRoster() {
   // Build team list from teamPlayers (SharePoint) or rosterData (Cosmos)
   let teams = {};
   if (Object.keys(teamPlayers).length) {
-    teams = teamPlayers;
+    // Clone with all fields
+    Object.entries(teamPlayers).forEach(([t, players]) => {
+      teams[t] = players.map(p => ({...p}));
+    });
   } else if (rosterData.length) {
     rosterData.forEach(p => {
       const t = p.team || 'Unassigned';
       if (!teams[t]) teams[t] = [];
-      teams[t].push({ name: p.fullName || '', position: p.primaryPosition || '', secondaryPosition: p.secondaryPosition || '', email: p.email || '' });
+      teams[t].push({ name: p.fullName||'', position: p.primaryPosition||'', secondaryPosition: p.secondaryPosition||'',
+        email: p.email||'', phone: p.phone||'', gender: p.gender||'', birthDate: p.birthDate||'',
+        currentLocation: p.currentLocation||'', country: p.country||'', currentTeam: p.currentTeam||'',
+        canTravel: p.canTravel||'', passportCountry: p.passportCountry||'', passportExpiry: p.passportExpiry||'',
+        visaStatus: p.visaStatus||'', height: p.height||'', dominantFoot: p.dominantFoot||'' });
     });
   }
 
   const teamNames = Object.keys(teams);
   const totalPlayers = teamNames.reduce((s, t) => s + teams[t].length, 0);
 
-  // Populate dropdown
   const sel = document.getElementById('roster-team-select');
   const current = sel.value;
   sel.innerHTML = '<option value="all">All Teams</option>' + teamNames.map(t =>
@@ -1391,22 +1415,16 @@ function renderRoster() {
   if (!totalPlayers) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">No players loaded</div></div>';
     countEl.textContent = '';
+    document.getElementById('badge-roster').textContent = 0;
     return;
   }
 
   const isPlayer = currentRole === 'player' || currentRole === 'viewer';
-  
-  // For players, auto-select their team
   if (isPlayer && playerTeamName && teamNames.includes(playerTeamName)) {
-    sel.value = playerTeamName;
-    sel.style.display = 'none'; // hide dropdown — they only see their team
+    sel.value = playerTeamName; sel.style.display = 'none';
   } else if (isPlayer) {
-    // Try to determine team
     const pTeam = getPlayerTeam();
-    if (pTeam && teamNames.includes(pTeam)) {
-      sel.value = pTeam;
-      sel.style.display = 'none';
-    }
+    if (pTeam && teamNames.includes(pTeam)) { sel.value = pTeam; sel.style.display = 'none'; }
   }
 
   const filter = sel.value;
@@ -1414,44 +1432,113 @@ function renderRoster() {
   let shownCount = 0;
   let html = '';
 
+  // Store for modal lookup
+  window._rosterPlayers = {};
+
   teamsToShow.forEach(team => {
     const players = teams[team] || [];
     if (!players.length) return;
     shownCount += players.length;
 
-    // Team header
-    html += `<div style="width:100%;font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
+    html += `<div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
 
-    // Player cards in grid
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px">';
+    html += `<table class="ops-table" style="margin-bottom:20px">
+      <thead><tr><th style="width:40px"></th><th>Name</th><th>Position</th><th>Location</th><th>Travel</th><th>Housing</th></tr></thead>
+      <tbody>`;
+
     players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    players.forEach(p => {
-      const initials = (p.name || '').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
-      const posDisplay = [p.position, p.secondaryPosition].filter(Boolean).join(' / ') || '—';
+    players.forEach((p, i) => {
+      const pid = team.replace(/[^a-z0-9]/gi,'') + '_' + i;
+      window._rosterPlayers[pid] = { ...p, _team: team };
+      const ini = (p.name||'').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      const travelColor = (p.canTravel||'').toLowerCase().startsWith('yes') ? 'var(--green)' : (p.canTravel||'').toLowerCase() === 'no' ? 'var(--red)' : 'var(--text-dim)';
 
-      // Find housing assignment
       let housingName = '';
       for (const h of housingData) {
-        if (h.beds && h.beds.some(b => b.assigned === p.name)) {
-          housingName = h.name; break;
-        }
+        if (h.beds && h.beds.some(b => b.assigned === p.name)) { housingName = h.name; break; }
       }
 
-      html += `<div class="player-card">
-        <div class="pc-avatar">${esc(initials)}</div>
-        <div class="pc-info">
-          <div class="pc-name">${esc(p.name)}</div>
-          <div class="pc-pos">${esc(posDisplay)}</div>
-          ${housingName ? `<div class="pc-house">🏠 ${esc(housingName)}</div>` : ''}
-        </div>
-      </div>`;
+      html += `<tr onclick="openPlayerModal('${esc(pid)}')" style="cursor:pointer">
+        <td><div style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark)">${esc(ini)}</div></td>
+        <td style="font-weight:500">${esc(p.name)}</td>
+        <td style="font-size:11px">${esc([p.position, p.secondaryPosition].filter(Boolean).join(' / ') || '—')}</td>
+        <td style="font-size:11px;color:var(--text-dim)">${esc(p.currentLocation || '')}${p.country ? ', '+esc(p.country) : ''}</td>
+        <td style="color:${travelColor};font-weight:500;font-size:11px">${esc(p.canTravel || '—')}</td>
+        <td style="font-size:11px;color:${housingName ? 'var(--gold)' : 'var(--text-faint)'}">${esc(housingName || '—')}</td>
+      </tr>`;
     });
-    html += '</div>';
+    html += '</tbody></table>';
   });
 
   el.innerHTML = html;
-  countEl.textContent = `${shownCount} player${shownCount !== 1 ? 's' : ''}`;
+  countEl.textContent = `${shownCount} player${shownCount !== 1 ? 's' : ''} · click name to view profile`;
   document.getElementById('badge-roster').textContent = shownCount;
+}
+
+function openPlayerModal(pid) {
+  const p = window._rosterPlayers[pid];
+  if (!p) return;
+
+  const ini = (p.name||'').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('pm-avatar').textContent = ini;
+  document.getElementById('pm-name').textContent = p.name || '—';
+  document.getElementById('pm-badges').innerHTML = [
+    p.gender ? `<span class="prof-badge">${esc(p.gender)}</span>` : '',
+    p.currentLocation ? `<span class="prof-badge">${esc(p.currentLocation)}${p.country?', '+esc(p.country):''}</span>` : '',
+    p.canTravel ? `<span class="prof-badge">${esc('Travel: '+p.canTravel)}</span>` : '',
+    p._team ? `<span class="prof-badge" style="color:var(--gold)">${esc(p._team)}</span>` : '',
+  ].filter(Boolean).join('');
+
+  // Find housing
+  let myHouse = null;
+  for (const h of housingData) {
+    if (h.beds && h.beds.some(b => b.assigned === p.name)) { myHouse = h; break; }
+  }
+
+  const v = (val) => val || '—';
+  const body = document.getElementById('pm-body');
+  body.innerHTML = `
+    <div class="prof-section"><div class="prof-sec-title">Player Info</div>
+      <div class="prof-grid">
+        <div><span class="prof-label">Full Name</span><div class="prof-val">${esc(v(p.name))}</div></div>
+        <div><span class="prof-label">Date of Birth</span><div class="prof-val">${esc(v(p.birthDate))}</div></div>
+        <div><span class="prof-label">Gender</span><div class="prof-val">${esc(v(p.gender))}</div></div>
+        <div><span class="prof-label">Can Travel</span><div class="prof-val">${esc(v(p.canTravel))}</div></div>
+        <div><span class="prof-label">Current Location</span><div class="prof-val">${esc(v(p.currentLocation))}${p.country?', '+esc(p.country):''}</div></div>
+        <div><span class="prof-label">Country</span><div class="prof-val">${esc(v(p.country))}</div></div>
+      </div>
+    </div>
+    <div class="prof-section"><div class="prof-sec-title">Passport & Travel</div>
+      <div class="prof-grid">
+        <div><span class="prof-label">Passport Country</span><div class="prof-val">${esc(v(p.passportCountry))}</div></div>
+        <div><span class="prof-label">Passport Expiry</span><div class="prof-val">${esc(v(p.passportExpiry))}</div></div>
+        <div><span class="prof-label">Visa Status</span><div class="prof-val">${esc(v(p.visaStatus))}</div></div>
+      </div>
+    </div>
+    <div class="prof-section"><div class="prof-sec-title">Playing History</div>
+      <div class="prof-grid">
+        <div><span class="prof-label">Primary Position</span><div class="prof-val">${esc(v(p.position))}</div></div>
+        <div><span class="prof-label">Secondary Position</span><div class="prof-val">${esc(v(p.secondaryPosition))}</div></div>
+        <div><span class="prof-label">Height</span><div class="prof-val">${esc(v(p.height))}</div></div>
+        <div><span class="prof-label">Dominant Foot</span><div class="prof-val">${esc(v(p.dominantFoot))}</div></div>
+        <div><span class="prof-label">Current Team</span><div class="prof-val">${esc(v(p.currentTeam))}</div></div>
+      </div>
+    </div>
+    ${myHouse ? `<div class="prof-section"><div class="prof-sec-title">Housing Assignment</div>
+      <div class="prof-grid">
+        <div><span class="prof-label">Property</span><div class="prof-val">${esc(myHouse.name)}</div></div>
+        <div><span class="prof-label">Check-In</span><div class="prof-val">${fmtDate(myHouse.checkin)}</div></div>
+        <div style="grid-column:1/-1"><span class="prof-label">Address</span><div class="prof-val"><a href="https://www.google.com/maps/search/${encodeURIComponent(myHouse.address||'')}" target="_blank" style="color:var(--cream);text-decoration:none;border-bottom:1px dotted var(--text-faint)">${esc(myHouse.address||'')}</a></div></div>
+      </div>
+    </div>` : ''}
+    ${p.email || p.phone ? `<div class="prof-section"><div class="prof-sec-title">Contact</div>
+      <div class="prof-grid">
+        ${p.email ? `<div><span class="prof-label">Email</span><div class="prof-val"><a href="mailto:${esc(p.email)}" style="color:var(--gold);text-decoration:none">${esc(p.email)}</a></div></div>` : ''}
+        ${p.phone ? `<div><span class="prof-label">Phone</span><div class="prof-val"><a href="https://wa.me/${(p.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366;text-decoration:none">📱 ${esc(p.phone)}</a></div></div>` : ''}
+      </div>
+    </div>` : ''}
+  `;
+  document.getElementById('modal-player').classList.add('open');
 }
 
 async function syncRosterFromSharePoint() {
