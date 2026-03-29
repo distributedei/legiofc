@@ -42,9 +42,19 @@ L.marker(WAKEMED, {
     html:'<div style="background:#dab751;color:#163d54;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4)">⚽ WakeMed Soccer Park</div>',
     iconSize:[0,0], iconAnchor:[90,35]
   })
-}).addTo(map).bindPopup('<b>WakeMed Soccer Park</b><br>101 Soccer Park Dr, Cary, NC 27511<br><a href="https://www.google.com/maps/search/WakeMed+Soccer+Park+201+Soccer+Park+Dr+Cary+NC" target="_blank">Open in Google Maps ↗</a>');
+}).addTo(map).bindPopup('<b>WakeMed Soccer Park</b><br>101 Soccer Park Dr, Cary, NC 27511<br><a href="https://www.google.com/maps/search/WakeMed+Soccer+Park+101+Soccer+Park+Dr+Cary+NC" target="_blank">Open in Google Maps ↗</a>');
 
-const allMarkers = [L.marker(WAKEMED)];
+// RDU Airport
+var RDU = [35.8772, -78.7934];
+L.marker(RDU, {
+  icon: L.divIcon({
+    className:'',
+    html:'<div style="background:#4a90d9;color:#fff;font-family:Arial,sans-serif;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4)">✈ RDU Airport</div>',
+    iconSize:[0,0], iconAnchor:[55,35]
+  })
+}).addTo(map).bindPopup('<b>RDU International Airport</b><br>2400 John Brantley Blvd, Morrisville, NC 27560<br><a href="https://www.google.com/maps/dir/RDU+Airport/101+Soccer+Park+Dr+Cary+NC+27511" target="_blank">Directions to WakeMed ↗</a>');
+
+const allMarkers = [L.marker(WAKEMED), L.marker(RDU)];
 
 properties.forEach(p => {
   const icon = L.divIcon({
