@@ -861,8 +861,9 @@ function showNotRegistered(name, email) {
         <span style="color:var(--text-dim)">Already registered?</span> If you've submitted your player profile and still can't access the portal, email <a href="mailto:jbukh@legiofc.com" style="color:var(--gold);text-decoration:none">jbukh@legiofc.com</a> for assistance.
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
-        <a href="register.html?t=TST" style="display:inline-block;padding:12px 32px;background:var(--gold);color:var(--blue-dark);font-family:Cinzel,serif;font-size:11px;font-weight:700;letter-spacing:2px;text-decoration:none;text-transform:uppercase;transition:all .2s">Submit Player Profile</a>
-        <button onclick="handleSignOut()" style="padding:8px 24px;background:transparent;border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;cursor:pointer;text-transform:uppercase">Sign Out</button>
+        <a href="register.html?t=TST" class="gate-btn" style="min-width:280px;text-decoration:none;text-align:center">Submit Player Profile</a>
+        <a href="mailto:jbukh@legiofc.com" class="gate-btn" style="min-width:280px;background:transparent;border:2px solid var(--gold);color:var(--gold);text-decoration:none;text-align:center">Contact Staff</a>
+        <button onclick="handleSignOut()" class="gate-btn" style="min-width:280px;background:transparent;border:2px solid var(--gold-border);color:var(--text-dim)">Sign Out</button>
       </div>
     </div>
   `;
