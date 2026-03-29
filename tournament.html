@@ -825,6 +825,7 @@ let editingScheduleId = null;
 let editingHousingId = null;
 let currentRole = 'viewer'; // default until Cosmos lookup completes
 let teamPlayers = {}; // tournamentName → [{id, name, position}, ...]
+let staffList = []; // [{name, role, email}, ...]
 
 async function loadAllData() {
   try {
@@ -945,7 +946,22 @@ async function loadTeamPlayersFromSharePoint() {
   const lists = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists?$select=id,displayName`, { headers: h })).json();
   const rosterList = lists.value.find(l => l.displayName === 'IDCampRoster');
   const tsList = lists.value.find(l => l.displayName === 'TeamSheets');
+  const staffRosterList = lists.value.find(l => l.displayName === 'StaffRoster');
   if (!rosterList || !tsList) { toast('SharePoint lists not found', 'error'); return; }
+
+  // Load staff
+  if (staffRosterList) {
+    try {
+      const staffRes = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists/${staffRosterList.id}/items?$expand=fields($select=Title,Role,Email,Phone)&$top=999`, { headers: h })).json();
+      staffList = (staffRes.value || []).map(item => ({
+        name: item.fields.Title || '',
+        role: item.fields.Role || '',
+        email: item.fields.Email || '',
+        phone: item.fields.Phone || '',
+      })).filter(s => s.name);
+      console.log(`StaffRoster: ${staffList.length} staff loaded`);
+    } catch(e) { console.warn('StaffRoster load failed:', e.message); }
+  }
 
   // Load all roster players (id → full detail)
   const rosterFields = 'Title,LastName,Postion,SecondaryPosition,Email,Phone,Gender,BirthDate,CurrentLocation,Country,CurrentTeam,PastExperience,CanTravel,PassportCountry,PassportExpiry,VisaStatus,Height,DominantFoot,IDCampLocation,HeadshotURL';
@@ -2303,11 +2319,22 @@ function editVan(id) {
   const v = vanData.find(x => x.id === id);
   if (!v) return;
 
-  // Get all players for dropdown
+  // Staff for driver dropdown
+  const driverOpts = staffList.map(s => `<option value="${esc(s.name)}">${esc(s.name)}${s.role ? ' — '+esc(s.role) : ''}</option>`).join('');
+
+  // Players for passenger dropdown — dedup by name
+  const seen = new Set();
   let allPlayers = [];
-  Object.values(teamPlayers).forEach(players => { players.forEach(p => allPlayers.push(p.name)); });
-  if (!allPlayers.length) rosterData.forEach(p => { if (p.fullName) allPlayers.push(p.fullName); });
+  Object.values(teamPlayers).forEach(players => {
+    players.forEach(p => { if (p.name && !seen.has(p.name)) { seen.add(p.name); allPlayers.push(p.name); } });
+  });
+  if (!allPlayers.length) {
+    rosterData.forEach(p => { if (p.fullName && !seen.has(p.fullName)) { seen.add(p.fullName); allPlayers.push(p.fullName); } });
+  }
   allPlayers.sort();
+
+  // Also add staff as potential passengers
+  staffList.forEach(s => { if (s.name && !seen.has(s.name)) { seen.add(s.name); allPlayers.push(s.name); } });
 
   const passengerOpts = allPlayers.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
   const currentPassengers = (v.passengers || []).map((p, i) =>
@@ -2329,7 +2356,7 @@ function editVan(id) {
       </div>
       <div class="form-field full"><label>Driver</label>
         <select id="ve-driver" style="padding:8px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;width:100%">
-          <option value="">— Select Driver —</option>${passengerOpts}
+          <option value="">— Select Driver —</option>${driverOpts}
         </select>
       </div>
       <div class="form-field full"><label>Rental Link</label><input type="url" id="ve-link" value="${esc(v.rentalLink || '')}" placeholder="https://enterprise.com/..."></div>
