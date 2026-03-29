@@ -1497,7 +1497,9 @@ function openPlayerModal(pid) {
 
   const v = (val) => val || '—';
   const body = document.getElementById('pm-body');
-  body.innerHTML = `
+
+  // Start building HTML
+  let html = `
     <div class="prof-section"><div class="prof-sec-title">Player Info</div>
       <div class="prof-grid">
         <div><span class="prof-label">Full Name</span><div class="prof-val">${esc(v(p.name))}</div></div>
@@ -1537,8 +1539,30 @@ function openPlayerModal(pid) {
         ${p.phone ? `<div><span class="prof-label">Phone</span><div class="prof-val"><a href="https://wa.me/${(p.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366;text-decoration:none">📱 ${esc(p.phone)}</a></div></div>` : ''}
       </div>
     </div>` : ''}
+    <div id="pm-tournament-info"></div>
   `;
+  body.innerHTML = html;
   document.getElementById('modal-player').classList.add('open');
+
+  // Load tournament-specific data from Cosmos users (async)
+  if (p.email) {
+    api(`users?email=${encodeURIComponent(p.email.toLowerCase())}`).then(user => {
+      const ti = document.getElementById('pm-tournament-info');
+      if (!ti) return;
+      const has = user.phone || user.emergencyContact || user.dietary || user.shirtSize || user.medical || user.profileNotes;
+      if (!has) { ti.innerHTML = `<div class="prof-section"><div class="prof-sec-title">Tournament Info</div><div style="font-size:11px;color:var(--text-faint);font-style:italic">Player has not submitted tournament info yet</div></div>`; return; }
+      ti.innerHTML = `<div class="prof-section"><div class="prof-sec-title">Tournament Info <span style="font-family:Inter,sans-serif;font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;margin-left:8px">submitted by player</span></div>
+        <div class="prof-grid">
+          ${user.phone ? `<div><span class="prof-label">Phone</span><div class="prof-val"><a href="https://wa.me/${(user.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366;text-decoration:none">📱 ${esc(user.phone)}</a></div></div>` : ''}
+          ${user.emergencyContact ? `<div><span class="prof-label">Emergency Contact</span><div class="prof-val" style="color:var(--red)">${esc(user.emergencyContact)}</div></div>` : ''}
+          ${user.dietary ? `<div><span class="prof-label">Dietary Restrictions</span><div class="prof-val">${esc(user.dietary)}</div></div>` : ''}
+          ${user.shirtSize ? `<div><span class="prof-label">Shirt Size</span><div class="prof-val">${esc(user.shirtSize)}</div></div>` : ''}
+          ${user.medical ? `<div style="grid-column:1/-1"><span class="prof-label">Medical / Things to Know</span><div class="prof-val" style="color:var(--red)">${esc(user.medical)}</div></div>` : ''}
+          ${user.profileNotes ? `<div style="grid-column:1/-1"><span class="prof-label">Notes / Special Requests</span><div class="prof-val">${esc(user.profileNotes)}</div></div>` : ''}
+        </div>
+      </div>`;
+    }).catch(() => {});
+  }
 }
 
 async function syncRosterFromSharePoint() {
