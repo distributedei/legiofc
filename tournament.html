@@ -232,7 +232,7 @@
         </a>
       </div>
       <div class="nav-right">
-        <a href="roster.html" id="nav-staff-link" class="staff-only" style="color:var(--gold);text-decoration:none;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;display:none">Staff Portal →</a>
+        <a href="roster.html" class="staff-only" style="color:var(--gold);text-decoration:none;font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase">Staff Portal →</a>
         <span class="nav-user" id="nav-user"></span>
         <span class="role-badge" id="role-badge"></span>
         <button class="sign-btn" id="auth-btn" onclick="handleSignOut()" style="display:none">Sign Out</button>
@@ -1959,11 +1959,15 @@ function renderRoster() {
   const filter = sel.value;
   const teamsToShow = filter === 'all' ? teamNames : [filter];
 
-  // Flatten all players with team tag
+  // Flatten all players with team tag — dedup by name
   let allRows = [];
+  const seenNames = new Set();
   window._rosterPlayers = {};
   teamsToShow.forEach(team => {
     (teams[team] || []).forEach((p, i) => {
+      const key = (p.name || '').toLowerCase().trim();
+      if (seenNames.has(key)) return; // skip duplicate
+      seenNames.add(key);
       const pid = team.replace(/[^a-z0-9]/gi,'') + '_' + i;
       window._rosterPlayers[pid] = { ...p, _team: team };
       allRows.push({ ...p, _team: team, _pid: pid });
