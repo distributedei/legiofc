@@ -652,7 +652,7 @@ async function saveScheduleItem() {
 async function deleteScheduleItem() {
   if (!editingScheduleId || !confirm('Delete this game?')) return;
   try {
-    await api(`schedule?id=${editingScheduleId}`, 'DELETE');
+    await api(`schedule?id=${editingScheduleId}&tournamentId=${CONFIG.tournamentId}`, 'DELETE');
     scheduleData = scheduleData.filter(g => g.id !== editingScheduleId);
     renderSchedule();
     renderOverview();
@@ -748,7 +748,7 @@ async function saveHousingItem() {
 async function deleteHousingItem() {
   if (!editingHousingId || !confirm('Delete this property?')) return;
   try {
-    await api(`housing?id=${editingHousingId}`, 'DELETE');
+    await api(`housing?id=${editingHousingId}&tournamentId=${CONFIG.tournamentId}`, 'DELETE');
     housingData = housingData.filter(h => h.id !== editingHousingId);
     renderHousing();
     renderOverview();
