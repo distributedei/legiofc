@@ -679,7 +679,7 @@ async function getSpSite() {
   if (spSiteId) return spSiteId;
   const token = await getToken(['Sites.Read.All']);
   const h = { Authorization: 'Bearer ' + token };
-  const site = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${CONFIG.spSiteHost}:${CONFIG.spSitePath}`, { headers: h })).json();
+  const site = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${CONFIG.spSiteHost}`, { headers: h })).json();
   spSiteId = site.id;
   return spSiteId;
 }
@@ -1191,7 +1191,7 @@ async function syncRosterFromSharePoint() {
     const h = { Authorization: 'Bearer ' + token };
 
     // Get site
-    const site = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${CONFIG.spSiteHost}:${CONFIG.spSitePath}`, { headers: h })).json();
+    const site = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${CONFIG.spSiteHost}`, { headers: h })).json();
     const siteId = site.id;
 
     // Find IDCampRoster list
