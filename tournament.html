@@ -1293,15 +1293,17 @@ function renderOverview() {
   const checkContainer = document.getElementById('overview-team-checks');
   if (checkContainer && isStaff) {
     const teamNames = Object.keys(teamPlayers);
-    if (!checkContainer.dataset.built) {
-      let checkHtml = '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Teams</span>';
-      checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="all" checked onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> All</label>`;
-      teamNames.forEach(tn => {
-        checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="${esc(tn)}" checked onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> ${esc(tn)}</label>`;
-      });
-      checkContainer.innerHTML = checkHtml;
-      checkContainer.dataset.built = '1';
-    }
+    // Preserve current checked state
+    const wasChecked = {};
+    document.querySelectorAll('.team-filter-cb').forEach(cb => { wasChecked[cb.value] = cb.checked; });
+    const hasExisting = Object.keys(wasChecked).length > 0;
+
+    let checkHtml = '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Teams</span>';
+    checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="all" ${hasExisting ? (wasChecked['all'] ? 'checked' : '') : 'checked'} onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> All</label>`;
+    teamNames.forEach(tn => {
+      checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="${esc(tn)}" ${hasExisting ? (wasChecked[tn] ? 'checked' : '') : 'checked'} onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> ${esc(tn)}</label>`;
+    });
+    checkContainer.innerHTML = checkHtml;
   }
 
   // Get checked teams
