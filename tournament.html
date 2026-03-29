@@ -252,26 +252,28 @@
 
         <!-- ═══ OVERVIEW ═══ -->
         <div class="panel active" id="panel-overview">
-          <div class="hero-card">
-            <div class="hero-eyebrow" id="tourn-eyebrow">Loading...</div>
-            <div class="hero-title" id="tourn-title">—</div>
-            <div class="hero-subtitle" id="tourn-subtitle">—</div>
-            <div class="countdown" id="countdown"></div>
-            <div class="hero-stats">
-              <div class="stat-box"><div class="stat-num" id="stat-players">—</div><div class="stat-label">Players</div></div>
-              <div class="stat-box"><div class="stat-num" id="stat-staff">—</div><div class="stat-label">Staff</div></div>
-              <div class="stat-box"><div class="stat-num" id="stat-games">—</div><div class="stat-label">Games</div></div>
-              <div class="stat-box"><div class="stat-num" id="stat-housing">—</div><div class="stat-label">Properties</div></div>
+          <!-- Hero -->
+          <div class="hero-card" style="display:flex;align-items:center;gap:20px">
+            <img src="logo.png" alt="Legio FC" style="width:80px;height:80px;flex-shrink:0">
+            <div style="flex:1">
+              <div class="hero-eyebrow" id="tourn-eyebrow">Loading...</div>
+              <div class="hero-title" id="tourn-title">—</div>
+              <div class="hero-subtitle" id="tourn-subtitle">—</div>
             </div>
+            <div class="countdown" id="countdown" style="flex-shrink:0"></div>
           </div>
 
-          <!-- Quick actions -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:20px">
-            <button class="add-btn admin-only" onclick="switchTab('schedule');openScheduleModal()" style="padding:16px;text-align:center">+ Add Game</button>
-            <button class="add-btn admin-only" onclick="switchTab('housing');openHousingModal()" style="padding:16px;text-align:center">+ Add Property</button>
-            <button class="add-btn" onclick="switchTab('roster')" style="padding:16px;text-align:center">View Roster</button>
-            <button class="add-btn" onclick="switchTab('logistics')" style="padding:16px;text-align:center">Checklist</button>
+          <!-- Stats Row -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px" id="overview-stats"></div>
+
+          <!-- Two-column: Teams + Next Game -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px" id="overview-grid">
+            <div id="overview-teams"></div>
+            <div id="overview-next-game"></div>
           </div>
+
+          <!-- Housing Summary -->
+          <div id="overview-housing" style="margin-top:16px"></div>
         </div>
 
         <!-- ═══ SCHEDULE ═══ -->
@@ -985,11 +987,6 @@ function renderOverview() {
   document.getElementById('tourn-title').textContent = t.name || 'TST 2026';
   document.getElementById('tourn-subtitle').textContent = [t.venue, t.city, t.state].filter(Boolean).join(' · ') +
     (t.startDate ? ` · ${fmtDate(t.startDate)} – ${fmtDate(t.endDate)}` : '');
-  const tpCount = Object.values(teamPlayers).reduce((s, arr) => s + arr.length, 0);
-  document.getElementById('stat-players').textContent = tpCount || rosterData.length || '—';
-  document.getElementById('stat-staff').textContent = '—';
-  document.getElementById('stat-games').textContent = scheduleData.length || '—';
-  document.getElementById('stat-housing').textContent = housingData.length || '—';
 
   // Countdown
   const target = t.startDate ? new Date(t.startDate + 'T00:00:00') : null;
@@ -998,6 +995,92 @@ function renderOverview() {
     clearInterval(window._cdInterval);
     window._cdInterval = setInterval(() => updateCountdown(target), 60000);
   }
+
+  // Stats
+  const totalPlayers = Object.values(teamPlayers).reduce((s, arr) => s + arr.length, 0) || rosterData.length;
+  const totalBeds = housingData.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
+  const assignedBeds = housingData.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
+  const bedPct = totalBeds ? Math.round(assignedBeds / totalBeds * 100) : 0;
+
+  const statBox = (num, label, sub) => `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:16px;text-align:center">
+    <div style="font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--gold)">${num}</div>
+    <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-top:4px">${label}</div>
+    ${sub ? `<div style="font-size:10px;color:var(--text-faint);margin-top:4px">${sub}</div>` : ''}
+  </div>`;
+
+  document.getElementById('overview-stats').innerHTML =
+    statBox(totalPlayers, 'Players', Object.keys(teamPlayers).length + ' teams') +
+    statBox(scheduleData.length, 'Games', 'scheduled') +
+    statBox(housingData.length, 'Properties', totalBeds + ' beds total') +
+    statBox(bedPct + '%', 'Beds Assigned', assignedBeds + '/' + totalBeds);
+
+  // Teams breakdown
+  let teamsHtml = '';
+  Object.entries(teamPlayers).forEach(([team, players]) => {
+    const teamHousing = housingData.filter(h => {
+      const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === team.toLowerCase());
+      return mapped && (h.team || '').toLowerCase() === mapped[0];
+    });
+    const teamBeds = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
+    const teamAssigned = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
+
+    teamsHtml += `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;margin-bottom:10px">
+      <div style="font-family:Cinzel,serif;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${esc(team)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+        <div><span style="color:var(--text-faint)">Players</span> <span style="color:var(--cream)">${players.length}</span></div>
+        <div><span style="color:var(--text-faint)">Properties</span> <span style="color:var(--cream)">${teamHousing.length}</span></div>
+        <div><span style="color:var(--text-faint)">Beds</span> <span style="color:var(--cream)">${teamAssigned}/${teamBeds}</span></div>
+        <div>
+          <div style="height:4px;background:var(--cream-dim);border-radius:2px;margin-top:4px">
+            <div style="height:100%;width:${teamBeds ? Math.round(teamAssigned/teamBeds*100) : 0}%;background:var(--gold);border-radius:2px"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('overview-teams').innerHTML = teamsHtml || '<div style="color:var(--text-faint);font-size:11px">No teams loaded</div>';
+
+  // Next game
+  const upcoming = [...scheduleData].filter(g => g.date && new Date(g.date + 'T23:59:59') >= new Date()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  let gameHtml = '';
+  if (upcoming.length) {
+    const g = upcoming[0];
+    gameHtml = `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px">
+      <div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Next Match</div>
+      <div style="font-family:Cinzel,serif;font-size:15px;color:var(--cream);font-weight:600">Legio FC vs ${esc(g.opponent || 'TBD')}</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:6px">${fmtDate(g.date)} ${g.time ? '· ' + esc(g.time) : ''}</div>
+      <div style="font-size:11px;color:var(--text-faint);margin-top:4px">${esc(g.venue || 'WakeMed Soccer Park')} · ${esc(g.stage || 'Group')}</div>
+    </div>`;
+    if (upcoming.length > 1) {
+      gameHtml += `<div style="margin-top:10px;font-size:10px;color:var(--text-faint)">${upcoming.length - 1} more game${upcoming.length > 2 ? 's' : ''} scheduled</div>`;
+    }
+  } else {
+    gameHtml = '<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;font-size:11px;color:var(--text-faint)">No upcoming games</div>';
+  }
+  document.getElementById('overview-next-game').innerHTML = gameHtml;
+
+  // Housing progress
+  let housingHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Housing Assignment Progress</div>`;
+  housingHtml += `<div style="height:8px;background:var(--cream-dim);border-radius:4px;margin-bottom:12px;overflow:hidden">
+    <div style="height:100%;width:${bedPct}%;background:var(--gold);border-radius:4px;transition:width .3s"></div>
+  </div>`;
+  housingHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">`;
+  housingData.forEach(h => {
+    const beds = h.beds || [];
+    const assigned = beds.filter(b => b.assigned).length;
+    const pct = beds.length ? Math.round(assigned / beds.length * 100) : 0;
+    const teamColor = (h.team || '').includes('Dallas') ? '#dab751' : (h.team || '').includes('Mama') || (h.team || '').includes('Africa') ? '#7dd893' : 'var(--gold)';
+    housingHtml += `<div style="background:rgba(22,61,84,0.3);border:1px solid var(--gold-border);padding:10px;cursor:pointer" onclick="switchTab('housing')">
+      <div style="font-size:11px;color:var(--cream);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.name)}</div>
+      <div style="font-size:9px;color:${teamColor};margin-top:2px">${esc(h.team || '')}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <div style="flex:1;height:3px;background:var(--cream-dim);border-radius:2px"><div style="height:100%;width:${pct}%;background:${teamColor};border-radius:2px"></div></div>
+        <span style="font-size:9px;color:var(--text-dim)">${assigned}/${beds.length}</span>
+      </div>
+    </div>`;
+  });
+  housingHtml += '</div>';
+  document.getElementById('overview-housing').innerHTML = housingHtml;
 }
 
 function updateCountdown(target) {
