@@ -311,14 +311,27 @@
             <div class="section-title">My Profile</div>
             <button class="save-btn" onclick="saveProfile()" style="padding:6px 18px;font-size:10px">Save Changes</button>
           </div>
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
-            <div id="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);border:3px solid var(--gold);overflow:hidden;flex-shrink:0"></div>
-            <div>
-              <div id="profile-name" style="font-family:Cinzel,serif;font-size:16px;color:var(--cream);font-weight:600"></div>
-              <div id="profile-team" style="font-size:11px;color:var(--gold);margin-top:2px"></div>
-              <div id="profile-position" style="font-size:11px;color:var(--text-dim);margin-top:2px"></div>
+          <!-- Player Card Header -->
+          <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:20px;margin-bottom:24px">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+              <div id="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);border:3px solid var(--gold);overflow:hidden;flex-shrink:0"></div>
+              <div>
+                <div id="profile-name" style="font-family:Cinzel,serif;font-size:18px;color:var(--cream);font-weight:600"></div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+                  <span id="profile-team" style="font-size:8px;padding:3px 10px;background:rgba(218,183,81,0.1);border:1px solid var(--gold-border);color:var(--gold);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase"></span>
+                  <span id="profile-position" style="font-size:8px;padding:3px 10px;background:rgba(218,183,81,0.05);border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase"></span>
+                </div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px">
+              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Housing</span><div id="profile-housing" style="color:var(--cream);margin-top:3px">—</div></div>
+              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Check-In</span><div id="profile-checkin" style="color:var(--cream);margin-top:3px">—</div></div>
+              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Address</span><div id="profile-address" style="color:var(--cream);margin-top:3px">—</div></div>
+              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Directions</span><div id="profile-directions" style="margin-top:3px">—</div></div>
             </div>
           </div>
+          <!-- Editable Fields -->
+          <div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--gold-border)">Personal Info</div>
           <div class="form-grid">
             <div class="form-field"><label>Phone</label><input type="tel" id="prof-phone" placeholder="+1 555-123-4567"></div>
             <div class="form-field"><label>Emergency Contact</label><input type="text" id="prof-emergency" placeholder="Name — Phone"></div>
@@ -1606,7 +1619,26 @@ async function loadProfile() {
     const match = players.find(p => (p.email || '').toLowerCase() === email || (p.name || '').toLowerCase() === displayName.toLowerCase());
     if (match) { position = match.position || ''; break; }
   }
+  if (!position) {
+    const rMatch = rosterData.find(p => (p.email || '').toLowerCase() === email || (p.fullName || '').toLowerCase() === displayName.toLowerCase());
+    if (rMatch) position = rMatch.primaryPosition || '';
+  }
   document.getElementById('profile-position').textContent = position || '—';
+
+  // Find housing assignment
+  let myHouse = null;
+  const nameLower = displayName.toLowerCase().trim();
+  for (const h of housingData) {
+    if (h.beds && h.beds.some(b => (b.assigned || '').toLowerCase().trim() === nameLower)) {
+      myHouse = h; break;
+    }
+  }
+  if (myHouse) {
+    document.getElementById('profile-housing').textContent = myHouse.name;
+    document.getElementById('profile-checkin').textContent = myHouse.checkin ? new Date(myHouse.checkin + 'T00:00:00').toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
+    document.getElementById('profile-address').innerHTML = myHouse.address ? `<a href="https://www.google.com/maps/search/${encodeURIComponent(myHouse.address)}" target="_blank" style="color:var(--cream);text-decoration:none;border-bottom:1px dotted var(--text-faint)">${myHouse.address}</a>` : '—';
+    document.getElementById('profile-directions').innerHTML = myHouse.address ? `<a href="https://www.google.com/maps/dir/101+Soccer+Park+Dr+Cary+NC+27511/${encodeURIComponent(myHouse.address)}" target="_blank" style="color:var(--gold);text-decoration:none;font-size:11px">🧭 From WakeMed ↗</a>` : '—';
+  }
 
   // Load saved profile from Cosmos users record
   try {
