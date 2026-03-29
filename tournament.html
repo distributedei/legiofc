@@ -554,7 +554,6 @@ async function onSignedIn() {
       currentRole = newUser.role || defaultRole;
     } catch (e2) { console.warn('User registration failed:', e2.message); currentRole = defaultRole; }
   }
-  }
   applyRoleGating();
   loadAllData();
 }
