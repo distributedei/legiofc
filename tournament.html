@@ -38,6 +38,11 @@
     .nav-sub{font-size:9px;letter-spacing:2px;color:var(--text-faint);text-transform:uppercase}
     .nav-right{display:flex;align-items:center;gap:14px}
     .nav-user{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+    .role-badge{display:none;padding:2px 8px;font-family:'Cinzel',serif;font-size:7px;letter-spacing:2px;border:1px solid;text-transform:uppercase;margin-left:8px}
+    .role-admin{color:var(--gold);border-color:var(--gold)}
+    .role-staff{color:var(--green);border-color:var(--green)}
+    .role-player{color:var(--cream);border-color:var(--text-faint)}
+    .role-viewer{color:var(--text-dim);border-color:var(--text-faint)}
     .sign-btn{padding:7px 16px;background:transparent;border:1px solid var(--gold);color:var(--gold);font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;transition:all .2s}
     .sign-btn:hover{background:var(--gold-dim)}
 
@@ -194,6 +199,7 @@
       </div>
       <div class="nav-right">
         <span class="nav-user" id="nav-user"></span>
+        <span class="role-badge" id="role-badge"></span>
         <button class="sign-btn" id="auth-btn" onclick="handleAuth()">Sign In</button>
       </div>
     </nav>
@@ -217,6 +223,7 @@
         <div class="tab" onclick="switchTab('housing')">Housing <span class="tab-badge" id="badge-housing">0</span></div>
         <div class="tab" onclick="switchTab('roster')">Roster <span class="tab-badge" id="badge-roster">0</span></div>
         <div class="tab" onclick="switchTab('logistics')">Logistics</div>
+        <div class="tab" id="tab-users" style="display:none" onclick="switchTab('users')">Users <span class="tab-badge" id="badge-users">0</span></div>
       </div>
 
       <!-- CONTENT -->
@@ -239,8 +246,8 @@
 
           <!-- Quick actions -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:20px">
-            <button class="add-btn" onclick="switchTab('schedule');openScheduleModal()" style="padding:16px;text-align:center">+ Add Game</button>
-            <button class="add-btn" onclick="switchTab('housing');openHousingModal()" style="padding:16px;text-align:center">+ Add Property</button>
+            <button class="add-btn admin-only" onclick="switchTab('schedule');openScheduleModal()" style="padding:16px;text-align:center">+ Add Game</button>
+            <button class="add-btn admin-only" onclick="switchTab('housing');openHousingModal()" style="padding:16px;text-align:center">+ Add Property</button>
             <button class="add-btn" onclick="switchTab('roster')" style="padding:16px;text-align:center">View Roster</button>
             <button class="add-btn" onclick="switchTab('logistics')" style="padding:16px;text-align:center">Checklist</button>
           </div>
@@ -250,7 +257,7 @@
         <div class="panel" id="panel-schedule">
           <div class="section-head">
             <div class="section-title">Game Schedule</div>
-            <button class="add-btn" onclick="openScheduleModal()">+ Add Game</button>
+            <button class="add-btn admin-only" onclick="openScheduleModal()">+ Add Game</button>
           </div>
           <div id="schedule-content">
             <div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No games scheduled</div></div>
@@ -261,7 +268,7 @@
         <div class="panel" id="panel-housing">
           <div class="section-head">
             <div class="section-title">Housing & Accommodations</div>
-            <button class="add-btn" onclick="openHousingModal()">+ Add Property</button>
+            <button class="add-btn admin-only" onclick="openHousingModal()">+ Add Property</button>
           </div>
           <div class="card-grid" id="housing-content">
             <div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏠</div><div class="empty-text">No properties added</div></div>
@@ -272,7 +279,7 @@
         <div class="panel" id="panel-roster">
           <div class="section-head">
             <div class="section-title">Tournament Roster</div>
-            <button class="add-btn" onclick="syncRosterFromSharePoint()">↻ Sync from SharePoint</button>
+            <button class="add-btn staff-only" onclick="syncRosterFromSharePoint()">↻ Sync from SharePoint</button>
           </div>
           <div id="roster-content">
             <div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">No players loaded</div></div>
@@ -283,9 +290,20 @@
         <div class="panel" id="panel-logistics">
           <div class="section-head">
             <div class="section-title">Operations Checklist</div>
-            <button class="add-btn" onclick="openChecklistModal()">+ Add Item</button>
+            <button class="add-btn admin-only" onclick="openChecklistModal()">+ Add Item</button>
           </div>
           <div id="checklist-content"></div>
+        </div>
+
+        <!-- ═══ USERS (admin only) ═══ -->
+        <div class="panel" id="panel-users">
+          <div class="section-head">
+            <div class="section-title">User Management</div>
+            <button class="add-btn" onclick="loadUsers()">↻ Refresh</button>
+          </div>
+          <div id="users-content">
+            <div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Loading users...</div></div>
+          </div>
         </div>
 
       </div>
@@ -460,9 +478,42 @@ function onSignedIn() {
   document.getElementById('gate-view').style.display = 'none';
   document.getElementById('app-view').style.display = '';
   const displayName = currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || currentUser.username || 'User';
+  const userEmail = (currentUser.idTokenClaims && currentUser.idTokenClaims.email) || currentUser.username || '';
   document.getElementById('nav-user').textContent = displayName;
   document.getElementById('auth-btn').textContent = 'Sign Out';
+
+  // ── Role lookup / registration ──
+  try {
+    const existing = await api(`users?email=${encodeURIComponent(userEmail.toLowerCase())}`);
+    currentRole = existing.role || 'viewer';
+  } catch (e) {
+    // User not found — register with default role
+    try {
+      const newUser = await api('users', 'POST', {
+        email: userEmail.toLowerCase(),
+        displayName: displayName,
+        role: 'viewer',
+        tournamentId: CONFIG.tournamentId,
+      });
+      currentRole = newUser.role || 'viewer';
+    } catch (e2) { console.warn('User registration failed:', e2.message); }
+  }
+  applyRoleGating();
   loadAllData();
+}
+
+function applyRoleGating() {
+  const isAdmin = currentRole === 'admin';
+  const isStaff = currentRole === 'staff' || isAdmin;
+  // Show/hide admin controls
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  document.querySelectorAll('.staff-only').forEach(el => el.style.display = isStaff ? '' : 'none');
+  // Role badge
+  const badge = document.getElementById('role-badge');
+  if (badge) { badge.textContent = currentRole.toUpperCase(); badge.style.display = ''; }
+  // Users tab (admin only)
+  const usersTab = document.getElementById('tab-users');
+  if (usersTab) usersTab.style.display = isAdmin ? '' : 'none';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -493,6 +544,7 @@ let rosterData = [];
 let checklistData = [];
 let editingScheduleId = null;
 let editingHousingId = null;
+let currentRole = 'viewer'; // default until Cosmos lookup completes
 
 async function loadAllData() {
   try {
@@ -620,6 +672,7 @@ function openScheduleModal(data) {
 }
 
 function editScheduleItem(id) {
+  if (currentRole !== 'admin') { toast('View only — contact an admin to make changes', 'info'); return; }
   const item = scheduleData.find(g => g.id === id);
   if (item) openScheduleModal(item);
 }
@@ -713,6 +766,7 @@ function openHousingModal(data) {
 }
 
 function editHousingItem(id) {
+  if (currentRole !== 'admin') { toast('View only — contact an admin to make changes', 'info'); return; }
   const item = housingData.find(h => h.id === id);
   if (item) openHousingModal(item);
 }
@@ -948,11 +1002,12 @@ function saveChecklistItem() {
 // ═══════════════════════════════════════════════════════════════
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    const tabs = ['overview', 'schedule', 'housing', 'roster', 'logistics'];
+    const tabs = ['overview', 'schedule', 'housing', 'roster', 'logistics', 'users'];
     t.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'users' && currentRole === 'admin') loadUsers();
 }
 
 function closeModal(name) {
@@ -978,6 +1033,73 @@ function toast(msg, type) {
   el.textContent = msg;
   wrap.appendChild(el);
   setTimeout(() => el.remove(), 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// USERS (admin only)
+// ═══════════════════════════════════════════════════════════════
+let allUsers = [];
+
+async function loadUsers() {
+  try {
+    allUsers = await api('users');
+    document.getElementById('badge-users').textContent = allUsers.length;
+    renderUsers();
+  } catch (e) {
+    document.getElementById('users-content').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Could not load users</div></div>';
+  }
+}
+
+function renderUsers() {
+  const el = document.getElementById('users-content');
+  if (!allUsers.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">No users registered</div></div>';
+    return;
+  }
+  const sorted = [...allUsers].sort((a, b) => (a.displayName || a.email || '').localeCompare(b.displayName || b.email || ''));
+  const roleColors = { admin: 'var(--gold)', staff: 'var(--green)', player: 'var(--cream)', viewer: 'var(--text-dim)' };
+  el.innerHTML = `<table class="ops-table">
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Registered</th><th></th></tr></thead>
+    <tbody>${sorted.map(u => {
+      const color = roleColors[u.role] || 'var(--text-dim)';
+      return `<tr>
+        <td style="font-weight:500">${esc(u.displayName || '—')}</td>
+        <td style="font-size:11px;color:var(--text-dim)">${esc(u.email || '')}</td>
+        <td><span style="color:${color};font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;text-transform:uppercase">${esc(u.role || 'viewer')}</span></td>
+        <td style="font-size:11px;color:var(--text-dim)">${fmtDate(u.createdAt)}</td>
+        <td style="text-align:right">
+          <select onchange="changeUserRole('${u.id}','${u.email}',this.value)" style="background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);padding:4px 8px;font-size:11px;cursor:pointer">
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+            <option value="staff" ${u.role==='staff'?'selected':''}>Staff</option>
+            <option value="player" ${u.role==='player'?'selected':''}>Player</option>
+            <option value="viewer" ${u.role==='viewer'||!u.role?'selected':''}>Viewer</option>
+          </select>
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+async function changeUserRole(id, email, newRole) {
+  try {
+    const user = allUsers.find(u => u.id === id);
+    if (!user) return;
+    const updated = { ...user, role: newRole };
+    await api('users', 'PUT', updated);
+    user.role = newRole;
+    renderUsers();
+    toast(`${user.displayName || user.email} → ${newRole}`, 'success');
+  } catch (e) { toast('Role update failed: ' + e.message, 'error'); }
+}
+
+// ── Role-gated click handlers ──
+function guardedEditSchedule(id) {
+  if (currentRole !== 'admin') return;
+  editScheduleItem(id);
+}
+
+function guardedEditHousing(id) {
+  if (currentRole !== 'admin') return;
+  editHousingItem(id);
 }
 
 // Close modals on overlay click
