@@ -884,19 +884,19 @@ let housingMarkers = [];
 
 // Approximate coords for known properties (keyed by id)
 const PROPERTY_COORDS = {
-  'h-dallas-1': [35.793, -78.733],  // Cary, near NC State & Airport
-  'h-dallas-2': [35.801, -78.702],  // Cary, near WakeMed Raleigh Hospital
-  'h-dallas-3': [35.797, -78.797],  // Cary, near Fred G Bond Metro Park
-  'h-dallas-4': [35.742, -78.712],  // Raleigh/Cary, near Lake Johnson
-  'h-dallas-5': [35.781, -78.653],  // Raleigh, near NC State / Dorton Arena
-  'h-mama-1':   [35.758, -78.698],  // Raleigh, near Lake Johnson & NCSU
-  'h-mama-2':   [35.752, -78.691],  // Raleigh, near Lake Johnson & NCSU
-  'h-mama-3':   [35.762, -78.684],  // Raleigh, near Lake Johnson & NCSU
-  'h-mama-4':   [35.770, -78.672],  // Raleigh, near Carolina Pines Dog Park
-  'h-mama-5':   [35.771, -78.673],  // Raleigh, near Carolina Pines Dog Park
+  'h-dallas-1': [35.7915, -78.6980],  // Near NC State & RDU Airport corridor
+  'h-dallas-2': [35.8140, -78.6435],  // Near WakeMed Raleigh Hospital / Cary Arts Center
+  'h-dallas-3': [35.7825, -78.7990],  // Near Fred G Bond Metro Park, Cary
+  'h-dallas-4': [35.7420, -78.7125],  // Near Lake Johnson, Raleigh
+  'h-dallas-5': [35.7810, -78.6530],  // Near NC State / J.S. Dorton Arena
+  'h-mama-1':   [35.7485, -78.6960],  // Near Lake Johnson & NCSU, Carolina Pines Dog Park 1 min
+  'h-mama-2':   [35.7510, -78.6910],  // Near Lake Johnson & NCSU, Carolina Pines Dog Park 2 min
+  'h-mama-3':   [35.7465, -78.6870],  // Near Lake Johnson & NCSU, Carolina Pines Dog Park 3 min
+  'h-mama-4':   [35.7680, -78.6615],  // Near Carolina Pines Dog Park & NCSU (Townhouse area)
+  'h-mama-5':   [35.7685, -78.6605],  // Near Carolina Pines Dog Park & NCSU (Townhouse area)
 };
 
-const WAKEMED = [35.735, -78.743]; // WakeMed Soccer Park
+const WAKEMED = [35.7572, -78.7487]; // WakeMed Soccer Park, 201 Soccer Park Dr, Cary, NC 27511
 
 function renderHousingMap(filtered) {
   const mapEl = document.getElementById('housing-map');
