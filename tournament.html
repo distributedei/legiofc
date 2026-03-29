@@ -318,11 +318,10 @@
           </div>
 
           <!-- Team Selector (staff only) -->
-          <div class="staff-only" style="margin-top:16px;display:flex;align-items:center;gap:12px">
-            <select id="overview-team-filter" onchange="renderOverview()" style="padding:8px 14px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px;font-family:Cinzel,serif;letter-spacing:1px;cursor:pointer">
-              <option value="all">All Teams</option>
-            </select>
+          <div class="staff-only" id="overview-team-checks" style="margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Teams</span>
           </div>
+          <input type="hidden" id="overview-team-filter" value="all">
 
           <!-- Stats Row -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px" id="overview-stats"></div>
@@ -763,6 +762,60 @@ function showStaffInstructions() {
   document.getElementById('staff-instructions').style.display = 'flex';
 }
 
+function updateTeamFilter() {
+  const allCb = document.querySelector('.team-filter-cb[value="all"]');
+  const teamCbs = document.querySelectorAll('.team-filter-cb:not([value="all"])');
+  
+  if (allCb && allCb.checked) {
+    teamCbs.forEach(cb => cb.checked = true);
+  }
+  const allTeamsChecked = Array.from(teamCbs).every(cb => cb.checked);
+  if (allCb) allCb.checked = allTeamsChecked;
+  
+  renderOverview();
+}
+
+function toggleTeamCheckbox(teamName) {
+  const allCb = document.querySelector('.team-filter-cb[value="all"]');
+  const teamCbs = document.querySelectorAll('.team-filter-cb:not([value="all"])');
+  
+  // Uncheck "All", uncheck all teams, then check only clicked team
+  if (allCb) allCb.checked = false;
+  teamCbs.forEach(cb => cb.checked = (cb.value === teamName));
+  
+  renderOverview();
+}
+
+function getActiveTeamNames() {
+  // Returns team names from SharePoint team sheets — single source of truth
+  return Object.keys(teamPlayers);
+}
+
+function populateDynamicTeamOptions() {
+  const teams = getActiveTeamNames();
+  
+  // Schedule modal team assignment
+  const schedTeam = document.getElementById('sched-team');
+  if (schedTeam) {
+    const selected = Array.from(schedTeam.selectedOptions).map(o => o.value);
+    schedTeam.innerHTML = '<option value="All">Everyone</option>' +
+      teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('') +
+      '<option value="Staff Only">Staff Only</option><option value="Coaches">Coaches</option><option value="Players Only">Players Only</option>';
+    Array.from(schedTeam.options).forEach(o => { if (selected.includes(o.value)) o.selected = true; });
+  }
+  
+  // Housing modal team
+  const houseTeam = document.getElementById('house-team');
+  if (houseTeam) {
+    const cur = houseTeam.value;
+    houseTeam.innerHTML = '<option value="">— Select —</option>' +
+      teams.map(t => `<option value="${esc(t)}" ${cur === t ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  }
+  
+  // Van team options
+  // (handled dynamically in editVan)
+}
+
 function handleSignOut() {
   const mode = authMode;
   // Clear both MSAL caches
@@ -1015,7 +1068,8 @@ async function loadAllData() {
     if (authMode === 'org') {
       try {
         await loadTeamPlayersFromSharePoint();
-        renderRoster(); // re-render with team sheet data
+        populateDynamicTeamOptions();
+        renderRoster();
         renderOverview();
       } catch(e) { console.warn('TeamSheet sync:', e.message); }
     }
@@ -1235,31 +1289,49 @@ function renderOverview() {
     window._cdInterval = setInterval(() => updateCountdown(target), 60000);
   }
 
-  // Team filter (staff only)
-  const filterSel = document.getElementById('overview-team-filter');
-  if (filterSel && isStaff) {
-    const cur = filterSel.value;
+  // Team filter checkboxes (staff only)
+  const checkContainer = document.getElementById('overview-team-checks');
+  if (checkContainer && isStaff) {
     const teamNames = Object.keys(teamPlayers);
-    filterSel.innerHTML = '<option value="all">All Teams</option>' + teamNames.map(tn =>
-      `<option value="${esc(tn)}" ${cur === tn ? 'selected' : ''}>${esc(tn)}</option>`
-    ).join('');
+    if (!checkContainer.dataset.built) {
+      let checkHtml = '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">Teams</span>';
+      checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="all" checked onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> All</label>`;
+      teamNames.forEach(tn => {
+        checkHtml += `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--cream)"><input type="checkbox" class="team-filter-cb" value="${esc(tn)}" checked onchange="updateTeamFilter()" style="accent-color:var(--gold);cursor:pointer"> ${esc(tn)}</label>`;
+      });
+      checkContainer.innerHTML = checkHtml;
+      checkContainer.dataset.built = '1';
+    }
   }
-  const teamFilter = filterSel ? filterSel.value : 'all';
+
+  // Get checked teams
+  const checkedTeams = [];
+  document.querySelectorAll('.team-filter-cb:checked').forEach(cb => {
+    if (cb.value !== 'all') checkedTeams.push(cb.value);
+  });
+  const allChecked = document.querySelector('.team-filter-cb[value="all"]');
+  const showAll = allChecked && allChecked.checked;
+  const teamFilter = showAll ? 'all' : (checkedTeams.length ? checkedTeams : ['all']);
 
   // Get filtered data based on team selection
   let filteredPlayers = [];
-  if (teamFilter === 'all') {
+  const isAllTeams = teamFilter === 'all' || (Array.isArray(teamFilter) && teamFilter.includes('all'));
+  if (isAllTeams) {
     Object.values(teamPlayers).forEach(p => filteredPlayers = filteredPlayers.concat(p));
   } else {
-    filteredPlayers = teamPlayers[teamFilter] || [];
+    const selected = Array.isArray(teamFilter) ? teamFilter : [teamFilter];
+    selected.forEach(t => { if (teamPlayers[t]) filteredPlayers = filteredPlayers.concat(teamPlayers[t]); });
   }
   // Dedup
   const seen = new Set();
   filteredPlayers = filteredPlayers.filter(p => { const k = (p.name||'').toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
 
-  const filteredHousing = teamFilter === 'all' ? housingData : housingData.filter(h => {
-    const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === teamFilter.toLowerCase());
-    return mapped && (h.team || '').toLowerCase() === mapped[0];
+  const filteredHousing = isAllTeams ? housingData : housingData.filter(h => {
+    const selected = Array.isArray(teamFilter) ? teamFilter : [teamFilter];
+    return selected.some(tf => {
+      const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === tf.toLowerCase());
+      return mapped && (h.team || '').toLowerCase() === mapped[0];
+    });
   });
 
   const totalBeds = filteredHousing.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
@@ -1276,7 +1348,7 @@ function renderOverview() {
 
   if (isStaff) {
     document.getElementById('overview-stats').innerHTML =
-      statBox(filteredPlayers.length, 'Players', teamFilter === 'all' ? Object.keys(teamPlayers).length + ' teams' : teamFilter) +
+      statBox(filteredPlayers.length, 'Players', isAllTeams ? Object.keys(teamPlayers).length + ' teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter)) +
       statBox(filteredGames.filter(g=>g.type!=='Message').length, 'Events', 'scheduled') +
       statBox(filteredHousing.length, 'Properties', totalBeds + ' beds') +
       statBox(bedPct + '%', 'Beds Assigned', assignedBeds + '/' + totalBeds);
@@ -1290,7 +1362,7 @@ function renderOverview() {
   }
 
   // Teams breakdown (staff only)
-  if (isStaff && teamFilter === 'all') {
+  if (isStaff && isAllTeams) {
     let teamsHtml = '';
     Object.entries(teamPlayers).forEach(([team, players]) => {
       const teamHousing = housingData.filter(h => {
@@ -1299,7 +1371,7 @@ function renderOverview() {
       });
       const teamBeds = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
       const teamAssigned = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
-      teamsHtml += `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;margin-bottom:10px;cursor:pointer" onclick="document.getElementById('overview-team-filter').value='${esc(team)}';renderOverview()">
+      teamsHtml += `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;margin-bottom:10px;cursor:pointer" onclick="toggleTeamCheckbox('${esc(team)}')">
         <div style="font-family:Cinzel,serif;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${esc(team)}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
           <div><span style="color:var(--text-faint)">Players</span> <span style="color:var(--cream)">${players.length}</span></div>
@@ -1333,7 +1405,7 @@ function renderOverview() {
 
   // Arrivals (staff only)
   if (isStaff) {
-    let arrHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Player Arrivals — ${esc(teamFilter === 'all' ? 'All Teams' : teamFilter)}</div>`;
+    let arrHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Player Arrivals — ${esc(isAllTeams ? 'All Teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter))}</div>`;
 
     // Build arrival info from player data
     const arrivals = filteredPlayers.map(p => {
@@ -1377,7 +1449,7 @@ function renderOverview() {
 
   // Roster Preview
   if (isStaff) {
-    let rosterHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Roster — ${esc(teamFilter === 'all' ? 'All Teams' : teamFilter)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;letter-spacing:0;text-transform:none">${filteredPlayers.length} players</span></div>`;
+    let rosterHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Roster — ${esc(isAllTeams ? 'All Teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter))} <span style="color:var(--text-dim);font-family:Inter,sans-serif;letter-spacing:0;text-transform:none">${filteredPlayers.length} players</span></div>`;
     rosterHtml += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
     filteredPlayers.slice(0, 30).forEach(p => {
       const ini = (p.name||'').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
@@ -1395,7 +1467,7 @@ function renderOverview() {
 
   // Housing progress (staff only)
   if (isStaff) {
-    let housingHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Housing — ${esc(teamFilter === 'all' ? 'All Teams' : teamFilter)}</div>`;
+    let housingHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Housing — ${esc(isAllTeams ? 'All Teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter))}</div>`;
     housingHtml += `<div style="height:8px;background:var(--cream-dim);border-radius:4px;margin-bottom:12px;overflow:hidden">
       <div style="height:100%;width:${bedPct}%;background:var(--gold);border-radius:4px;transition:width .3s"></div>
     </div>`;
@@ -2750,7 +2822,8 @@ function editVan(id) {
     <div class="form-grid">
       <div class="form-field"><label>Van Name</label><input type="text" id="ve-name" value="${esc(v.name)}"></div>
       <div class="form-field"><label>Team</label>
-        <select id="ve-team"><option ${v.team==='Leon Dallas Coed'?'selected':''}>Leon Dallas Coed</option><option ${v.team==="Mama Africa Men's"?'selected':''}>Mama Africa Men's</option><option ${v.team==='Shared'?'selected':''}>Shared</option></select>
+        <select id="ve-team">${getActiveTeamNames().map(t => `<option ${v.team===t?'selected':''}>${esc(t)}</option>`).join('')}<option ${v.team==='Shared'?'selected':''}>Shared</option>
+        </select>
       </div>
       <div class="form-field full"><label>Driver</label>
         <select id="ve-driver" style="padding:8px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;width:100%">
