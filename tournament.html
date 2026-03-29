@@ -532,6 +532,9 @@ async function handleExtAuth() {
 
 function handleSignOut() {
   const mode = authMode;
+  // Clear both MSAL caches
+  try { msalOrg.getAllAccounts().forEach(a => msalOrg.getAccountByHomeId(a.homeAccountId) && msalOrg.setActiveAccount(null)); } catch(e) {}
+  try { msalExt.getAllAccounts().forEach(a => msalExt.getAccountByHomeId(a.homeAccountId) && msalExt.setActiveAccount(null)); } catch(e) {}
   sessionStorage.clear();
   if (mode === 'org') {
     msalOrg.logoutRedirect({ postLogoutRedirectUri: redirectUri });
@@ -579,11 +582,15 @@ async function checkAuth() {
       if (resp) { authMode = 'ext'; activeMsal = msalExt; currentUser = resp.account; await onSignedIn(); return; }
     }
 
-    // Check existing sessions
-    const orgAccts = msalOrg.getAllAccounts();
-    if (orgAccts.length) { authMode = 'org'; activeMsal = msalOrg; currentUser = orgAccts[0]; await onSignedIn(); return; }
-    const extAccts = msalExt.getAllAccounts();
-    if (extAccts.length) { authMode = 'ext'; activeMsal = msalExt; currentUser = extAccts[0]; await onSignedIn(); return; }
+    // Check existing sessions — only if we have a saved mode (prevents stale org session pickup)
+    if (savedMode === 'org') {
+      const orgAccts = msalOrg.getAllAccounts();
+      if (orgAccts.length) { authMode = 'org'; activeMsal = msalOrg; currentUser = orgAccts[0]; await onSignedIn(); return; }
+    }
+    if (savedMode === 'ext') {
+      const extAccts = msalExt.getAllAccounts();
+      if (extAccts.length) { authMode = 'ext'; activeMsal = msalExt; currentUser = extAccts[0]; await onSignedIn(); return; }
+    }
   } catch (e) { console.error('Auth check error:', e); }
 }
 
