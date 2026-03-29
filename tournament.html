@@ -1060,9 +1060,9 @@ async function deleteScheduleItem() {
 // HOUSING
 // ═══════════════════════════════════════════════════════════════
 function renderHousing() {
-  document.getElementById('badge-housing').textContent = housingData.length;
   const el = document.getElementById('housing-content');
   if (!housingData.length) {
+    document.getElementById('badge-housing').textContent = 0;
     el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏠</div><div class="empty-text">No properties added</div></div>';
     return;
   }
@@ -1077,15 +1077,16 @@ function renderHousing() {
       return h.beds.some(b => {
         const a = (b.assigned || '').toLowerCase().trim();
         if (!a) return false;
-        // Exact match on name or email only
         return a === userEmail || a === userName;
       });
     });
     if (!filtered.length) {
+      document.getElementById('badge-housing').textContent = 0;
       el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏠</div><div class="empty-text">No housing assigned to you yet</div></div>';
       return;
     }
   }
+  document.getElementById('badge-housing').textContent = filtered.length;
 
   // Group by team for admin/staff view
   const teams = [...new Set(filtered.map(h => h.team || 'Unassigned'))];
