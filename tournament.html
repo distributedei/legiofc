@@ -283,6 +283,13 @@
             <div class="countdown" id="countdown" style="flex-shrink:0"></div>
           </div>
 
+          <!-- Team Selector (staff only) -->
+          <div class="staff-only" style="margin-top:16px;display:flex;align-items:center;gap:12px">
+            <select id="overview-team-filter" onchange="renderOverview()" style="padding:8px 14px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px;font-family:Cinzel,serif;letter-spacing:1px;cursor:pointer">
+              <option value="all">All Teams</option>
+            </select>
+          </div>
+
           <!-- Stats Row -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px" id="overview-stats"></div>
 
@@ -291,6 +298,12 @@
             <div id="overview-teams"></div>
             <div id="overview-next-game"></div>
           </div>
+
+          <!-- Arrivals (staff only) -->
+          <div id="overview-arrivals" class="staff-only" style="margin-top:16px"></div>
+
+          <!-- Roster Preview -->
+          <div id="overview-roster-preview" style="margin-top:16px"></div>
 
           <!-- Housing Summary -->
           <div id="overview-housing" style="margin-top:16px"></div>
@@ -1113,6 +1126,8 @@ async function loadTeamPlayersFromSharePoint() {
 // ═══════════════════════════════════════════════════════════════
 function renderOverview() {
   const t = tournament || {};
+  const isStaff = currentRole === 'admin' || currentRole === 'staff';
+
   document.getElementById('tourn-eyebrow').textContent = t.format ? `${t.format} Tournament` : 'Tournament';
   document.getElementById('tourn-title').textContent = t.name || 'TST 2026';
   document.getElementById('tourn-subtitle').textContent = [t.venue, t.city, t.state].filter(Boolean).join(' · ') +
@@ -1126,15 +1141,39 @@ function renderOverview() {
     window._cdInterval = setInterval(() => updateCountdown(target), 60000);
   }
 
-  // Stats
-  const isStaff = currentRole === 'admin' || currentRole === 'staff';
-  const totalPlayers = Object.values(teamPlayers).reduce((s, arr) => s + arr.length, 0) || rosterData.length;
-  const totalBeds = housingData.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
-  const assignedBeds = housingData.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
+  // Team filter (staff only)
+  const filterSel = document.getElementById('overview-team-filter');
+  if (filterSel && isStaff) {
+    const cur = filterSel.value;
+    const teamNames = Object.keys(teamPlayers);
+    filterSel.innerHTML = '<option value="all">All Teams</option>' + teamNames.map(tn =>
+      `<option value="${esc(tn)}" ${cur === tn ? 'selected' : ''}>${esc(tn)}</option>`
+    ).join('');
+  }
+  const teamFilter = filterSel ? filterSel.value : 'all';
+
+  // Get filtered data based on team selection
+  let filteredPlayers = [];
+  if (teamFilter === 'all') {
+    Object.values(teamPlayers).forEach(p => filteredPlayers = filteredPlayers.concat(p));
+  } else {
+    filteredPlayers = teamPlayers[teamFilter] || [];
+  }
+  // Dedup
+  const seen = new Set();
+  filteredPlayers = filteredPlayers.filter(p => { const k = (p.name||'').toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+
+  const filteredHousing = teamFilter === 'all' ? housingData : housingData.filter(h => {
+    const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === teamFilter.toLowerCase());
+    return mapped && (h.team || '').toLowerCase() === mapped[0];
+  });
+
+  const totalBeds = filteredHousing.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
+  const assignedBeds = filteredHousing.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
   const bedPct = totalBeds ? Math.round(assignedBeds / totalBeds * 100) : 0;
   const filteredGames = filterScheduleForUser(scheduleData);
-  const t2 = tournament || {};
 
+  // Stats
   const statBox = (num, label, sub) => `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:16px;text-align:center">
     <div style="font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--gold)">${num}</div>
     <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;margin-top:4px">${label}</div>
@@ -1143,98 +1182,146 @@ function renderOverview() {
 
   if (isStaff) {
     document.getElementById('overview-stats').innerHTML =
-      statBox(totalPlayers, 'Players', Object.keys(teamPlayers).length + ' teams') +
-      statBox(scheduleData.length, 'Games', 'scheduled') +
-      statBox(housingData.length, 'Properties', totalBeds + ' beds total') +
+      statBox(filteredPlayers.length, 'Players', teamFilter === 'all' ? Object.keys(teamPlayers).length + ' teams' : teamFilter) +
+      statBox(filteredGames.filter(g=>g.type!=='Message').length, 'Events', 'scheduled') +
+      statBox(filteredHousing.length, 'Properties', totalBeds + ' beds') +
       statBox(bedPct + '%', 'Beds Assigned', assignedBeds + '/' + totalBeds);
   } else {
-    // Player stats — players, games, airport, arrival
     const playerTeam = getPlayerTeamForSchedule();
-    const myTeamCount = playerTeam ? (Object.values(teamPlayers).find((p, i) => {
-      const tn = Object.keys(teamPlayers)[i];
-      const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === tn.toLowerCase());
-      return mapped && mapped[0].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').toLowerCase() === playerTeam.toLowerCase();
-    }) || []).length : totalPlayers;
-
     document.getElementById('overview-stats').innerHTML =
-      statBox(myTeamCount || totalPlayers, 'Teammates', playerTeam || '') +
+      statBox(filteredPlayers.length || '—', 'Teammates', playerTeam || '') +
       statBox(filteredGames.length, 'Events', 'on your schedule') +
       statBox('RDU', 'Airport', 'Raleigh-Durham, NC') +
-      statBox(fmtDate(t2.startDate), 'Arrival', t2.venue || '');
+      statBox(fmtDate(t.startDate), 'Arrival', t.venue || '');
   }
 
   // Teams breakdown (staff only)
-  if (isStaff) {
+  if (isStaff && teamFilter === 'all') {
     let teamsHtml = '';
     Object.entries(teamPlayers).forEach(([team, players]) => {
-    const teamHousing = housingData.filter(h => {
-      const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === team.toLowerCase());
-      return mapped && (h.team || '').toLowerCase() === mapped[0];
-    });
-    const teamBeds = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
-    const teamAssigned = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
-
-    teamsHtml += `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;margin-bottom:10px">
-      <div style="font-family:Cinzel,serif;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${esc(team)}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
-        <div><span style="color:var(--text-faint)">Players</span> <span style="color:var(--cream)">${players.length}</span></div>
-        <div><span style="color:var(--text-faint)">Properties</span> <span style="color:var(--cream)">${teamHousing.length}</span></div>
-        <div><span style="color:var(--text-faint)">Beds</span> <span style="color:var(--cream)">${teamAssigned}/${teamBeds}</span></div>
-        <div>
-          <div style="height:4px;background:var(--cream-dim);border-radius:2px;margin-top:4px">
-            <div style="height:100%;width:${teamBeds ? Math.round(teamAssigned/teamBeds*100) : 0}%;background:var(--gold);border-radius:2px"></div>
-          </div>
+      const teamHousing = housingData.filter(h => {
+        const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === team.toLowerCase());
+        return mapped && (h.team || '').toLowerCase() === mapped[0];
+      });
+      const teamBeds = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
+      const teamAssigned = teamHousing.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
+      teamsHtml += `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;margin-bottom:10px;cursor:pointer" onclick="document.getElementById('overview-team-filter').value='${esc(team)}';renderOverview()">
+        <div style="font-family:Cinzel,serif;font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${esc(team)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+          <div><span style="color:var(--text-faint)">Players</span> <span style="color:var(--cream)">${players.length}</span></div>
+          <div><span style="color:var(--text-faint)">Properties</span> <span style="color:var(--cream)">${teamHousing.length}</span></div>
+          <div><span style="color:var(--text-faint)">Beds</span> <span style="color:var(--cream)">${teamAssigned}/${teamBeds}</span></div>
+          <div><div style="height:4px;background:var(--cream-dim);border-radius:2px;margin-top:4px"><div style="height:100%;width:${teamBeds ? Math.round(teamAssigned/teamBeds*100) : 0}%;background:var(--gold);border-radius:2px"></div></div></div>
         </div>
-      </div>
-    </div>`;
-  });
-  document.getElementById('overview-teams').innerHTML = teamsHtml || '<div style="color:var(--text-faint);font-size:11px">No teams loaded</div>';
+      </div>`;
+    });
+    document.getElementById('overview-teams').innerHTML = teamsHtml || '';
   } else {
     document.getElementById('overview-teams').innerHTML = '';
   }
 
-  // Next game / next event
-  const upcoming = [...(isStaff ? scheduleData : filteredGames)].filter(g => g.date && new Date(g.date + 'T23:59:59') >= new Date()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  // Next game
+  const upcoming = [...(isStaff ? scheduleData.filter(g=>g.type!=='Message') : filteredGames)].filter(g => g.date && new Date(g.date + 'T23:59:59') >= new Date()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   let gameHtml = '';
   if (upcoming.length) {
     const g = upcoming[0];
     gameHtml = `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px">
-      <div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">${isStaff ? 'Next Match' : 'Next Event'}</div>
+      <div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Next Event</div>
       <div style="font-family:Cinzel,serif;font-size:15px;color:var(--cream);font-weight:600">${g.type === 'Game' ? 'Legio FC vs ' + esc(g.opponent || 'TBD') : esc(g.title || g.type || 'Event')}</div>
       <div style="font-size:12px;color:var(--text-dim);margin-top:6px">${fmtDate(g.date)} ${g.time ? '· ' + esc(g.time) : ''}</div>
-      <div style="font-size:11px;color:var(--text-faint);margin-top:4px">${esc(g.venue || 'WakeMed Soccer Park')} · ${esc(g.stage || 'Group')}</div>
+      <div style="font-size:11px;color:var(--text-faint);margin-top:4px">${esc(g.venue || 'WakeMed Soccer Park')}</div>
     </div>`;
-    if (upcoming.length > 1) {
-      gameHtml += `<div style="margin-top:10px;font-size:10px;color:var(--text-faint)">${upcoming.length - 1} more game${upcoming.length > 2 ? 's' : ''} scheduled</div>`;
-    }
+    if (upcoming.length > 1) gameHtml += `<div style="margin-top:10px;font-size:10px;color:var(--text-faint)">${upcoming.length - 1} more event${upcoming.length > 2 ? 's' : ''} scheduled</div>`;
   } else {
-    gameHtml = '<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;font-size:11px;color:var(--text-faint)">No upcoming games</div>';
+    gameHtml = '<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;font-size:11px;color:var(--text-faint)">No upcoming events</div>';
   }
   document.getElementById('overview-next-game').innerHTML = gameHtml;
 
-  // Housing progress (staff only)
+  // Arrivals (staff only)
   if (isStaff) {
-    let housingHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Housing Assignment Progress</div>`;
-  housingHtml += `<div style="height:8px;background:var(--cream-dim);border-radius:4px;margin-bottom:12px;overflow:hidden">
-    <div style="height:100%;width:${bedPct}%;background:var(--gold);border-radius:4px;transition:width .3s"></div>
-  </div>`;
-  housingHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">`;
-  housingData.forEach(h => {
-    const beds = h.beds || [];
-    const assigned = beds.filter(b => b.assigned).length;
-    const pct = beds.length ? Math.round(assigned / beds.length * 100) : 0;
-    const teamColor = (h.team || '').includes('Dallas') ? '#dab751' : (h.team || '').includes('Mama') || (h.team || '').includes('Africa') ? '#7dd893' : 'var(--gold)';
-    housingHtml += `<div style="background:rgba(22,61,84,0.3);border:1px solid var(--gold-border);padding:10px;cursor:pointer" onclick="switchTab('housing')">
-      <div style="font-size:11px;color:var(--cream);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.name)}</div>
-      <div style="font-size:9px;color:${teamColor};margin-top:2px">${esc(h.team || '')}</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-        <div style="flex:1;height:3px;background:var(--cream-dim);border-radius:2px"><div style="height:100%;width:${pct}%;background:${teamColor};border-radius:2px"></div></div>
-        <span style="font-size:9px;color:var(--text-dim)">${assigned}/${beds.length}</span>
+    let arrHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Player Arrivals — ${esc(teamFilter === 'all' ? 'All Teams' : teamFilter)}</div>`;
+
+    // Build arrival info from player data
+    const arrivals = filteredPlayers.map(p => {
+      const location = [p.currentLocation, p.country].filter(Boolean).join(', ');
+      const canTravel = p.canTravel || '';
+      return { name: p.name, location, canTravel, position: p.position || '' };
+    }).sort((a, b) => (a.name||'').localeCompare(b.name||''));
+
+    const needTravel = arrivals.filter(a => a.canTravel.toLowerCase().startsWith('yes'));
+    const noTravel = arrivals.filter(a => !a.canTravel.toLowerCase().startsWith('yes') && a.canTravel.toLowerCase() !== 'no');
+    const cantTravel = arrivals.filter(a => a.canTravel.toLowerCase() === 'no');
+
+    arrHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px">
+      <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:10px;text-align:center">
+        <div style="font-family:Cinzel,serif;font-size:18px;color:var(--green);font-weight:700">${needTravel.length}</div>
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Can Travel</div>
+      </div>
+      <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:10px;text-align:center">
+        <div style="font-family:Cinzel,serif;font-size:18px;color:var(--gold);font-weight:700">${noTravel.length}</div>
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Pending</div>
+      </div>
+      <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:10px;text-align:center">
+        <div style="font-family:Cinzel,serif;font-size:18px;color:var(--red);font-weight:700">${cantTravel.length}</div>
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Cannot Travel</div>
       </div>
     </div>`;
-  });
-  housingHtml += '</div>';
-  document.getElementById('overview-housing').innerHTML = housingHtml;
+
+    arrHtml += `<table class="ops-table" style="font-size:11px"><thead><tr><th>Name</th><th>Position</th><th>Traveling From</th><th>Travel Status</th></tr></thead><tbody>`;
+    arrivals.forEach(a => {
+      const travelColor = a.canTravel.toLowerCase().startsWith('yes') ? 'var(--green)' : a.canTravel.toLowerCase() === 'no' ? 'var(--red)' : 'var(--text-dim)';
+      arrHtml += `<tr>
+        <td style="font-weight:500">${esc(a.name)}</td>
+        <td style="color:var(--text-dim)">${esc(a.position)}</td>
+        <td style="color:var(--text-dim)">${esc(a.location || '—')}</td>
+        <td style="color:${travelColor};font-weight:500">${esc(a.canTravel || '—')}</td>
+      </tr>`;
+    });
+    arrHtml += '</tbody></table>';
+    document.getElementById('overview-arrivals').innerHTML = arrHtml;
+  }
+
+  // Roster Preview
+  if (isStaff) {
+    let rosterHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Roster — ${esc(teamFilter === 'all' ? 'All Teams' : teamFilter)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;letter-spacing:0;text-transform:none">${filteredPlayers.length} players</span></div>`;
+    rosterHtml += `<div style="display:flex;flex-wrap:wrap;gap:8px">`;
+    filteredPlayers.slice(0, 30).forEach(p => {
+      const ini = (p.name||'').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      rosterHtml += `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(22,61,84,0.4);border:1px solid var(--gold-border);cursor:pointer" onclick="switchTab('roster')">
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:8px;font-weight:700;color:var(--blue-dark)">${esc(ini)}</div>
+        <div style="font-size:10px;color:var(--cream)">${esc(p.name)}</div>
+      </div>`;
+    });
+    if (filteredPlayers.length > 30) rosterHtml += `<div style="font-size:10px;color:var(--text-faint);padding:8px">+${filteredPlayers.length - 30} more</div>`;
+    rosterHtml += '</div>';
+    document.getElementById('overview-roster-preview').innerHTML = rosterHtml;
+  } else {
+    document.getElementById('overview-roster-preview').innerHTML = '';
+  }
+
+  // Housing progress (staff only)
+  if (isStaff) {
+    let housingHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Housing — ${esc(teamFilter === 'all' ? 'All Teams' : teamFilter)}</div>`;
+    housingHtml += `<div style="height:8px;background:var(--cream-dim);border-radius:4px;margin-bottom:12px;overflow:hidden">
+      <div style="height:100%;width:${bedPct}%;background:var(--gold);border-radius:4px;transition:width .3s"></div>
+    </div>`;
+    housingHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">`;
+    filteredHousing.forEach(h => {
+      const beds = h.beds || [];
+      const assigned = beds.filter(b => b.assigned).length;
+      const pct = beds.length ? Math.round(assigned / beds.length * 100) : 0;
+      const teamColor = (h.team || '').includes('Dallas') ? '#dab751' : (h.team || '').includes('Mama') || (h.team || '').includes('Africa') ? '#7dd893' : 'var(--gold)';
+      housingHtml += `<div style="background:rgba(22,61,84,0.3);border:1px solid var(--gold-border);padding:10px;cursor:pointer" onclick="switchTab('housing')">
+        <div style="font-size:11px;color:var(--cream);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.name)}</div>
+        <div style="font-size:9px;color:${teamColor};margin-top:2px">${esc(h.team || '')}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+          <div style="flex:1;height:3px;background:var(--cream-dim);border-radius:2px"><div style="height:100%;width:${pct}%;background:${teamColor};border-radius:2px"></div></div>
+          <span style="font-size:9px;color:var(--text-dim)">${assigned}/${beds.length}</span>
+        </div>
+      </div>`;
+    });
+    housingHtml += '</div>';
+    document.getElementById('overview-housing').innerHTML = housingHtml;
   } else {
     document.getElementById('overview-housing').innerHTML = '';
   }
