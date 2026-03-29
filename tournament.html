@@ -368,7 +368,7 @@
           </div>
           <div class="form-field"><label>Confirmation #</label><input type="text" id="house-confirm" placeholder="ABC123"></div>
           <div class="form-field"><label>Team</label>
-            <select id="house-team"><option value="">— Select —</option><option value="Leon Dallas Coed">Leon Dallas Coed</option><option value="Mama Africa Men's">Mama Africa Men's</option></select>
+            <select id="house-team" onchange="onTeamChange()"><option value="">— Select —</option><option value="Leon Dallas Coed">Leon Dallas Coed</option><option value="Mama Africa Men's">Mama Africa Men's</option></select>
           </div>
         </div>
         <!-- BED ASSIGNMENTS -->
@@ -619,6 +619,7 @@ let checklistData = [];
 let editingScheduleId = null;
 let editingHousingId = null;
 let currentRole = 'viewer'; // default until Cosmos lookup completes
+let teamPlayers = {}; // tournamentName → [{id, name, position}, ...]
 
 async function loadAllData() {
   try {
@@ -657,11 +658,93 @@ async function loadAllData() {
     // Load checklist from localStorage (lightweight — no Cosmos needed)
     loadChecklist();
 
+    // Load team players from SharePoint (org auth only — live data)
+    if (authMode === 'org') {
+      try { await loadTeamPlayersFromSharePoint(); } catch(e) { console.warn('TeamSheet sync:', e.message); }
+    }
+
     toast('Tournament data loaded', 'success');
   } catch (e) {
     console.error('Load error:', e);
     toast('Error loading data: ' + e.message, 'error');
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SHAREPOINT TEAM SHEETS (org auth only — live lineup data)
+// ═══════════════════════════════════════════════════════════════
+let spSiteId = null;
+
+async function getSpSite() {
+  if (spSiteId) return spSiteId;
+  const token = await getToken(['Sites.Read.All']);
+  const h = { Authorization: 'Bearer ' + token };
+  const site = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${CONFIG.spSiteHost}:${CONFIG.spSitePath}`, { headers: h })).json();
+  spSiteId = site.id;
+  return spSiteId;
+}
+
+async function loadTeamPlayersFromSharePoint() {
+  toast('Loading team sheets from SharePoint...', 'info');
+  const sId = await getSpSite();
+  const token = await getToken(['Sites.Read.All']);
+  const h = { Authorization: 'Bearer ' + token };
+
+  // Find lists
+  const lists = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists?$select=id,displayName`, { headers: h })).json();
+  const rosterList = lists.value.find(l => l.displayName === 'IDCampRoster');
+  const tsList = lists.value.find(l => l.displayName === 'TeamSheets');
+  if (!rosterList || !tsList) { toast('SharePoint lists not found', 'error'); return; }
+
+  // Load all roster players (id → name mapping)
+  const rosterFields = 'Title,Postion,SecondaryPosition,Email';
+  let rosterUrl = `https://graph.microsoft.com/v1.0/sites/${sId}/lists/${rosterList.id}/items?$expand=fields($select=${rosterFields})&$top=999`;
+  const playerMap = {}; // spItemId → {name, position, email}
+  while (rosterUrl) {
+    const res = await (await fetch(rosterUrl, { headers: h })).json();
+    (res.value || []).forEach(item => {
+      playerMap[item.id] = {
+        id: item.id,
+        name: item.fields.Title || '',
+        position: item.fields.Postion || '',
+        secondaryPosition: item.fields.SecondaryPosition || '',
+        email: item.fields.Email || '',
+      };
+    });
+    rosterUrl = res['@odata.nextLink'] || null;
+  }
+
+  // Load all team sheets
+  const tsFields = 'Title,Tournament,Line,Players';
+  const tsRes = await (await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/lists/${tsList.id}/items?$expand=fields($select=${tsFields})&$top=999`, { headers: h })).json();
+
+  teamPlayers = {};
+  (tsRes.value || []).forEach(item => {
+    const f = item.fields;
+    if (!f.Tournament) return;
+    if (!teamPlayers[f.Tournament]) teamPlayers[f.Tournament] = {};
+
+    // Parse lineup JSON {slotIndex: playerId}
+    let lineup = {};
+    try { lineup = JSON.parse(f.Players || '{}'); } catch(e) {}
+
+    // Collect unique players across all slots
+    Object.values(lineup).forEach(pid => {
+      if (pid && playerMap[pid]) {
+        teamPlayers[f.Tournament][pid] = playerMap[pid];
+      }
+    });
+  });
+
+  // Convert to arrays and deduplicate
+  Object.keys(teamPlayers).forEach(team => {
+    teamPlayers[team] = Object.values(teamPlayers[team]).sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  const teamCount = Object.keys(teamPlayers).length;
+  const totalPlayers = Object.values(teamPlayers).reduce((s, arr) => s + arr.length, 0);
+  console.log('TeamPlayers loaded:', teamPlayers);
+  toast(`${totalPlayers} players loaded from ${teamCount} team sheets`, 'success');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -894,8 +977,11 @@ function renderHousingMap(filtered) {
   btnContainer.innerHTML = btns;
 }
 
+let editingPropertyTeam = '';
+
 function openHousingModal(data) {
   editingHousingId = data ? data.id : null;
+  editingPropertyTeam = data ? data.team || '' : '';
   document.getElementById('house-modal-title').textContent = data ? 'Edit Property' : 'Add Property';
   document.getElementById('house-del-btn').style.display = data ? '' : 'none';
   document.getElementById('house-name').value = data ? data.name || '' : '';
@@ -921,8 +1007,14 @@ function openHousingModal(data) {
 }
 
 function renderBedRow(container, bed, idx) {
-  // Build player options from rosterData
-  const playerOpts = rosterData.map(p => `<option value="${esc(p.fullName)}" ${(bed.assigned||'') === p.fullName ? 'selected' : ''}>${esc(p.fullName)}</option>`).join('');
+  // Get players for this property's team from SharePoint team sheets
+  let players = getPlayersForTeam(editingPropertyTeam);
+
+  // Build player options
+  const playerOpts = players.map(p => {
+    const label = p.position ? `${p.name} (${p.position})` : p.name;
+    return `<option value="${esc(p.name)}" ${(bed.assigned||'') === p.name ? 'selected' : ''}>${esc(label)}</option>`;
+  }).join('');
 
   const row = document.createElement('div');
   row.className = 'bed-row';
@@ -949,10 +1041,49 @@ function renderBedRow(container, bed, idx) {
   container.appendChild(row);
 }
 
+/** Get players for a housing team — matches against TeamSheet tournament names */
+function getPlayersForTeam(housingTeam) {
+  if (!housingTeam || !Object.keys(teamPlayers).length) {
+    // Fallback to rosterData from Cosmos
+    return rosterData.map(p => ({ name: p.fullName || '', position: p.primaryPosition || '' }));
+  }
+  const ht = housingTeam.toLowerCase();
+
+  // Try exact match first
+  for (const [tournName, players] of Object.entries(teamPlayers)) {
+    if (tournName.toLowerCase() === ht) return players;
+  }
+  // Try partial match (tournament name contains housing team or vice versa)
+  for (const [tournName, players] of Object.entries(teamPlayers)) {
+    const tn = tournName.toLowerCase();
+    if (tn.includes(ht) || ht.includes(tn)) return players;
+    // Match on key words
+    const htWords = ht.split(/[\s-]+/).filter(w => w.length > 3);
+    const tnWords = tn.split(/[\s-]+/).filter(w => w.length > 3);
+    if (htWords.some(w => tn.includes(w)) || tnWords.some(w => ht.includes(w))) return players;
+  }
+  // No match — show all players across all teams
+  const all = [];
+  Object.entries(teamPlayers).forEach(([team, players]) => {
+    players.forEach(p => { if (!all.find(a => a.name === p.name)) all.push(p); });
+  });
+  return all.length ? all : rosterData.map(p => ({ name: p.fullName || '', position: p.primaryPosition || '' }));
+}
+
 function addBedRow() {
   const container = document.getElementById('house-beds');
   const idx = container.children.length;
+  editingPropertyTeam = document.getElementById('house-team').value;
   renderBedRow(container, { room: '', type: 'Queen', assigned: '' }, idx);
+}
+
+function onTeamChange() {
+  editingPropertyTeam = document.getElementById('house-team').value;
+  // Refresh all bed dropdowns with new team's players
+  const container = document.getElementById('house-beds');
+  const currentBeds = collectBeds();
+  container.innerHTML = '';
+  currentBeds.forEach((b, i) => renderBedRow(container, b, i));
 }
 
 function collectBeds() {
