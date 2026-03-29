@@ -233,7 +233,8 @@
         <div class="tab" onclick="switchTab('schedule')">Schedule <span class="tab-badge" id="badge-schedule">0</span></div>
         <div class="tab" onclick="switchTab('housing')">Housing <span class="tab-badge" id="badge-housing">0</span></div>
         <div class="tab" onclick="switchTab('roster')">Roster <span class="tab-badge" id="badge-roster">0</span></div>
-        <div class="tab" onclick="switchTab('logistics')">Logistics</div>
+        <div class="tab staff-only" onclick="switchTab('logistics')">Logistics</div>
+        <div class="tab" id="tab-profile" style="display:none" onclick="switchTab('profile')">My Profile</div>
         <div class="tab" id="tab-users" style="display:none" onclick="switchTab('users')">Users <span class="tab-badge" id="badge-users">0</span></div>
       </div>
 
@@ -302,6 +303,32 @@
           </div>
           <div id="roster-count" style="font-size:11px;color:var(--text-dim);margin-bottom:16px"></div>
           <div id="roster-content"></div>
+        </div>
+
+        <!-- ═══ MY PROFILE (players only) ═══ -->
+        <div class="panel" id="panel-profile" style="max-width:600px">
+          <div class="section-head">
+            <div class="section-title">My Profile</div>
+            <button class="save-btn" onclick="saveProfile()" style="padding:6px 18px;font-size:10px">Save Changes</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px">
+            <div id="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);border:3px solid var(--gold);overflow:hidden;flex-shrink:0"></div>
+            <div>
+              <div id="profile-name" style="font-family:Cinzel,serif;font-size:16px;color:var(--cream);font-weight:600"></div>
+              <div id="profile-team" style="font-size:11px;color:var(--gold);margin-top:2px"></div>
+              <div id="profile-position" style="font-size:11px;color:var(--text-dim);margin-top:2px"></div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-field"><label>Phone</label><input type="tel" id="prof-phone" placeholder="+1 555-123-4567"></div>
+            <div class="form-field"><label>Emergency Contact</label><input type="text" id="prof-emergency" placeholder="Name — Phone"></div>
+            <div class="form-field"><label>Dietary Restrictions</label><input type="text" id="prof-dietary" placeholder="None, vegetarian, etc."></div>
+            <div class="form-field"><label>Shirt Size</label>
+              <select id="prof-shirt"><option value="">—</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+            </div>
+            <div class="form-field full"><label>Highlight Reel Link</label><input type="url" id="prof-highlight" placeholder="https://youtube.com/..."></div>
+            <div class="form-field full"><label>Notes / Special Requests</label><textarea id="prof-notes" rows="2" placeholder="Anything we should know..."></textarea></div>
+          </div>
         </div>
 
         <!-- ═══ LOGISTICS ═══ -->
@@ -589,6 +616,7 @@ async function onSignedIn() {
 function applyRoleGating() {
   const isAdmin = currentRole === 'admin';
   const isStaff = currentRole === 'staff' || isAdmin;
+  const isPlayer = currentRole === 'player' || currentRole === 'viewer';
   // Show/hide admin controls
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
   document.querySelectorAll('.staff-only').forEach(el => el.style.display = isStaff ? '' : 'none');
@@ -598,6 +626,11 @@ function applyRoleGating() {
   // Users tab (admin only)
   const usersTab = document.getElementById('tab-users');
   if (usersTab) usersTab.style.display = isAdmin ? '' : 'none';
+  // Profile tab (players only)
+  const profileTab = document.getElementById('tab-profile');
+  if (profileTab) profileTab.style.display = isPlayer ? '' : 'none';
+  // Auto-open profile for players
+  if (isPlayer) { loadProfile(); }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -985,6 +1018,7 @@ function renderHousing() {
       const bedCount = beds.length;
       const assignedCount = beds.filter(b => b.assigned).length;
       const costDisplay = h.costPerNight || h.cost || '—';
+      const isStaffView = currentRole === 'admin' || currentRole === 'staff';
 
       let bedHtml = '';
       if (beds.length) {
@@ -1012,8 +1046,8 @@ function renderHousing() {
         <div class="card-row"><span class="card-label">Check-out</span><span class="card-val">${fmtDate(h.checkout)}</span></div>
         <div class="card-row"><span class="card-label">Rooms / Bath</span><span class="card-val">${h.rooms || '—'} BR / ${h.bathrooms || '—'} BA</span></div>
         <div class="card-row"><span class="card-label">Beds</span><span class="card-val">${bedCount} (${assignedCount} assigned)</span></div>
-        <div class="card-row"><span class="card-label">Nights</span><span class="card-val">${nights}</span></div>
-        <div class="card-row"><span class="card-label">Cost</span><span class="card-val">${esc(costDisplay)}/night</span></div>
+        ${isStaffView ? `<div class="card-row"><span class="card-label">Nights</span><span class="card-val">${nights}</span></div>
+        <div class="card-row"><span class="card-label">Cost</span><span class="card-val">${esc(costDisplay)}/night</span></div>` : ''}
         ${vrboHtml}
         ${directionsHtml}
         ${bedHtml}
@@ -1271,6 +1305,21 @@ function renderRoster() {
     return;
   }
 
+  const isPlayer = currentRole === 'player' || currentRole === 'viewer';
+  
+  // For players, auto-select their team
+  if (isPlayer && playerTeamName && teamNames.includes(playerTeamName)) {
+    sel.value = playerTeamName;
+    sel.style.display = 'none'; // hide dropdown — they only see their team
+  } else if (isPlayer) {
+    // Try to determine team
+    const pTeam = getPlayerTeam();
+    if (pTeam && teamNames.includes(pTeam)) {
+      sel.value = pTeam;
+      sel.style.display = 'none';
+    }
+  }
+
   const filter = sel.value;
   const teamsToShow = filter === 'all' ? teamNames : [filter];
   let shownCount = 0;
@@ -1475,13 +1524,15 @@ function saveChecklistItem() {
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════
 function switchTab(name) {
+  const tabs = ['overview', 'schedule', 'housing', 'roster', 'logistics', 'profile', 'users'];
   document.querySelectorAll('.tab').forEach((t, i) => {
-    const tabs = ['overview', 'schedule', 'housing', 'roster', 'logistics', 'users'];
     t.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
+  const panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
   if (name === 'users' && currentRole === 'admin') loadUsers();
+  if (name === 'profile') loadProfile();
 }
 
 function closeModal(name) {
@@ -1507,6 +1558,93 @@ function toast(msg, type) {
   el.textContent = msg;
   wrap.appendChild(el);
   setTimeout(() => el.remove(), 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MY PROFILE (player self-service)
+// ═══════════════════════════════════════════════════════════════
+let playerProfile = null;
+let playerTeamName = '';
+
+function getPlayerTeam() {
+  // Match current user's email/name against rosterData to find their team
+  const email = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
+  const name = currentUser ? (currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || '').toLowerCase().trim() : '';
+
+  // Check teamPlayers first (SharePoint live data)
+  for (const [team, players] of Object.entries(teamPlayers)) {
+    for (const p of players) {
+      if ((p.email || '').toLowerCase() === email || (p.name || '').toLowerCase() === name) {
+        return team;
+      }
+    }
+  }
+  // Check Cosmos rosterData
+  for (const p of rosterData) {
+    if ((p.email || '').toLowerCase() === email || (p.fullName || '').toLowerCase() === name) {
+      return p.team || '';
+    }
+  }
+  return '';
+}
+
+async function loadProfile() {
+  const email = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
+  const displayName = currentUser ? (currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || '') : '';
+
+  // Set header info
+  const initials = displayName.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  document.getElementById('profile-avatar').textContent = initials;
+  document.getElementById('profile-name').textContent = displayName;
+
+  playerTeamName = getPlayerTeam();
+  document.getElementById('profile-team').textContent = playerTeamName || 'Unassigned';
+
+  // Find position from roster data
+  let position = '';
+  for (const [team, players] of Object.entries(teamPlayers)) {
+    const match = players.find(p => (p.email || '').toLowerCase() === email || (p.name || '').toLowerCase() === displayName.toLowerCase());
+    if (match) { position = match.position || ''; break; }
+  }
+  document.getElementById('profile-position').textContent = position || '—';
+
+  // Load saved profile from Cosmos users record
+  try {
+    const user = await api(`users?email=${encodeURIComponent(email)}`);
+    playerProfile = user;
+    document.getElementById('prof-phone').value = user.phone || '';
+    document.getElementById('prof-emergency').value = user.emergencyContact || '';
+    document.getElementById('prof-dietary').value = user.dietary || '';
+    document.getElementById('prof-shirt').value = user.shirtSize || '';
+    document.getElementById('prof-highlight').value = user.highlightReel || '';
+    document.getElementById('prof-notes').value = user.profileNotes || '';
+  } catch(e) { playerProfile = null; }
+}
+
+async function saveProfile() {
+  const email = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
+  if (!email) { toast('No email found', 'error'); return; }
+
+  const updates = {
+    phone: document.getElementById('prof-phone').value,
+    emergencyContact: document.getElementById('prof-emergency').value,
+    dietary: document.getElementById('prof-dietary').value,
+    shirtSize: document.getElementById('prof-shirt').value,
+    highlightReel: document.getElementById('prof-highlight').value,
+    profileNotes: document.getElementById('prof-notes').value,
+    team: playerTeamName,
+  };
+
+  try {
+    if (playerProfile && playerProfile.id) {
+      const merged = { ...playerProfile, ...updates };
+      await api('users', 'PUT', merged);
+    } else {
+      const displayName = currentUser ? (currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || '') : '';
+      await api('users', 'POST', { email, displayName, role: 'player', tournamentId: CONFIG.tournamentId, ...updates });
+    }
+    toast('Profile saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════
