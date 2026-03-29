@@ -88,6 +88,12 @@
     .player-card .pc-name{font-family:Cinzel,serif;font-size:11px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .player-card .pc-pos{font-size:10px;color:var(--text-faint)}
     .player-card .pc-house{font-size:9px;color:var(--gold);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .prof-badge{font-size:8px;padding:2px 8px;background:rgba(218,183,81,0.1);border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase}
+    .prof-section{margin-bottom:16px}
+    .prof-sec-title{font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--gold-border)}
+    .prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .prof-label{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px}
+    .prof-val{font-size:12px;color:var(--cream);margin-top:2px}
     .ops-table tr:hover td{background:var(--cream-dim)}
 
     /* ── CARDS ── */
@@ -309,32 +315,71 @@
         </div>
 
         <!-- ═══ MY PROFILE (players only) ═══ -->
-        <div class="panel" id="panel-profile" style="max-width:600px">
+        <div class="panel" id="panel-profile" style="max-width:640px">
           <div class="section-head">
             <div class="section-title">My Profile</div>
             <button class="save-btn" onclick="saveProfile()" style="padding:6px 18px;font-size:10px">Save Changes</button>
           </div>
-          <!-- Player Card Header -->
-          <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:20px;margin-bottom:24px">
-            <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-              <div id="profile-avatar" style="width:72px;height:72px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--blue-dark);border:3px solid var(--gold);overflow:hidden;flex-shrink:0"></div>
+          <!-- Player Card -->
+          <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);margin-bottom:24px">
+            <!-- Header -->
+            <div style="padding:16px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--gold-border)">
+              <div id="profile-avatar" style="width:60px;height:60px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:22px;font-weight:700;color:var(--blue-dark);border:2px solid var(--gold);flex-shrink:0"></div>
               <div>
-                <div id="profile-name" style="font-family:Cinzel,serif;font-size:18px;color:var(--cream);font-weight:600"></div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
-                  <span id="profile-team" style="font-size:8px;padding:3px 10px;background:rgba(218,183,81,0.1);border:1px solid var(--gold-border);color:var(--gold);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase"></span>
-                  <span id="profile-position" style="font-size:8px;padding:3px 10px;background:rgba(218,183,81,0.05);border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;letter-spacing:1px;text-transform:uppercase"></span>
+                <div id="profile-name" style="font-family:Cinzel,serif;font-size:17px;color:var(--cream);font-weight:600"></div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">
+                  <span id="profile-badge-gender" class="prof-badge"></span>
+                  <span id="profile-badge-location" class="prof-badge"></span>
+                  <span id="profile-badge-travel" class="prof-badge"></span>
+                  <span id="profile-badge-team" class="prof-badge" style="color:var(--gold)"></span>
                 </div>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px">
-              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Housing</span><div id="profile-housing" style="color:var(--cream);margin-top:3px">—</div></div>
-              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Check-In</span><div id="profile-checkin" style="color:var(--cream);margin-top:3px">—</div></div>
-              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Address</span><div id="profile-address" style="color:var(--cream);margin-top:3px">—</div></div>
-              <div><span style="color:var(--text-faint);font-size:9px;text-transform:uppercase;letter-spacing:1px">Directions</span><div id="profile-directions" style="margin-top:3px">—</div></div>
+            <!-- Player Info -->
+            <div style="padding:16px 20px" id="profile-card-body">
+              <div class="prof-section">
+                <div class="prof-sec-title">Player Info</div>
+                <div class="prof-grid">
+                  <div><span class="prof-label">Full Name</span><div class="prof-val" id="pv-name"></div></div>
+                  <div><span class="prof-label">Date of Birth</span><div class="prof-val" id="pv-dob"></div></div>
+                  <div><span class="prof-label">Gender</span><div class="prof-val" id="pv-gender"></div></div>
+                  <div><span class="prof-label">Can Travel</span><div class="prof-val" id="pv-travel"></div></div>
+                  <div><span class="prof-label">Current Location</span><div class="prof-val" id="pv-location"></div></div>
+                  <div><span class="prof-label">Country</span><div class="prof-val" id="pv-country"></div></div>
+                </div>
+              </div>
+              <div class="prof-section">
+                <div class="prof-sec-title">Passport & Travel</div>
+                <div class="prof-grid">
+                  <div><span class="prof-label">Passport Country</span><div class="prof-val" id="pv-passport"></div></div>
+                  <div><span class="prof-label">Passport Expiry</span><div class="prof-val" id="pv-passexp"></div></div>
+                  <div><span class="prof-label">Visa Status</span><div class="prof-val" id="pv-visa"></div></div>
+                </div>
+              </div>
+              <div class="prof-section">
+                <div class="prof-sec-title">Playing History</div>
+                <div class="prof-grid">
+                  <div><span class="prof-label">Primary Position</span><div class="prof-val" id="pv-pos1"></div></div>
+                  <div><span class="prof-label">Secondary Position</span><div class="prof-val" id="pv-pos2"></div></div>
+                  <div><span class="prof-label">Height</span><div class="prof-val" id="pv-height"></div></div>
+                  <div><span class="prof-label">Dominant Foot</span><div class="prof-val" id="pv-foot"></div></div>
+                  <div><span class="prof-label">Current Team</span><div class="prof-val" id="pv-team"></div></div>
+                </div>
+              </div>
+              <div class="prof-section">
+                <div class="prof-sec-title">Housing Assignment</div>
+                <div class="prof-grid">
+                  <div><span class="prof-label">Property</span><div class="prof-val" id="pv-house"></div></div>
+                  <div><span class="prof-label">Check-In</span><div class="prof-val" id="pv-checkin"></div></div>
+                  <div style="grid-column:1/-1"><span class="prof-label">Address</span><div class="prof-val" id="pv-address"></div></div>
+                  <div><span class="prof-label">Directions</span><div class="prof-val" id="pv-directions"></div></div>
+                  <div><span class="prof-label">VRBO</span><div class="prof-val" id="pv-vrbo"></div></div>
+                </div>
+              </div>
             </div>
           </div>
-          <!-- Editable Fields -->
-          <div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--gold-border)">Personal Info</div>
+          <!-- Tournament-Specific Editable Fields -->
+          <div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--gold-border)">Tournament Info — Please Complete</div>
           <div class="form-grid">
             <div class="form-field"><label>Phone</label><input type="tel" id="prof-phone" placeholder="+1 555-123-4567"></div>
             <div class="form-field"><label>Emergency Contact</label><input type="text" id="prof-emergency" placeholder="Name — Phone"></div>
@@ -342,8 +387,9 @@
             <div class="form-field"><label>Shirt Size</label>
               <select id="prof-shirt"><option value="">—</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
             </div>
+            <div class="form-field full"><label>Medical Info / Things We Should Know</label><textarea id="prof-medical" rows="2" placeholder="Allergies, medications, conditions..."></textarea></div>
             <div class="form-field full"><label>Highlight Reel Link</label><input type="url" id="prof-highlight" placeholder="https://youtube.com/..."></div>
-            <div class="form-field full"><label>Notes / Special Requests</label><textarea id="prof-notes" rows="2" placeholder="Anything we should know..."></textarea></div>
+            <div class="form-field full"><label>Notes / Special Requests</label><textarea id="prof-notes" rows="2" placeholder="Anything else..."></textarea></div>
           </div>
         </div>
 
@@ -778,19 +824,35 @@ async function loadTeamPlayersFromSharePoint() {
   const tsList = lists.value.find(l => l.displayName === 'TeamSheets');
   if (!rosterList || !tsList) { toast('SharePoint lists not found', 'error'); return; }
 
-  // Load all roster players (id → name mapping)
-  const rosterFields = 'Title,Postion,SecondaryPosition,Email';
+  // Load all roster players (id → full detail)
+  const rosterFields = 'Title,LastName,Postion,SecondaryPosition,Email,Phone,Gender,BirthDate,CurrentLocation,Country,CurrentTeam,PastExperience,CanTravel,PassportCountry,PassportExpiry,VisaStatus,Height,DominantFoot,IDCampLocation';
   let rosterUrl = `https://graph.microsoft.com/v1.0/sites/${sId}/lists/${rosterList.id}/items?$expand=fields($select=${rosterFields})&$top=999`;
-  const playerMap = {}; // spItemId → {name, position, email}
+  const playerMap = {};
   while (rosterUrl) {
     const res = await (await fetch(rosterUrl, { headers: h })).json();
     (res.value || []).forEach(item => {
+      const f = item.fields;
       playerMap[item.id] = {
         id: item.id,
-        name: item.fields.Title || '',
-        position: item.fields.Postion || '',
-        secondaryPosition: item.fields.SecondaryPosition || '',
-        email: item.fields.Email || '',
+        name: f.Title || '',
+        lastName: f.LastName || '',
+        position: f.Postion || '',
+        secondaryPosition: f.SecondaryPosition || '',
+        email: f.Email || '',
+        phone: f.Phone || '',
+        gender: f.Gender || '',
+        birthDate: f.BirthDate || '',
+        currentLocation: f.CurrentLocation || '',
+        country: f.Country || '',
+        currentTeam: f.CurrentTeam || '',
+        pastExperience: f.PastExperience || '',
+        canTravel: f.CanTravel || '',
+        passportCountry: f.PassportCountry || '',
+        passportExpiry: f.PassportExpiry || '',
+        visaStatus: f.VisaStatus || '',
+        height: f.Height || '',
+        dominantFoot: f.DominantFoot || '',
+        campSite: f.IDCampLocation || '',
       };
     });
     rosterUrl = res['@odata.nextLink'] || null;
@@ -845,12 +907,17 @@ async function loadTeamPlayersFromSharePoint() {
       for (const p of players) {
         await api('players', 'POST', {
           tournamentId: CONFIG.tournamentId,
-          fullName: p.name,
-          primaryPosition: p.position,
-          secondaryPosition: p.secondaryPosition || '',
-          email: p.email || '',
-          team: team,
-          spItemId: p.id,
+          fullName: p.name, lastName: p.lastName || '',
+          primaryPosition: p.position, secondaryPosition: p.secondaryPosition || '',
+          email: p.email || '', phone: p.phone || '',
+          gender: p.gender || '', birthDate: p.birthDate || '',
+          currentLocation: p.currentLocation || '', country: p.country || '',
+          currentTeam: p.currentTeam || '', pastExperience: p.pastExperience || '',
+          canTravel: p.canTravel || '', passportCountry: p.passportCountry || '',
+          passportExpiry: p.passportExpiry || '', visaStatus: p.visaStatus || '',
+          height: p.height || '', dominantFoot: p.dominantFoot || '',
+          campSite: p.campSite || '',
+          team: team, spItemId: p.id,
         });
       }
     }
@@ -1614,53 +1681,88 @@ function getPlayerTeam() {
 async function loadProfile() {
   const email = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
   const displayName = currentUser ? (currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || '') : '';
+  const nameLower = displayName.toLowerCase().trim();
 
-  // Set header info
   const initials = displayName.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('profile-avatar').textContent = initials;
   document.getElementById('profile-name').textContent = displayName;
 
-  playerTeamName = getPlayerTeam();
-  document.getElementById('profile-team').textContent = playerTeamName || 'Unassigned';
-
-  // Find position from roster data
-  let position = '';
+  // Find full player record — first from teamPlayers (SharePoint), then rosterData (Cosmos)
+  let p = null;
   for (const [team, players] of Object.entries(teamPlayers)) {
-    const match = players.find(p => (p.email || '').toLowerCase() === email || (p.name || '').toLowerCase() === displayName.toLowerCase());
-    if (match) { position = match.position || ''; break; }
+    p = players.find(x => (x.email || '').toLowerCase() === email || (x.name || '').toLowerCase() === nameLower);
+    if (p) { p._team = team; break; }
   }
-  if (!position) {
-    const rMatch = rosterData.find(p => (p.email || '').toLowerCase() === email || (p.fullName || '').toLowerCase() === displayName.toLowerCase());
-    if (rMatch) position = rMatch.primaryPosition || '';
+  if (!p) {
+    const rMatch = rosterData.find(x => (x.email || '').toLowerCase() === email || (x.fullName || '').toLowerCase() === nameLower);
+    if (rMatch) p = { name: rMatch.fullName, position: rMatch.primaryPosition, secondaryPosition: rMatch.secondaryPosition,
+      email: rMatch.email, phone: rMatch.phone, gender: rMatch.gender, birthDate: rMatch.birthDate,
+      currentLocation: rMatch.currentLocation, country: rMatch.country, currentTeam: rMatch.currentTeam,
+      pastExperience: rMatch.pastExperience, canTravel: rMatch.canTravel, passportCountry: rMatch.passportCountry,
+      passportExpiry: rMatch.passportExpiry, visaStatus: rMatch.visaStatus, height: rMatch.height,
+      dominantFoot: rMatch.dominantFoot, campSite: rMatch.campSite, _team: rMatch.team || '' };
   }
-  document.getElementById('profile-position').textContent = position || '—';
 
-  // Find housing assignment
+  playerTeamName = p ? p._team || '' : getPlayerTeam();
+
+  // Badges
+  document.getElementById('profile-badge-gender').textContent = p && p.gender ? p.gender : '';
+  document.getElementById('profile-badge-location').textContent = p && p.currentLocation ? p.currentLocation + (p.country ? ', ' + p.country : '') : '';
+  document.getElementById('profile-badge-travel').textContent = p && p.canTravel ? 'Travel: ' + p.canTravel : '';
+  document.getElementById('profile-badge-team').textContent = playerTeamName || '';
+
+  // Player Info
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || '—'; };
+  setVal('pv-name', displayName);
+  setVal('pv-dob', p && p.birthDate ? p.birthDate : '');
+  setVal('pv-gender', p ? p.gender : '');
+  setVal('pv-travel', p ? p.canTravel : '');
+  setVal('pv-location', p ? (p.currentLocation || '') + (p.country ? ', ' + p.country : '') : '');
+  setVal('pv-country', p ? p.country : '');
+
+  // Passport
+  setVal('pv-passport', p ? p.passportCountry : '');
+  setVal('pv-passexp', p ? p.passportExpiry : '');
+  setVal('pv-visa', p ? p.visaStatus : '');
+
+  // Playing History
+  setVal('pv-pos1', p ? p.position : '');
+  setVal('pv-pos2', p ? p.secondaryPosition : '');
+  setVal('pv-height', p ? p.height : '');
+  setVal('pv-foot', p ? p.dominantFoot : '');
+  setVal('pv-team', p ? p.currentTeam : '');
+
+  // Housing
   let myHouse = null;
-  const nameLower = displayName.toLowerCase().trim();
   for (const h of housingData) {
     if (h.beds && h.beds.some(b => (b.assigned || '').toLowerCase().trim() === nameLower)) {
       myHouse = h; break;
     }
   }
-  if (myHouse) {
-    document.getElementById('profile-housing').textContent = myHouse.name;
-    document.getElementById('profile-checkin').textContent = myHouse.checkin ? new Date(myHouse.checkin + 'T00:00:00').toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
-    document.getElementById('profile-address').innerHTML = myHouse.address ? `<a href="https://www.google.com/maps/search/${encodeURIComponent(myHouse.address)}" target="_blank" style="color:var(--cream);text-decoration:none;border-bottom:1px dotted var(--text-faint)">${myHouse.address}</a>` : '—';
-    document.getElementById('profile-directions').innerHTML = myHouse.address ? `<a href="https://www.google.com/maps/dir/101+Soccer+Park+Dr+Cary+NC+27511/${encodeURIComponent(myHouse.address)}" target="_blank" style="color:var(--gold);text-decoration:none;font-size:11px">🧭 From WakeMed ↗</a>` : '—';
-  }
+  setVal('pv-house', myHouse ? myHouse.name : '');
+  setVal('pv-checkin', myHouse && myHouse.checkin ? fmtDate(myHouse.checkin) : '');
+  const addrEl = document.getElementById('pv-address');
+  if (addrEl) addrEl.innerHTML = myHouse && myHouse.address ? `<a href="https://www.google.com/maps/search/${encodeURIComponent(myHouse.address)}" target="_blank" style="color:var(--cream);text-decoration:none;border-bottom:1px dotted var(--text-faint)">${myHouse.address}</a>` : '—';
+  const dirEl = document.getElementById('pv-directions');
+  if (dirEl) dirEl.innerHTML = myHouse && myHouse.address ? `<a href="https://www.google.com/maps/dir/101+Soccer+Park+Dr+Cary+NC+27511/${encodeURIComponent(myHouse.address)}" target="_blank" style="color:var(--gold);text-decoration:none">🧭 From WakeMed ↗</a>` : '—';
+  const vrboEl = document.getElementById('pv-vrbo');
+  if (vrboEl) vrboEl.innerHTML = myHouse && myHouse.vrboLink ? `<a href="${myHouse.vrboLink}" target="_blank" style="color:var(--gold);text-decoration:none">View Property ↗</a>` : '—';
 
-  // Load saved profile from Cosmos users record
+  // Load saved tournament-specific info from Cosmos user record
   try {
     const user = await api(`users?email=${encodeURIComponent(email)}`);
     playerProfile = user;
-    document.getElementById('prof-phone').value = user.phone || '';
+    document.getElementById('prof-phone').value = user.phone || (p ? p.phone : '') || '';
     document.getElementById('prof-emergency').value = user.emergencyContact || '';
     document.getElementById('prof-dietary').value = user.dietary || '';
     document.getElementById('prof-shirt').value = user.shirtSize || '';
+    document.getElementById('prof-medical').value = user.medical || '';
     document.getElementById('prof-highlight').value = user.highlightReel || '';
     document.getElementById('prof-notes').value = user.profileNotes || '';
-  } catch(e) { playerProfile = null; }
+  } catch(e) {
+    playerProfile = null;
+    if (p && p.phone) document.getElementById('prof-phone').value = p.phone;
+  }
 }
 
 async function saveProfile() {
@@ -1672,6 +1774,7 @@ async function saveProfile() {
     emergencyContact: document.getElementById('prof-emergency').value,
     dietary: document.getElementById('prof-dietary').value,
     shirtSize: document.getElementById('prof-shirt').value,
+    medical: document.getElementById('prof-medical').value,
     highlightReel: document.getElementById('prof-highlight').value,
     profileNotes: document.getElementById('prof-notes').value,
     team: playerTeamName,
