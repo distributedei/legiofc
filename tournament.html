@@ -783,32 +783,54 @@ async function checkAuth() {
 }
 
 async function onSignedIn() {
+  const displayName = currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || currentUser.username || 'User';
+  const userEmail = ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase();
+  const isOrgUser = authMode === 'org';
+
+  // For external users — check if they're on the roster before granting access
+  if (!isOrgUser) {
+    try {
+      const roster = await api(`players?tournamentId=${CONFIG.tournamentId}`);
+      const nameLower = displayName.toLowerCase().trim();
+      const found = roster.find(p => {
+        const pEmail = (p.email || '').toLowerCase();
+        const pName = (p.fullName || '').toLowerCase().trim();
+        return (pEmail && pEmail === userEmail) || (nameLower && pName === nameLower);
+      });
+
+      if (!found) {
+        // Not on roster — show rejection screen
+        document.getElementById('gate-view').style.display = 'none';
+        document.getElementById('app-view').style.display = 'none';
+        showNotRegistered(displayName, userEmail);
+        return;
+      }
+    } catch(e) {
+      console.warn('Roster check failed:', e.message);
+      // If API fails, let them through (graceful degradation)
+    }
+  }
+
   document.getElementById('gate-view').style.display = 'none';
   document.getElementById('app-view').style.display = '';
-  const displayName = currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || currentUser.username || 'User';
-  const userEmail = (currentUser.idTokenClaims && currentUser.idTokenClaims.email) || currentUser.username || '';
   document.getElementById('nav-user').textContent = displayName;
   document.getElementById('auth-btn').style.display = '';
 
   // ── Role lookup / registration ──
-  // Org tenant users (legiofc.com) auto-get staff/admin
-  const isOrgUser = authMode === 'org';
-  const defaultRole = isOrgUser ? 'admin' : 'viewer';
+  const defaultRole = isOrgUser ? 'admin' : 'player';
 
   try {
-    const existing = await api(`users?email=${encodeURIComponent(userEmail.toLowerCase())}`);
+    const existing = await api(`users?email=${encodeURIComponent(userEmail)}`);
     currentRole = existing.role || defaultRole;
-    // Upgrade org users if they were previously registered as viewer
     if (isOrgUser && (existing.role === 'viewer' || existing.role === 'player')) {
       existing.role = 'admin';
       await api('users', 'PUT', existing);
       currentRole = 'admin';
     }
   } catch (e) {
-    // User not found — register
     try {
       const newUser = await api('users', 'POST', {
-        email: userEmail.toLowerCase(),
+        email: userEmail,
         displayName: displayName,
         role: defaultRole,
         tournamentId: CONFIG.tournamentId,
@@ -819,6 +841,30 @@ async function onSignedIn() {
   }
   applyRoleGating();
   loadAllData();
+}
+
+function showNotRegistered(name, email) {
+  const content = document.querySelector('.content') || document.body;
+  const notRegDiv = document.createElement('div');
+  notRegDiv.id = 'not-registered-view';
+  notRegDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;height:calc(100vh - 60px)';
+  notRegDiv.innerHTML = `
+    <div style="text-align:center;max-width:500px;padding:40px">
+      <div style="width:80px;height:80px;margin:0 auto 20px;border-radius:50%;background:rgba(218,183,81,0.1);border:2px solid var(--gold-border);display:flex;align-items:center;justify-content:center;font-size:32px">🔒</div>
+      <div style="font-family:Cinzel,serif;font-size:18px;color:var(--cream);font-weight:600;margin-bottom:12px">Not on the Roster</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:8px">
+        Hi <strong style="color:var(--cream)">${esc(name)}</strong>, your email <strong style="color:var(--gold)">${esc(email)}</strong> is not currently on a tournament roster.
+      </div>
+      <div style="font-size:12px;color:var(--text-faint);line-height:1.6;margin-bottom:28px">
+        To access the Tournament Portal, you need to submit a player profile and be added to a team roster by the coaching staff.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
+        <a href="register.html?t=TST" style="display:inline-block;padding:12px 32px;background:var(--gold);color:var(--blue-dark);font-family:Cinzel,serif;font-size:11px;font-weight:700;letter-spacing:2px;text-decoration:none;text-transform:uppercase;transition:all .2s">Submit Player Profile</a>
+        <button onclick="handleSignOut()" style="padding:8px 24px;background:transparent;border:1px solid var(--gold-border);color:var(--text-dim);font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;cursor:pointer;text-transform:uppercase">Sign Out</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('app-view').parentElement.appendChild(notRegDiv);
 }
 
 function applyRoleGating() {
