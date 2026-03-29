@@ -535,13 +535,16 @@
           <div id="checklist-progress" style="margin-bottom:12px"></div>
           <div id="checklist-content"></div>
           <!-- Inline add row -->
-          <div style="display:grid;grid-template-columns:1fr 120px 120px 40px;gap:8px;margin-top:12px;align-items:center" class="admin-only">
-            <input type="text" id="new-check-text" placeholder="New checklist item..." style="padding:8px 10px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:12px">
-            <select id="new-check-cat" style="padding:8px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px">
-              <option>Admin</option><option>Travel</option><option>Housing</option><option>Equipment</option><option>Medical</option><option>Other</option>
-            </select>
-            <input type="date" id="new-check-due" style="padding:8px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:11px">
-            <button onclick="addChecklistInline()" style="padding:8px;background:var(--gold);border:none;color:var(--blue-dark);font-weight:700;cursor:pointer;font-size:14px">+</button>
+          <div class="staff-only" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--gold-border)">
+            <div style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">Add New Item</div>
+            <div style="display:grid;grid-template-columns:1fr 120px 120px 50px;gap:8px;align-items:center">
+              <input type="text" id="new-check-text" placeholder="What needs to be done..." onkeydown="if(event.key==='Enter')addChecklistInline()" style="padding:10px 12px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:12px">
+              <select id="new-check-cat" style="padding:10px 8px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px">
+                <option>Admin</option><option>Travel</option><option>Housing</option><option>Equipment</option><option>Medical</option><option>Other</option>
+              </select>
+              <input type="date" id="new-check-due" style="padding:10px 8px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:11px">
+              <button onclick="addChecklistInline()" class="gate-btn" style="padding:8px;font-size:12px;min-width:0">+</button>
+            </div>
           </div>
         </div>
 
