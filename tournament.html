@@ -760,6 +760,32 @@ async function loadTeamPlayersFromSharePoint() {
   const teamCount = Object.keys(teamPlayers).length;
   const totalPlayers = Object.values(teamPlayers).reduce((s, arr) => s + arr.length, 0);
   console.log('TeamPlayers loaded:', teamPlayers);
+
+  // Cache to Cosmos so external-auth players can read it
+  try {
+    // Delete old Cosmos player records first
+    const existing = await api(`players?tournamentId=${CONFIG.tournamentId}`);
+    for (const p of existing) {
+      try { await api(`players?id=${p.id}&tournamentId=${CONFIG.tournamentId}`, 'DELETE'); } catch(e) {}
+    }
+    // Write fresh team-tagged player records
+    for (const [team, players] of Object.entries(teamPlayers)) {
+      for (const p of players) {
+        await api('players', 'POST', {
+          tournamentId: CONFIG.tournamentId,
+          fullName: p.name,
+          primaryPosition: p.position,
+          secondaryPosition: p.secondaryPosition || '',
+          email: p.email || '',
+          team: team,
+          spItemId: p.id,
+        });
+      }
+    }
+    // Reload rosterData from Cosmos
+    rosterData = await api(`players?tournamentId=${CONFIG.tournamentId}`);
+  } catch(e) { console.warn('Cosmos player cache failed:', e.message); }
+
   toast(`${totalPlayers} players loaded from ${teamCount} team sheets`, 'success');
 }
 
@@ -904,12 +930,18 @@ function renderHousing() {
   }
 
   // For players — only show properties where they're assigned to a bed
-  const userEmail = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || currentUser.username || '').toLowerCase() : '';
+  const userEmail = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
+  const userName = currentUser ? (currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || '').toLowerCase().trim() : '';
   let filtered = housingData;
   if (currentRole === 'player' || currentRole === 'viewer') {
     filtered = housingData.filter(h => {
       if (!h.beds || !h.beds.length) return false;
-      return h.beds.some(b => (b.assigned || '').toLowerCase() === userEmail);
+      return h.beds.some(b => {
+        const a = (b.assigned || '').toLowerCase().trim();
+        if (!a) return false;
+        // Exact match on name or email only
+        return a === userEmail || a === userName;
+      });
     });
     if (!filtered.length) {
       el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏠</div><div class="empty-text">No housing assigned to you yet</div></div>';
@@ -943,7 +975,7 @@ function renderHousing() {
         bedHtml = `<div class="card-occupants" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gold-border)">
           <div style="font-family:Cinzel,serif;font-size:8px;letter-spacing:2px;color:var(--gold);margin-bottom:8px;text-transform:uppercase">Beds (${assignedCount}/${bedCount} assigned)</div>
           ${beds.map((b, i) => {
-            const isMe = userEmail && (b.assigned || '').toLowerCase() === userEmail;
+            const isMe = (b.assigned || '').toLowerCase() === userEmail || (userName && (b.assigned || '').toLowerCase() === userName);
             return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;${isMe ? 'background:rgba(218,183,81,0.08);padding:4px 6px;margin:0 -6px;' : ''}">
               <span style="color:var(--text-dim)">${esc(b.room)} — ${esc(b.type)}</span>
               <span style="color:${b.assigned ? 'var(--cream)' : 'var(--text-faint)'};font-weight:${b.assigned ? '500' : '300'}">${b.assigned ? esc(b.assigned) : '—'}</span>
@@ -1236,19 +1268,41 @@ function renderRoster() {
     return;
   }
 
-  // Fallback — Cosmos rosterData
+  // Fallback — Cosmos rosterData (for external auth users)
   if (!rosterData.length) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">No players loaded</div></div>';
     return;
   }
-  const sorted = [...rosterData].sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
-  el.innerHTML = `<table class="ops-table">
-    <thead><tr><th>Name</th><th>Position</th><th>Email</th></tr></thead>
-    <tbody>${sorted.map(p => `<tr>
-      <td style="font-weight:500">${esc(p.fullName || '')}</td>
-      <td>${esc(p.primaryPosition || '')}</td>
-      <td style="font-size:11px;color:var(--text-dim)">${esc(p.email || '')}</td>
-    </tr>`).join('')}</tbody></table>`;
+
+  // Group by team field from Cosmos
+  const teamGroups = {};
+  rosterData.forEach(p => {
+    const team = p.team || 'Unassigned';
+    if (!teamGroups[team]) teamGroups[team] = [];
+    teamGroups[team].push(p);
+  });
+
+  let html = '';
+  Object.entries(teamGroups).forEach(([team, players]) => {
+    players.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
+    html += `<div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
+    html += `<table class="ops-table">
+      <thead><tr><th>Name</th><th>Position</th><th>Housing</th></tr></thead>
+      <tbody>${players.map(p => {
+        let housingName = '—';
+        for (const h of housingData) {
+          if (h.beds && h.beds.some(b => b.assigned === (p.fullName || ''))) {
+            housingName = h.name; break;
+          }
+        }
+        return `<tr>
+          <td style="font-weight:500">${esc(p.fullName || '')}</td>
+          <td>${esc(p.primaryPosition || '')}</td>
+          <td style="font-size:11px;color:${housingName === '—' ? 'var(--text-faint)' : 'var(--text-dim)'}">${esc(housingName)}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  });
+  el.innerHTML = html;
 }
 
 async function syncRosterFromSharePoint() {
