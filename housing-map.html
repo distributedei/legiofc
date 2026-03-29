@@ -14,64 +14,63 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden}
 <script>
 const WAKEMED = [35.7572, -78.7487];
 
-const properties = {
-  'h-dallas-1': { coords:[35.7570,-78.7584], name:'Cozy 4bd Home - BBQ', addr:'1308 Bloomingdale Dr, Cary', team:'Leon Dallas Coed', beds:5 },
-  'h-dallas-2': { coords:[35.7630,-78.8045], name:'Modern 4BR - Game Room', addr:'1115 Brookgreen Dr, Cary', team:'Leon Dallas Coed', beds:7 },
-  'h-dallas-3': { coords:[35.7572,-78.8221], name:'Renovated 4BR - Cul-de-sac', addr:'116 McDole Cir, Cary', team:'Leon Dallas Coed', beds:5 },
-  'h-dallas-4': { coords:[35.7768,-78.7196], name:'Mulberry on Athens - 5BR', addr:'857 Athens Dr, Raleigh', team:'Leon Dallas Coed', beds:6 },
-  'h-dallas-5': { coords:[35.7815,-78.7164], name:'3BR Artful Design', addr:'2117 Scarlet Maple Dr, Raleigh', team:'Leon Dallas Coed', beds:10 },
-  'h-mama-1':   { coords:[35.7514,-78.6876], name:'Modern Home NCSU', addr:'2909 Silver Maple Pl, Raleigh', team:"Mama Africa Men's", beds:6 },
-  'h-mama-2':   { coords:[35.7522,-78.6892], name:'Mighty Mansion 3,300SF', addr:'1917 Deep Forest Trail, Raleigh', team:"Mama Africa Men's", beds:8 },
-  'h-mama-3':   { coords:[35.7517,-78.6880], name:'The Maple Marvel', addr:'2908 Silver Maple Pl, Raleigh', team:"Mama Africa Men's", beds:7 },
-  'h-mama-4':   { coords:[35.7435,-78.6830], name:'3BR Townhouse (Unit 1)', addr:'2606 Wolf Cub Ct, Raleigh', team:"Mama Africa Men's", beds:5 },
-  'h-mama-5':   { coords:[35.7431,-78.6829], name:'3BR Townhouse (Unit 2)', addr:'2622 Wolf Cub Ct, Raleigh', team:"Mama Africa Men's", beds:5 },
-};
+const properties = [
+  // Leon Dallas Coed — exact from Google Places API
+  { coords:[35.7569679, -78.7583755], name:'Cozy 4bd Home - BBQ', addr:'1308 Bloomingdale Dr, Cary, NC 27511', team:'Leon Dallas Coed', beds:5, color:'#dab751' },
+  { coords:[35.762974, -78.804485], name:'Modern 4BR - Game Room & Firepit', addr:'1115 Brookgreen Dr, Cary, NC 27511', team:'Leon Dallas Coed', beds:7, color:'#dab751' },
+  { coords:[35.757229, -78.822145], name:'Renovated 4BR - Cul-de-sac', addr:'116 McDole Cir, Cary, NC 27511', team:'Leon Dallas Coed', beds:5, color:'#dab751' },
+  { coords:[35.776839, -78.719601], name:'Mulberry on Athens - 5BR', addr:'857 Athens Dr, Raleigh, NC 27606', team:'Leon Dallas Coed', beds:6, color:'#dab751' },
+  { coords:[35.781543, -78.716389], name:'3BR Artful Design & Central', addr:'2117 Scarlet Maple Dr, Raleigh, NC 27606', team:'Leon Dallas Coed', beds:10, color:'#dab751' },
+  // Mama Africa Men's — exact from Google Places API
+  { coords:[35.751403, -78.687598], name:'Modern Home NCSU & Downtown', addr:'2909 Silver Maple Pl, Raleigh, NC 27603', team:"Mama Africa Men's", beds:6, color:'#2d7a3a' },
+  { coords:[35.752201, -78.689225], name:'Mighty Mansion 3,300SF', addr:'1917 Deep Forest Trail, Raleigh, NC 27603', team:"Mama Africa Men's", beds:8, color:'#2d7a3a' },
+  { coords:[35.751689, -78.688031], name:'The Maple Marvel', addr:'2908 Silver Maple Pl, Raleigh, NC 27603', team:"Mama Africa Men's", beds:7, color:'#2d7a3a' },
+  { coords:[35.743482, -78.683042], name:'3BR Townhouse (Unit 1)', addr:'2606 Wolf Cub Ct, Raleigh, NC 27603', team:"Mama Africa Men's", beds:5, color:'#2d7a3a' },
+  { coords:[35.743137, -78.682890], name:'3BR Townhouse (Unit 2)', addr:'2622 Wolf Cub Ct, Raleigh, NC 27603', team:"Mama Africa Men's", beds:5, color:'#2d7a3a' },
+];
 
 const map = L.map('map').setView([35.760, -78.740], 12);
+
 L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
   subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google'
 }).addTo(map);
 
 // WakeMed marker
-const venueIcon = L.divIcon({
-  className:'',
-  html:'<div style="background:#dab751;color:#163d54;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4)">⚽ WakeMed Soccer Park</div>',
-  iconSize:[0,0], iconAnchor:[90,35]
-});
-L.marker(WAKEMED,{icon:venueIcon}).addTo(map).bindPopup('<b>WakeMed Soccer Park</b><br>201 Soccer Park Dr, Cary, NC 27511<br><a href="https://www.google.com/maps/search/WakeMed+Soccer+Park+Cary+NC" target="_blank">Open in Google Maps ↗</a>');
+L.marker(WAKEMED, {
+  icon: L.divIcon({
+    className:'',
+    html:'<div style="background:#dab751;color:#163d54;font-family:Arial,sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4)">⚽ WakeMed Soccer Park</div>',
+    iconSize:[0,0], iconAnchor:[90,35]
+  })
+}).addTo(map).bindPopup('<b>WakeMed Soccer Park</b><br>201 Soccer Park Dr, Cary, NC 27511<br><a href="https://www.google.com/maps/search/WakeMed+Soccer+Park+201+Soccer+Park+Dr+Cary+NC" target="_blank">Open in Google Maps ↗</a>');
 
-const teamColors = {'Leon Dallas Coed':'#dab751',"Mama Africa Men's":'#2d7a3a'};
 const allMarkers = [L.marker(WAKEMED)];
 
-Object.entries(properties).forEach(([id, p]) => {
-  const color = teamColors[p.team] || '#dab751';
+properties.forEach(p => {
   const icon = L.divIcon({
     className:'',
-    html:`<div style="width:30px;height:30px;background:${color};border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer">${p.beds}</div>`,
+    html:'<div style="width:30px;height:30px;background:'+p.color+';border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer">'+p.beds+'</div>',
     iconSize:[30,30], iconAnchor:[15,15]
   });
 
-  const directionsUrl = `https://www.google.com/maps/dir/201+Soccer+Park+Dr+Cary+NC+27511/${encodeURIComponent(p.addr)}`;
-  const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(p.addr)}`;
+  var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(p.addr);
+  var dirUrl = 'https://www.google.com/maps/dir/201+Soccer+Park+Dr+Cary+NC+27511/' + encodeURIComponent(p.addr);
 
-  const marker = L.marker(p.coords, {icon}).addTo(map);
-  marker.bindPopup(`
-    <div style="font-family:Arial,sans-serif;min-width:220px;line-height:1.5">
-      <div style="font-size:13px;font-weight:700;margin-bottom:3px">${p.name}</div>
-      <div style="font-size:11px;color:#666;margin-bottom:6px">${p.addr}</div>
-      <div style="font-size:11px;font-weight:600;color:${color};margin-bottom:4px">${p.team}</div>
-      <div style="font-size:11px;margin-bottom:8px">${p.beds} beds</div>
-      <div style="display:flex;gap:8px">
-        <a href="${mapsUrl}" target="_blank" style="font-size:11px;color:#1a73e8;text-decoration:none">📍 View</a>
-        <a href="${directionsUrl}" target="_blank" style="font-size:11px;color:#1a73e8;text-decoration:none">🧭 Directions from WakeMed</a>
-      </div>
-    </div>`);
+  var marker = L.marker(p.coords, {icon:icon}).addTo(map);
+  marker.bindPopup(
+    '<div style="font-family:Arial,sans-serif;min-width:220px;line-height:1.5">' +
+    '<div style="font-size:13px;font-weight:700;margin-bottom:3px">' + p.name + '</div>' +
+    '<div style="font-size:11px;color:#666;margin-bottom:6px">' + p.addr + '</div>' +
+    '<div style="font-size:11px;font-weight:600;color:' + p.color + ';margin-bottom:4px">' + p.team + '</div>' +
+    '<div style="font-size:11px;margin-bottom:8px">' + p.beds + ' beds</div>' +
+    '<a href="' + mapsUrl + '" target="_blank" style="font-size:11px;color:#1a73e8;text-decoration:none;margin-right:12px">📍 View on Maps</a>' +
+    '<a href="' + dirUrl + '" target="_blank" style="font-size:11px;color:#1a73e8;text-decoration:none">🧭 Directions</a>' +
+    '</div>'
+  );
   allMarkers.push(marker);
 });
 
-// Fit all markers
-const group = L.featureGroup(allMarkers);
-map.fitBounds(group.getBounds().pad(0.08));
+map.fitBounds(L.featureGroup(allMarkers).getBounds().pad(0.08));
 </script>
 </body>
 </html>
