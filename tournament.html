@@ -200,7 +200,7 @@
       <div class="nav-right">
         <span class="nav-user" id="nav-user"></span>
         <span class="role-badge" id="role-badge"></span>
-        <button class="sign-btn" id="auth-btn" onclick="handleAuth()">Sign In</button>
+        <button class="sign-btn" id="auth-btn" onclick="handleSignOut()" style="display:none">Sign Out</button>
       </div>
     </nav>
 
@@ -209,8 +209,12 @@
       <div class="gate">
         <div class="gate-logo"><img src="logo.png" alt="Legio FC"></div>
         <div class="gate-title">Tournament Operations</div>
-        <div class="gate-sub">Staff portal for managing tournament logistics, housing, schedules, and team rosters. Sign in with your Legio FC account to continue.</div>
-        <button class="gate-btn" onclick="handleAuth()">Sign In with Microsoft</button>
+        <div class="gate-sub">Manage tournament logistics, housing, schedules, and rosters.</div>
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:8px">
+          <button class="gate-btn" onclick="handleStaffAuth()" style="min-width:280px">Staff Sign In</button>
+          <button class="gate-btn" onclick="handleExtAuth()" style="min-width:280px;background:transparent;border:2px solid var(--gold);color:var(--gold)">Player / Coach Sign In</button>
+          <div style="font-size:10px;color:var(--text-faint);margin-top:4px">Staff: use your @legiofc.com account · Players: use any email</div>
+        </div>
       </div>
     </div>
 
@@ -395,83 +399,124 @@
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
 const CONFIG = {
-  // ── Auth (Microsoft Entra External ID) ──
-  clientId:  '1a75d820-5676-436b-8510-36033db7ec29',
-  tenantId:  '820c9bb0-be51-4a55-a4e6-f94cb19d3250',
-  tenantName: 'legiofcext',
-  authority: 'https://legiofcext.ciamlogin.com/',
+  // ── Org tenant (staff — legiofc.com accounts) ──
+  org: {
+    clientId:  'b1c58e0f-4e20-40e8-be74-5c231a030a90',
+    tenantId:  '99b5fc0c-be85-4531-a7de-bc8da0002ec2',
+    authority: 'https://login.microsoftonline.com/99b5fc0c-be85-4531-a7de-bc8da0002ec2',
+    scopes:    ['User.Read','Sites.Read.All'],
+  },
+  // ── External tenant (players, coaches, public) ──
+  ext: {
+    clientId:  '1a75d820-5676-436b-8510-36033db7ec29',
+    tenantId:  '820c9bb0-be51-4a55-a4e6-f94cb19d3250',
+    tenantName: 'legiofcext',
+    authority: 'https://legiofcext.ciamlogin.com/',
+    scopes:    ['openid','profile'],
+  },
 
   // ── API ──
   apiBase: 'https://legiofc-api-hshtangwcydsb7ap.eastus-01.azurewebsites.net/api',
-  // apiBase: 'http://localhost:7071/api',  // local dev
 
   // ── Active tournament ──
   tournamentId: 'tst-2026',
 
-  // ── SharePoint (for sync button — requires org tenant auth via roster.html) ──
+  // ── SharePoint ──
   spSiteHost: 'legiofc.sharepoint.com',
   spSitePath: '/sites/BusinessOperations',
 };
 
 // ═══════════════════════════════════════════════════════════════
-// AUTH
+// AUTH — Dual MSAL (org tenant + external tenant)
 // ═══════════════════════════════════════════════════════════════
-const msalConfig = {
-  auth: {
-    clientId: CONFIG.clientId,
-    authority: CONFIG.authority,
-    knownAuthorities: [`${CONFIG.tenantName}.ciamlogin.com`],
-    redirectUri: window.location.href.split('?')[0].split('#')[0],
-  },
-  cache: { cacheLocation: 'sessionStorage' },
-};
-const msalApp = new msal.PublicClientApplication(msalConfig);
-let currentUser = null;
+const redirectUri = window.location.href.split('?')[0].split('#')[0];
 
-let msalReady = false;
-async function handleAuth() {
-  if (!msalReady) await msalApp.initialize();
-  msalReady = true;
-  if (currentUser) {
-    msalApp.logoutRedirect({ postLogoutRedirectUri: window.location.href.split('?')[0].split('#')[0] });
-    return;
-  }
+const msalOrg = new msal.PublicClientApplication({
+  auth: { clientId: CONFIG.org.clientId, authority: CONFIG.org.authority, redirectUri },
+  cache: { cacheLocation: 'sessionStorage' },
+});
+
+const msalExt = new msal.PublicClientApplication({
+  auth: { clientId: CONFIG.ext.clientId, authority: CONFIG.ext.authority,
+    knownAuthorities: [`${CONFIG.ext.tenantName}.ciamlogin.com`], redirectUri },
+  cache: { cacheLocation: 'sessionStorage' },
+});
+
+let currentUser = null;
+let authMode = null; // 'org' or 'ext'
+let activeMsal = null;
+
+async function handleStaffAuth() {
+  await msalOrg.initialize();
+  sessionStorage.setItem('authMode', 'org');
   try {
-    // Try redirect for iPad/Safari compat
-    const accts = msalApp.getAllAccounts();
-    if (accts.length) {
-      currentUser = accts[0];
-      onSignedIn();
-      return;
-    }
-    await msalApp.loginRedirect({ scopes: ['openid','profile'] });
-  } catch (e) {
-    console.error('Auth error:', e);
-    toast('Sign-in failed: ' + e.message, 'error');
+    await msalOrg.loginRedirect({ scopes: CONFIG.org.scopes });
+  } catch (e) { console.error('Org auth error:', e); toast('Staff sign-in failed: ' + e.message, 'error'); }
+}
+
+async function handleExtAuth() {
+  await msalExt.initialize();
+  sessionStorage.setItem('authMode', 'ext');
+  try {
+    await msalExt.loginRedirect({ scopes: CONFIG.ext.scopes });
+  } catch (e) { console.error('Ext auth error:', e); toast('Sign-in failed: ' + e.message, 'error'); }
+}
+
+function handleSignOut() {
+  const mode = authMode;
+  sessionStorage.clear();
+  if (mode === 'org') {
+    msalOrg.logoutRedirect({ postLogoutRedirectUri: redirectUri });
+  } else if (mode === 'ext') {
+    msalExt.logoutRedirect({ postLogoutRedirectUri: redirectUri });
+  } else {
+    window.location.reload();
   }
 }
 
 async function getToken(scopes) {
-  const accts = msalApp.getAllAccounts();
+  if (!activeMsal) throw new Error('Not signed in');
+  const accts = activeMsal.getAllAccounts();
   if (!accts.length) throw new Error('Not signed in');
+  const defaultScopes = authMode === 'org' ? CONFIG.org.scopes : CONFIG.ext.scopes;
   try {
-    const r = await msalApp.acquireTokenSilent({ scopes: scopes || ['openid','profile'], account: accts[0] });
+    const r = await activeMsal.acquireTokenSilent({ scopes: scopes || defaultScopes, account: accts[0] });
     return r.accessToken;
   } catch (e) {
-    const r = await msalApp.acquireTokenRedirect({ scopes: scopes || ['openid','profile'], account: accts[0] });
-    return r.accessToken;
+    await activeMsal.acquireTokenRedirect({ scopes: scopes || defaultScopes, account: accts[0] });
   }
 }
 
 async function checkAuth() {
   try {
-    await msalApp.initialize();
-    msalReady = true;
-    const resp = await msalApp.handleRedirectPromise();
-    if (resp) { currentUser = resp.account; onSignedIn(); return; }
-    const accts = msalApp.getAllAccounts();
-    if (accts.length) { currentUser = accts[0]; onSignedIn(); }
-  } catch (e) { console.error('Redirect error:', e); }
+    const savedMode = sessionStorage.getItem('authMode');
+    await msalOrg.initialize();
+    await msalExt.initialize();
+
+    // Handle redirect from whichever auth was used
+    let resp = null;
+    if (savedMode === 'org') {
+      try { resp = await msalOrg.handleRedirectPromise(); } catch(e) {}
+      if (resp) { authMode = 'org'; activeMsal = msalOrg; currentUser = resp.account; await onSignedIn(); return; }
+    }
+    if (savedMode === 'ext') {
+      try { resp = await msalExt.handleRedirectPromise(); } catch(e) {}
+      if (resp) { authMode = 'ext'; activeMsal = msalExt; currentUser = resp.account; await onSignedIn(); return; }
+    }
+    // No saved mode — try both
+    if (!savedMode) {
+      try { resp = await msalOrg.handleRedirectPromise(); } catch(e) {}
+      if (resp) { authMode = 'org'; activeMsal = msalOrg; currentUser = resp.account; await onSignedIn(); return; }
+      try { resp = await msalExt.handleRedirectPromise(); } catch(e) {}
+      if (resp) { authMode = 'ext'; activeMsal = msalExt; currentUser = resp.account; await onSignedIn(); return; }
+    }
+
+    // Check existing sessions
+    const orgAccts = msalOrg.getAllAccounts();
+    if (orgAccts.length) { authMode = 'org'; activeMsal = msalOrg; currentUser = orgAccts[0]; await onSignedIn(); return; }
+    const extAccts = msalExt.getAllAccounts();
+    if (extAccts.length) { authMode = 'ext'; activeMsal = msalExt; currentUser = extAccts[0]; await onSignedIn(); return; }
+  } catch (e) { console.error('Auth check error:', e); }
 }
 
 async function onSignedIn() {
@@ -480,23 +525,35 @@ async function onSignedIn() {
   const displayName = currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || currentUser.username || 'User';
   const userEmail = (currentUser.idTokenClaims && currentUser.idTokenClaims.email) || currentUser.username || '';
   document.getElementById('nav-user').textContent = displayName;
-  document.getElementById('auth-btn').textContent = 'Sign Out';
+  document.getElementById('auth-btn').style.display = '';
 
   // ── Role lookup / registration ──
+  // Org tenant users (legiofc.com) auto-get staff/admin
+  const isOrgUser = authMode === 'org';
+  const defaultRole = isOrgUser ? 'admin' : 'viewer';
+
   try {
     const existing = await api(`users?email=${encodeURIComponent(userEmail.toLowerCase())}`);
-    currentRole = existing.role || 'viewer';
+    currentRole = existing.role || defaultRole;
+    // Upgrade org users if they were previously registered as viewer
+    if (isOrgUser && (existing.role === 'viewer' || existing.role === 'player')) {
+      existing.role = 'admin';
+      await api('users', 'PUT', existing);
+      currentRole = 'admin';
+    }
   } catch (e) {
-    // User not found — register with default role
+    // User not found — register
     try {
       const newUser = await api('users', 'POST', {
         email: userEmail.toLowerCase(),
         displayName: displayName,
-        role: 'viewer',
+        role: defaultRole,
         tournamentId: CONFIG.tournamentId,
+        authMode: authMode,
       });
-      currentRole = newUser.role || 'viewer';
-    } catch (e2) { console.warn('User registration failed:', e2.message); }
+      currentRole = newUser.role || defaultRole;
+    } catch (e2) { console.warn('User registration failed:', e2.message); currentRole = defaultRole; }
+  }
   }
   applyRoleGating();
   loadAllData();
@@ -843,10 +900,11 @@ function renderRoster() {
 }
 
 async function syncRosterFromSharePoint() {
-  // SharePoint sync requires org tenant (legiofc.com) auth — not available via External ID
-  // For now, use roster.html (staff-only) to manage roster, or seed via API
-  toast('Roster sync requires staff access via roster.html — use the API to add players directly', 'info');
-  return;
+  if (authMode !== 'org') {
+    toast('Roster sync requires Staff Sign In (@legiofc.com)', 'info');
+    return;
+  }
+  toast('Syncing roster from SharePoint...', 'info');
   try {
     const token = await getToken(['Sites.Read.All']);
     const h = { Authorization: 'Bearer ' + token };
