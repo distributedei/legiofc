@@ -78,7 +78,7 @@
     .ops-table{width:100%;border-collapse:collapse;font-size:13px}
     .ops-table th{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;text-align:left;padding:12px 14px;border-bottom:1px solid var(--gold-border);background:var(--cream-dim);position:sticky;top:0;z-index:2}
     .ops-table td{padding:12px 14px;border-bottom:1px solid rgba(218,183,81,0.06);color:var(--text);vertical-align:middle}
-    .player-card{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(22,61,84,0.4);border:1px solid var(--gold-border);min-width:220px;flex:0 0 auto;transition:all .15s}
+    .player-card{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(22,61,84,0.4);border:1px solid var(--gold-border);border-radius:6px;min-width:220px;flex:0 0 auto;transition:all .15s}
     .player-card:hover{background:rgba(218,183,81,0.08);border-color:var(--gold)}
     .player-card .pc-avatar{width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:14px;font-weight:700;color:var(--blue-dark);flex-shrink:0;border:2px solid var(--gold)}
     .player-card .pc-info{min-width:0;flex:1}
@@ -1241,7 +1241,7 @@ function renderRoster() {
     rosterData.forEach(p => {
       const t = p.team || 'Unassigned';
       if (!teams[t]) teams[t] = [];
-      teams[t].push({ name: p.fullName || '', position: p.primaryPosition || '', email: p.email || '' });
+      teams[t].push({ name: p.fullName || '', position: p.primaryPosition || '', secondaryPosition: p.secondaryPosition || '', email: p.email || '' });
     });
   }
 
@@ -1278,10 +1278,12 @@ function renderRoster() {
     // Team header
     html += `<div style="width:100%;font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:16px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
 
-    // Player cards
+    // Player cards in grid
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px">';
     players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     players.forEach(p => {
       const initials = (p.name || '').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      const posDisplay = [p.position, p.secondaryPosition].filter(Boolean).join(' / ') || '—';
 
       // Find housing assignment
       let housingName = '';
@@ -1295,11 +1297,12 @@ function renderRoster() {
         <div class="pc-avatar">${esc(initials)}</div>
         <div class="pc-info">
           <div class="pc-name">${esc(p.name)}</div>
-          <div class="pc-pos">${esc(p.position || '—')}</div>
+          <div class="pc-pos">${esc(posDisplay)}</div>
           ${housingName ? `<div class="pc-house">🏠 ${esc(housingName)}</div>` : ''}
         </div>
       </div>`;
     });
+    html += '</div>';
   });
 
   el.innerHTML = html;
