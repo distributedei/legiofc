@@ -1095,10 +1095,13 @@ function renderOverview() {
   }
 
   // Stats
+  const isStaff = currentRole === 'admin' || currentRole === 'staff';
   const totalPlayers = Object.values(teamPlayers).reduce((s, arr) => s + arr.length, 0) || rosterData.length;
   const totalBeds = housingData.reduce((s, h) => s + (h.beds ? h.beds.length : 0), 0);
   const assignedBeds = housingData.reduce((s, h) => s + (h.beds ? h.beds.filter(b => b.assigned).length : 0), 0);
   const bedPct = totalBeds ? Math.round(assignedBeds / totalBeds * 100) : 0;
+  const filteredGames = filterScheduleForUser(scheduleData);
+  const t2 = tournament || {};
 
   const statBox = (num, label, sub) => `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:16px;text-align:center">
     <div style="font-family:Cinzel,serif;font-size:24px;font-weight:700;color:var(--gold)">${num}</div>
@@ -1106,15 +1109,32 @@ function renderOverview() {
     ${sub ? `<div style="font-size:10px;color:var(--text-faint);margin-top:4px">${sub}</div>` : ''}
   </div>`;
 
-  document.getElementById('overview-stats').innerHTML =
-    statBox(totalPlayers, 'Players', Object.keys(teamPlayers).length + ' teams') +
-    statBox(scheduleData.length, 'Games', 'scheduled') +
-    statBox(housingData.length, 'Properties', totalBeds + ' beds total') +
-    statBox(bedPct + '%', 'Beds Assigned', assignedBeds + '/' + totalBeds);
+  if (isStaff) {
+    document.getElementById('overview-stats').innerHTML =
+      statBox(totalPlayers, 'Players', Object.keys(teamPlayers).length + ' teams') +
+      statBox(scheduleData.length, 'Games', 'scheduled') +
+      statBox(housingData.length, 'Properties', totalBeds + ' beds total') +
+      statBox(bedPct + '%', 'Beds Assigned', assignedBeds + '/' + totalBeds);
+  } else {
+    // Player stats — players, games, airport, arrival
+    const playerTeam = getPlayerTeamForSchedule();
+    const myTeamCount = playerTeam ? (Object.values(teamPlayers).find((p, i) => {
+      const tn = Object.keys(teamPlayers)[i];
+      const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === tn.toLowerCase());
+      return mapped && mapped[0].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').toLowerCase() === playerTeam.toLowerCase();
+    }) || []).length : totalPlayers;
 
-  // Teams breakdown
-  let teamsHtml = '';
-  Object.entries(teamPlayers).forEach(([team, players]) => {
+    document.getElementById('overview-stats').innerHTML =
+      statBox(myTeamCount || totalPlayers, 'Teammates', playerTeam || '') +
+      statBox(filteredGames.length, 'Events', 'on your schedule') +
+      statBox('RDU', 'Airport', 'Raleigh-Durham, NC') +
+      statBox(fmtDate(t2.startDate), 'Arrival', t2.venue || '');
+  }
+
+  // Teams breakdown (staff only)
+  if (isStaff) {
+    let teamsHtml = '';
+    Object.entries(teamPlayers).forEach(([team, players]) => {
     const teamHousing = housingData.filter(h => {
       const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === team.toLowerCase());
       return mapped && (h.team || '').toLowerCase() === mapped[0];
@@ -1137,15 +1157,18 @@ function renderOverview() {
     </div>`;
   });
   document.getElementById('overview-teams').innerHTML = teamsHtml || '<div style="color:var(--text-faint);font-size:11px">No teams loaded</div>';
+  } else {
+    document.getElementById('overview-teams').innerHTML = '';
+  }
 
-  // Next game
-  const upcoming = [...scheduleData].filter(g => g.date && new Date(g.date + 'T23:59:59') >= new Date()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  // Next game / next event
+  const upcoming = [...(isStaff ? scheduleData : filteredGames)].filter(g => g.date && new Date(g.date + 'T23:59:59') >= new Date()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   let gameHtml = '';
   if (upcoming.length) {
     const g = upcoming[0];
     gameHtml = `<div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px">
-      <div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Next Match</div>
-      <div style="font-family:Cinzel,serif;font-size:15px;color:var(--cream);font-weight:600">Legio FC vs ${esc(g.opponent || 'TBD')}</div>
+      <div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">${isStaff ? 'Next Match' : 'Next Event'}</div>
+      <div style="font-family:Cinzel,serif;font-size:15px;color:var(--cream);font-weight:600">${g.type === 'Game' ? 'Legio FC vs ' + esc(g.opponent || 'TBD') : esc(g.title || g.type || 'Event')}</div>
       <div style="font-size:12px;color:var(--text-dim);margin-top:6px">${fmtDate(g.date)} ${g.time ? '· ' + esc(g.time) : ''}</div>
       <div style="font-size:11px;color:var(--text-faint);margin-top:4px">${esc(g.venue || 'WakeMed Soccer Park')} · ${esc(g.stage || 'Group')}</div>
     </div>`;
@@ -1157,8 +1180,9 @@ function renderOverview() {
   }
   document.getElementById('overview-next-game').innerHTML = gameHtml;
 
-  // Housing progress
-  let housingHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Housing Assignment Progress</div>`;
+  // Housing progress (staff only)
+  if (isStaff) {
+    let housingHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Housing Assignment Progress</div>`;
   housingHtml += `<div style="height:8px;background:var(--cream-dim);border-radius:4px;margin-bottom:12px;overflow:hidden">
     <div style="height:100%;width:${bedPct}%;background:var(--gold);border-radius:4px;transition:width .3s"></div>
   </div>`;
@@ -1179,6 +1203,9 @@ function renderOverview() {
   });
   housingHtml += '</div>';
   document.getElementById('overview-housing').innerHTML = housingHtml;
+  } else {
+    document.getElementById('overview-housing').innerHTML = '';
+  }
 }
 
 function updateCountdown(target) {
