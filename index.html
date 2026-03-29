@@ -130,7 +130,8 @@
 <body>
 
     <!-- Staff login — top right -->
-    <div class="staff-nav">
+    <div class="staff-nav" style="display:flex;gap:10px">
+        <a href="tournament.html" class="staff-nav-link" style="color:var(--gold);border-color:rgba(218,183,81,0.5)">Tournament Login</a>
         <a href="roster.html" class="staff-nav-link">Staff Login</a>
     </div>
 
@@ -169,6 +170,9 @@
                         </a>
                     </div>
                     <p style="font-size:12px;font-weight:300;color:rgba(248,246,241,0.45);letter-spacing:1px;line-height:1.7;">Register below for an ID Camp to be considered for the roster.</p>
+                    <div style="display:flex;justify-content:center;margin-top:20px">
+                        <a href="tournament.html" class="btn-camp" style="background:var(--gold);color:var(--blue-dark);font-weight:700">🏟 Tournament Portal — Players & Staff</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -438,6 +442,7 @@ function switchTournament(id) {
             <div class="camp-column">
                 <a href="https://tst7v7.com/" target="_blank" class="camp-logo-link"><img src="tst-logo.png" alt="TST - The Soccer Tournament" class="camp-logo tst-logo"></a>
                 <a href="register.html?t=TST" class="btn-camp">Submit Player Profile</a>
+                <a href="tournament.html" class="btn-camp" style="margin-top:8px;background:rgba(218,183,81,0.1)">🏟 Tournament Portal</a>
             </div>
             <div class="camp-column">
                 <a href="https://www.townofcary.org/carycup" target="_blank" class="camp-logo-link"><img src="cary-cup-logo.png" alt="The Cary Cup" class="camp-logo cary-logo"></a>
