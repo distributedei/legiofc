@@ -262,6 +262,7 @@
         <div class="tab" onclick="switchTab('housing')">Housing <span class="tab-badge" id="badge-housing">0</span></div>
         <div class="tab" onclick="switchTab('roster')">Roster <span class="tab-badge" id="badge-roster">0</span></div>
         <div class="tab staff-only" onclick="switchTab('logistics')">Logistics</div>
+        <div class="tab" onclick="switchTab('messages')">Messages <span class="tab-badge" id="badge-messages">0</span></div>
         <div class="tab" id="tab-profile" style="display:none" onclick="switchTab('profile')">My Profile</div>
         <div class="tab" id="tab-users" style="display:none" onclick="switchTab('users')">Users <span class="tab-badge" id="badge-users">0</span></div>
       </div>
@@ -448,6 +449,27 @@
             <div class="form-field full"><label>Medical Info / Things We Should Know</label><textarea id="prof-medical" rows="2" placeholder="Allergies, medications, conditions..."></textarea></div>
             <div class="form-field full"><label>Notes / Special Requests</label><textarea id="prof-notes" rows="2" placeholder="Anything else..."></textarea></div>
           </div>
+        </div>
+
+        <!-- ═══ MESSAGES ═══ -->
+        <div class="panel" id="panel-messages" style="max-width:800px">
+          <div class="section-head">
+            <div class="section-title">Messages</div>
+          </div>
+          <!-- Compose -->
+          <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:14px;margin-bottom:16px">
+            <div style="display:flex;gap:10px;margin-bottom:10px">
+              <select id="msg-to" style="flex:1;padding:8px 10px;background:var(--blue-dark);border:1px solid var(--gold-border);color:var(--cream);font-size:11px;font-family:Cinzel,serif">
+                <option value="all-staff">📢 All Staff</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px">
+              <textarea id="msg-text" rows="2" placeholder="Type your message..." style="flex:1;padding:8px 10px;background:var(--cream-dim);border:1px solid var(--gold-border);color:var(--cream);font-size:12px;resize:none"></textarea>
+              <button onclick="sendMessage()" class="save-btn" style="padding:8px 20px;font-size:9px;align-self:flex-end">Send</button>
+            </div>
+          </div>
+          <!-- Thread -->
+          <div id="msg-thread" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
 
         <!-- ═══ LOGISTICS ═══ -->
@@ -875,6 +897,13 @@ async function loadAllData() {
     // Load checklist from localStorage (lightweight — no Cosmos needed)
     loadChecklist();
 
+    // Load messages count
+    try {
+      const allSched = await api(`schedule?tournamentId=${CONFIG.tournamentId}`);
+      const msgCount = allSched.filter(m => m.type === 'Message').length;
+      document.getElementById('badge-messages').textContent = msgCount;
+    } catch(e) {}
+
     // Load team players from SharePoint (org auth only — live data)
     if (authMode === 'org') {
       try {
@@ -1256,9 +1285,11 @@ function getPlayerTeamForSchedule() {
 }
 
 function filterScheduleForUser(events) {
+  // Exclude messages from calendar
+  const schedEvents = events.filter(e => e.type !== 'Message');
   const playerTeam = getPlayerTeamForSchedule();
-  if (!playerTeam) return events; // staff sees all
-  return events.filter(e => {
+  if (!playerTeam) return schedEvents; // staff sees all
+  return schedEvents.filter(e => {
     const teams = (e.team || 'All').split(',').map(t => t.trim().toLowerCase());
     if (teams.includes('all') || teams.includes('everyone')) return true;
     if (teams.includes('players only')) return true;
@@ -1589,7 +1620,7 @@ function openEventFromCal(id) {
 }
 
 function onHourClick(dateStr, hour) {
-  if (currentRole !== 'admin') return; // only admin can create events
+  if (currentRole !== 'admin' && currentRole !== 'staff') return;
   const time = String(hour).padStart(2, '0') + ':00';
   openScheduleModal({ date: dateStr, time: time });
 }
@@ -2634,7 +2665,7 @@ function saveChecklistItem() {
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════
 function switchTab(name) {
-  const tabs = ['overview', 'schedule', 'housing', 'roster', 'logistics', 'profile', 'users'];
+  const tabs = ['overview', 'schedule', 'housing', 'roster', 'logistics', 'messages', 'profile', 'users'];
   document.querySelectorAll('.tab').forEach((t, i) => {
     t.classList.toggle('active', tabs[i] === name);
   });
@@ -2643,6 +2674,7 @@ function switchTab(name) {
   if (panel) panel.classList.add('active');
   if (name === 'users' && currentRole === 'admin') loadUsers();
   if (name === 'profile') loadProfile();
+  if (name === 'messages') loadMessages();
 }
 
 function closeModal(name) {
@@ -2668,6 +2700,137 @@ function toast(msg, type) {
   el.textContent = msg;
   wrap.appendChild(el);
   setTimeout(() => el.remove(), 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MESSAGES
+// ═══════════════════════════════════════════════════════════════
+let messagesData = [];
+
+function populateMessageRecipients() {
+  const sel = document.getElementById('msg-to');
+  if (!sel) return;
+  const isStaff = currentRole === 'admin' || currentRole === 'staff';
+
+  let html = '<option value="all-staff">📢 All Staff</option>';
+
+  if (isStaff) {
+    // Staff can message individual players or all
+    html += '<option value="all-players">📢 All Players</option>';
+    html += '<option value="all">📢 Everyone</option>';
+    // Add individual staff
+    if (staffList.length) {
+      html += '<optgroup label="Staff">';
+      staffList.forEach(s => {
+        if (s.name) html += `<option value="staff:${esc(s.email || s.name)}">${esc(s.name)}${s.role ? ' — '+esc(s.role) : ''}</option>`;
+      });
+      html += '</optgroup>';
+    }
+    // Add individual players
+    const seen = new Set();
+    Object.entries(teamPlayers).forEach(([team, players]) => {
+      html += `<optgroup label="${esc(team)}">`;
+      players.forEach(p => {
+        if (p.name && !seen.has(p.name)) {
+          seen.add(p.name);
+          html += `<option value="player:${esc(p.email || p.name)}">${esc(p.name)}</option>`;
+        }
+      });
+      html += '</optgroup>';
+    });
+  } else {
+    // Players can message individual staff or all staff
+    if (staffList.length) {
+      staffList.forEach(s => {
+        if (s.name) html += `<option value="staff:${esc(s.email || s.name)}">${esc(s.name)}${s.role ? ' — '+esc(s.role) : ''}</option>`;
+      });
+    }
+  }
+  sel.innerHTML = html;
+}
+
+async function loadMessages() {
+  populateMessageRecipients();
+  try {
+    const all = await api(`schedule?tournamentId=${CONFIG.tournamentId}`);
+    messagesData = all.filter(m => m.type === 'Message').sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+  } catch(e) { messagesData = []; }
+
+  // Filter messages for current user
+  const email = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
+  const isStaff = currentRole === 'admin' || currentRole === 'staff';
+
+  const visible = messagesData.filter(m => {
+    const to = (m.to || '').toLowerCase();
+    if (to === 'all' || to === 'all-staff' && isStaff || to === 'all-players' && !isStaff) return true;
+    if (to.includes(email)) return true;
+    if ((m.from || '').toLowerCase() === email) return true; // see own sent messages
+    if (isStaff && (to === 'all-staff' || to.startsWith('staff:'))) return true;
+    return false;
+  });
+
+  document.getElementById('badge-messages').textContent = visible.length;
+  renderMessages(visible);
+}
+
+function renderMessages(messages) {
+  const el = document.getElementById('msg-thread');
+  const email = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
+
+  if (!messages.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;font-size:11px;color:var(--text-faint)">No messages yet</div>';
+    return;
+  }
+
+  el.innerHTML = messages.map(m => {
+    const isMine = (m.from || '').toLowerCase() === email;
+    const toLabel = formatRecipient(m.to || '');
+    const time = m.timestamp ? new Date(m.timestamp).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+
+    return `<div style="display:flex;${isMine ? 'justify-content:flex-end' : ''}">
+      <div style="max-width:75%;padding:12px 14px;background:${isMine ? 'rgba(218,183,81,0.12)' : 'rgba(22,61,84,0.5)'};border:1px solid ${isMine ? 'var(--gold-border)' : 'rgba(218,183,81,0.1)'};${isMine ? 'border-right:3px solid var(--gold)' : 'border-left:3px solid var(--text-faint)'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-family:Cinzel,serif;font-size:10px;color:${isMine ? 'var(--gold)' : 'var(--cream)'};font-weight:600">${esc(m.fromName || 'Unknown')}</span>
+          <span style="font-size:9px;color:var(--text-faint);margin-left:12px">${esc(time)}</span>
+        </div>
+        <div style="font-size:9px;color:var(--text-faint);margin-bottom:6px">To: ${esc(toLabel)}</div>
+        <div style="font-size:12px;color:var(--cream);line-height:1.5">${esc(m.text || '')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function formatRecipient(to) {
+  if (to === 'all-staff') return '📢 All Staff';
+  if (to === 'all-players') return '📢 All Players';
+  if (to === 'all') return '📢 Everyone';
+  if (to.startsWith('staff:')) return to.replace('staff:', '');
+  if (to.startsWith('player:')) return to.replace('player:', '');
+  return to;
+}
+
+async function sendMessage() {
+  const text = document.getElementById('msg-text').value.trim();
+  if (!text) { toast('Type a message', 'info'); return; }
+  const to = document.getElementById('msg-to').value;
+  const email = currentUser ? ((currentUser.idTokenClaims && currentUser.idTokenClaims.email) || (currentUser.idTokenClaims && currentUser.idTokenClaims.emails && currentUser.idTokenClaims.emails[0]) || currentUser.username || '').toLowerCase() : '';
+  const name = currentUser ? (currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || '') : '';
+
+  try {
+    await api('schedule', 'POST', {
+      tournamentId: CONFIG.tournamentId,
+      type: 'Message',
+      from: email,
+      fromName: name,
+      to: to,
+      toName: formatRecipient(to),
+      text: text,
+      timestamp: new Date().toISOString(),
+    });
+    document.getElementById('msg-text').value = '';
+    toast('Message sent', 'success');
+    loadMessages();
+  } catch(e) { toast('Send failed: ' + e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════
