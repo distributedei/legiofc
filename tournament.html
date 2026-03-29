@@ -830,6 +830,36 @@ async function getSpSite() {
 }
 
 async function loadTeamPlayersFromSharePoint() {
+
+  // Photo cache
+  const photoCache = {};
+
+  async function fetchPlayerPhoto(playerName) {
+    if (!playerName || authMode !== 'org') return null;
+    if (photoCache[playerName]) return photoCache[playerName];
+    try {
+      const sId = await getSpSite();
+      const token = await getSpToken();
+      const h = { Authorization: 'Bearer ' + token };
+      const folderPath = '/PlayerPhotos/' + playerName;
+      const encoded = folderPath.split('/').map(s => encodeURIComponent(s)).join('/');
+      const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/drive/root:${encoded}:/children`, { headers: h });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const files = data.value || [];
+      const file = files.find(f => f.name.toLowerCase().includes('headshot')) || files[0];
+      if (!file) return null;
+      const imgRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${sId}/drive/items/${file.id}/content`, { headers: h });
+      if (!imgRes.ok) return null;
+      const blob = await imgRes.blob();
+      const url = URL.createObjectURL(blob);
+      photoCache[playerName] = url;
+      return url;
+    } catch(e) { return null; }
+  }
+
+  // Make globally accessible
+  window._fetchPlayerPhoto = fetchPlayerPhoto;
   toast('Loading team sheets from SharePoint...', 'info');
   const sId = await getSpSite();
   const token = await getSpToken();
@@ -842,7 +872,7 @@ async function loadTeamPlayersFromSharePoint() {
   if (!rosterList || !tsList) { toast('SharePoint lists not found', 'error'); return; }
 
   // Load all roster players (id → full detail)
-  const rosterFields = 'Title,LastName,Postion,SecondaryPosition,Email,Phone,Gender,BirthDate,CurrentLocation,Country,CurrentTeam,PastExperience,CanTravel,PassportCountry,PassportExpiry,VisaStatus,Height,DominantFoot,IDCampLocation';
+  const rosterFields = 'Title,LastName,Postion,SecondaryPosition,Email,Phone,Gender,BirthDate,CurrentLocation,Country,CurrentTeam,PastExperience,CanTravel,PassportCountry,PassportExpiry,VisaStatus,Height,DominantFoot,IDCampLocation,HeadshotURL';
   let rosterUrl = `https://graph.microsoft.com/v1.0/sites/${sId}/lists/${rosterList.id}/items?$expand=fields($select=${rosterFields})&$top=999`;
   const playerMap = {};
   while (rosterUrl) {
@@ -870,6 +900,7 @@ async function loadTeamPlayersFromSharePoint() {
         height: f.Height || '',
         dominantFoot: f.DominantFoot || '',
         campSite: f.IDCampLocation || '',
+        headshotUrl: f.HeadshotURL || '',
       };
     });
     rosterUrl = res['@odata.nextLink'] || null;
@@ -1459,7 +1490,7 @@ function renderRoster() {
       }
 
       html += `<tr onclick="openPlayerModal('${esc(pid)}')" style="cursor:pointer">
-        <td><div style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark)">${esc(ini)}</div></td>
+        <td><div id="rav-${esc(pid)}" style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif;font-size:9px;font-weight:700;color:var(--blue-dark);overflow:hidden">${esc(ini)}</div></td>
         <td style="font-weight:500">${esc(p.name)}</td>
         <td style="font-size:11px">${esc([p.position, p.secondaryPosition].filter(Boolean).join(' / ') || '—')}</td>
         <td style="font-size:11px;color:var(--text-dim)">${esc(p.currentLocation || '')}${p.country ? ', '+esc(p.country) : ''}</td>
@@ -1473,6 +1504,18 @@ function renderRoster() {
   el.innerHTML = html;
   countEl.textContent = `${shownCount} player${shownCount !== 1 ? 's' : ''} · click name to view profile`;
   document.getElementById('badge-roster').textContent = shownCount;
+
+  // Async load photos (org auth only)
+  if (authMode === 'org' && window._fetchPlayerPhoto) {
+    Object.entries(window._rosterPlayers).forEach(([pid, p]) => {
+      window._fetchPlayerPhoto(p.name).then(url => {
+        if (!url) return;
+        p._photoUrl = url;
+        const el = document.getElementById('rav-' + pid);
+        if (el) el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;object-position:top;">`;
+      });
+    });
+  }
 }
 
 function openPlayerModal(pid) {
@@ -1480,7 +1523,18 @@ function openPlayerModal(pid) {
   if (!p) return;
 
   const ini = (p.name||'').split(' ').filter(Boolean).map(n=>n[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('pm-avatar').textContent = ini;
+  const pmAv = document.getElementById('pm-avatar');
+  if (p._photoUrl) {
+    pmAv.innerHTML = `<img src="${p._photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;">`;
+  } else {
+    pmAv.textContent = ini;
+    // Try to load async
+    if (window._fetchPlayerPhoto) {
+      window._fetchPlayerPhoto(p.name).then(url => {
+        if (url) { p._photoUrl = url; pmAv.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;object-position:top;">`; }
+      });
+    }
+  }
   document.getElementById('pm-name').textContent = p.name || '—';
   document.getElementById('pm-badges').innerHTML = [
     p.gender ? `<span class="prof-badge">${esc(p.gender)}</span>` : '',
@@ -1510,13 +1564,13 @@ function openPlayerModal(pid) {
         <div><span class="prof-label">Country</span><div class="prof-val">${esc(v(p.country))}</div></div>
       </div>
     </div>
-    <div class="prof-section"><div class="prof-sec-title">Passport & Travel</div>
+    ${(currentRole === 'admin' || currentRole === 'staff') ? `<div class="prof-section"><div class="prof-sec-title">Passport & Travel</div>
       <div class="prof-grid">
         <div><span class="prof-label">Passport Country</span><div class="prof-val">${esc(v(p.passportCountry))}</div></div>
         <div><span class="prof-label">Passport Expiry</span><div class="prof-val">${esc(v(p.passportExpiry))}</div></div>
         <div><span class="prof-label">Visa Status</span><div class="prof-val">${esc(v(p.visaStatus))}</div></div>
       </div>
-    </div>
+    </div>` : ''}
     <div class="prof-section"><div class="prof-sec-title">Playing History</div>
       <div class="prof-grid">
         <div><span class="prof-label">Primary Position</span><div class="prof-val">${esc(v(p.position))}</div></div>
@@ -1533,31 +1587,32 @@ function openPlayerModal(pid) {
         <div style="grid-column:1/-1"><span class="prof-label">Address</span><div class="prof-val"><a href="https://www.google.com/maps/search/${encodeURIComponent(myHouse.address||'')}" target="_blank" style="color:var(--cream);text-decoration:none;border-bottom:1px dotted var(--text-faint)">${esc(myHouse.address||'')}</a></div></div>
       </div>
     </div>` : ''}
-    ${p.email || p.phone ? `<div class="prof-section"><div class="prof-sec-title">Contact</div>
+    ${(p.email || p.phone) && (currentRole === 'admin' || currentRole === 'staff') ? `<div class="prof-section"><div class="prof-sec-title">Contact</div>
       <div class="prof-grid">
         ${p.email ? `<div><span class="prof-label">Email</span><div class="prof-val"><a href="mailto:${esc(p.email)}" style="color:var(--gold);text-decoration:none">${esc(p.email)}</a></div></div>` : ''}
         ${p.phone ? `<div><span class="prof-label">Phone</span><div class="prof-val"><a href="https://wa.me/${(p.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366;text-decoration:none">📱 ${esc(p.phone)}</a></div></div>` : ''}
       </div>
     </div>` : ''}
-    <div id="pm-tournament-info"></div>
+    ${(currentRole === 'admin' || currentRole === 'staff') ? '<div id="pm-tournament-info"></div>' : ''}
   `;
   body.innerHTML = html;
   document.getElementById('modal-player').classList.add('open');
 
-  // Load tournament-specific data from Cosmos users (async)
-  if (p.email) {
+  // Load tournament-specific data from Cosmos users (staff only)
+  if (p.email && (currentRole === 'admin' || currentRole === 'staff')) {
     api(`users?email=${encodeURIComponent(p.email.toLowerCase())}`).then(user => {
       const ti = document.getElementById('pm-tournament-info');
       if (!ti) return;
+      const isStaffViewing = currentRole === 'admin' || currentRole === 'staff';
       const has = user.phone || user.emergencyContact || user.dietary || user.shirtSize || user.medical || user.profileNotes;
       if (!has) { ti.innerHTML = `<div class="prof-section"><div class="prof-sec-title">Tournament Info</div><div style="font-size:11px;color:var(--text-faint);font-style:italic">Player has not submitted tournament info yet</div></div>`; return; }
       ti.innerHTML = `<div class="prof-section"><div class="prof-sec-title">Tournament Info <span style="font-family:Inter,sans-serif;font-size:9px;color:var(--text-dim);letter-spacing:0;text-transform:none;margin-left:8px">submitted by player</span></div>
         <div class="prof-grid">
           ${user.phone ? `<div><span class="prof-label">Phone</span><div class="prof-val"><a href="https://wa.me/${(user.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366;text-decoration:none">📱 ${esc(user.phone)}</a></div></div>` : ''}
-          ${user.emergencyContact ? `<div><span class="prof-label">Emergency Contact</span><div class="prof-val" style="color:var(--red)">${esc(user.emergencyContact)}</div></div>` : ''}
+          ${user.emergencyContact && isStaffViewing ? `<div><span class="prof-label">Emergency Contact</span><div class="prof-val">${esc(user.emergencyContact)}</div></div>` : ''}
           ${user.dietary ? `<div><span class="prof-label">Dietary Restrictions</span><div class="prof-val">${esc(user.dietary)}</div></div>` : ''}
           ${user.shirtSize ? `<div><span class="prof-label">Shirt Size</span><div class="prof-val">${esc(user.shirtSize)}</div></div>` : ''}
-          ${user.medical ? `<div style="grid-column:1/-1"><span class="prof-label">Medical / Things to Know</span><div class="prof-val" style="color:var(--red)">${esc(user.medical)}</div></div>` : ''}
+          ${user.medical && isStaffViewing ? `<div style="grid-column:1/-1"><span class="prof-label">Medical / Things to Know</span><div class="prof-val">${esc(user.medical)}</div></div>` : ''}
           ${user.profileNotes ? `<div style="grid-column:1/-1"><span class="prof-label">Notes / Special Requests</span><div class="prof-val">${esc(user.profileNotes)}</div></div>` : ''}
         </div>
       </div>`;
