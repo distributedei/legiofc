@@ -660,7 +660,11 @@ async function loadAllData() {
 
     // Load team players from SharePoint (org auth only — live data)
     if (authMode === 'org') {
-      try { await loadTeamPlayersFromSharePoint(); } catch(e) { console.warn('TeamSheet sync:', e.message); }
+      try {
+        await loadTeamPlayersFromSharePoint();
+        renderRoster(); // re-render with team sheet data
+        renderOverview();
+      } catch(e) { console.warn('TeamSheet sync:', e.message); }
     }
 
     toast('Tournament data loaded', 'success');
@@ -768,7 +772,8 @@ function renderOverview() {
   document.getElementById('tourn-title').textContent = t.name || 'TST 2026';
   document.getElementById('tourn-subtitle').textContent = [t.venue, t.city, t.state].filter(Boolean).join(' · ') +
     (t.startDate ? ` · ${fmtDate(t.startDate)} – ${fmtDate(t.endDate)}` : '');
-  document.getElementById('stat-players').textContent = rosterData.length || '—';
+  const tpCount = Object.values(teamPlayers).reduce((s, arr) => s + arr.length, 0);
+  document.getElementById('stat-players').textContent = tpCount || rosterData.length || '—';
   document.getElementById('stat-staff').textContent = '—';
   document.getElementById('stat-games').textContent = scheduleData.length || '—';
   document.getElementById('stat-housing').textContent = housingData.length || '—';
@@ -1186,27 +1191,64 @@ async function deleteHousingItem() {
 // ROSTER
 // ═══════════════════════════════════════════════════════════════
 function renderRoster() {
-  document.getElementById('badge-roster').textContent = rosterData.length;
+  // Use teamPlayers from SharePoint TeamSheets (live lineup data)
+  const teams = Object.keys(teamPlayers);
+  const totalPlayers = teams.reduce((s, t) => s + teamPlayers[t].length, 0);
+  document.getElementById('badge-roster').textContent = totalPlayers || rosterData.length;
   const el = document.getElementById('roster-content');
+
+  // If teamPlayers loaded, use that (grouped by team)
+  if (totalPlayers) {
+    let html = '';
+    teams.forEach(team => {
+      const players = teamPlayers[team];
+      const housingTeam = Object.entries(TEAM_MAP).find(([k, v]) => v === team.toLowerCase());
+      const displayTeam = housingTeam ? housingTeam[0].split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : team;
+
+      html += `<div style="font-family:Cinzel,serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--gold-border)">${esc(team)} <span style="color:var(--text-dim);font-family:Inter,sans-serif;font-size:11px;letter-spacing:0;text-transform:none;margin-left:12px">${players.length} players</span></div>`;
+
+      // Find housing assignment for each player
+      const teamHousing = housingData.filter(h => {
+        const ht = (h.team || '').toLowerCase();
+        const dt = displayTeam.toLowerCase();
+        return ht === dt || ht.includes(dt) || dt.includes(ht);
+      });
+
+      html += `<table class="ops-table">
+        <thead><tr><th>Name</th><th>Position</th><th>Housing</th></tr></thead>
+        <tbody>${players.map(p => {
+          // Find which property this player is assigned to
+          let housingName = '—';
+          for (const h of teamHousing) {
+            if (h.beds && h.beds.some(b => b.assigned === p.name)) {
+              housingName = h.name;
+              break;
+            }
+          }
+          return `<tr>
+            <td style="font-weight:500">${esc(p.name)}</td>
+            <td>${esc(p.position || '—')}</td>
+            <td style="font-size:11px;color:${housingName === '—' ? 'var(--text-faint)' : 'var(--text-dim)'}">${esc(housingName)}</td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    });
+    el.innerHTML = html;
+    return;
+  }
+
+  // Fallback — Cosmos rosterData
   if (!rosterData.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">No players loaded — click Sync from SharePoint</div></div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon">⚽</div><div class="empty-text">No players loaded</div></div>';
     return;
   }
   const sorted = [...rosterData].sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
   el.innerHTML = `<table class="ops-table">
-    <thead><tr><th>Name</th><th>Position</th><th>Location</th><th>Passport</th><th>Travel</th><th>Email</th></tr></thead>
-    <tbody>${sorted.map(p => {
-      const canTravel = (p.canTravel || '').toLowerCase();
-      const travelColor = canTravel === 'yes' ? 'var(--green)' : canTravel === 'no' ? 'var(--red)' : 'var(--text-dim)';
-      return `<tr>
-        <td style="font-weight:500">${esc(p.fullName || '')}</td>
-        <td>${esc(p.primaryPosition || '')}</td>
-        <td style="font-size:11px;color:var(--text-dim)">${esc(p.currentLocation || '')}${p.country ? ', ' + esc(p.country) : ''}</td>
-        <td style="font-size:11px">${esc(p.passportCountry || '—')}</td>
-        <td style="color:${travelColor};font-weight:500">${esc(p.canTravel || '—')}</td>
-        <td style="font-size:11px;color:var(--text-dim)">${esc(p.email || '')}</td>
-      </tr>`;
-    }).join('')}</tbody></table>`;
+    <thead><tr><th>Name</th><th>Position</th><th>Email</th></tr></thead>
+    <tbody>${sorted.map(p => `<tr>
+      <td style="font-weight:500">${esc(p.fullName || '')}</td>
+      <td>${esc(p.primaryPosition || '')}</td>
+      <td style="font-size:11px;color:var(--text-dim)">${esc(p.email || '')}</td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
 async function syncRosterFromSharePoint() {
