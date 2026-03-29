@@ -377,14 +377,11 @@
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
 const CONFIG = {
-  // ── Auth (Org tenant — swap to B2C when tenant is ready) ──
-  clientId:  'b1c58e0f-4e20-40e8-be74-5c231a030a90',
-  tenantId:  '99b5fc0c-be85-4531-a7de-bc8da0002ec2',
-  // ── B2C (uncomment and swap when B2C tenant is created) ──
-  // b2cTenant:   'legiofcb2c',
-  // b2cPolicy:   'B2C_1_signup_signin',
-  // b2cClientId: 'YOUR-B2C-CLIENT-ID',
-  // authority:   'https://legiofcb2c.b2clogin.com/legiofcb2c.onmicrosoft.com/B2C_1_signup_signin',
+  // ── Auth (Microsoft Entra External ID) ──
+  clientId:  '1a75d820-5676-436b-8510-36033db7ec29',
+  tenantId:  '820c9bb0-be51-4a55-a4e6-f94cb19d3250',
+  tenantName: 'legiofcext',
+  authority: 'https://legiofcext.ciamlogin.com/',
 
   // ── API ──
   apiBase: 'https://legiofc-api-hshtangwcydsb7ap.eastus-01.azurewebsites.net/api',
@@ -393,7 +390,7 @@ const CONFIG = {
   // ── Active tournament ──
   tournamentId: 'tst-2026',
 
-  // ── SharePoint (for sync button) ──
+  // ── SharePoint (for sync button — requires org tenant auth via roster.html) ──
   spSiteHost: 'legiofc.sharepoint.com',
   spSitePath: '/sites/BusinessOperations',
 };
@@ -404,7 +401,8 @@ const CONFIG = {
 const msalConfig = {
   auth: {
     clientId: CONFIG.clientId,
-    authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`,
+    authority: CONFIG.authority,
+    knownAuthorities: [`${CONFIG.tenantName}.ciamlogin.com`],
     redirectUri: window.location.href.split('?')[0].split('#')[0],
   },
   cache: { cacheLocation: 'sessionStorage' },
@@ -428,7 +426,7 @@ async function handleAuth() {
       onSignedIn();
       return;
     }
-    await msalApp.loginRedirect({ scopes: ['User.Read','Sites.Read.All'] });
+    await msalApp.loginRedirect({ scopes: ['openid','profile'] });
   } catch (e) {
     console.error('Auth error:', e);
     toast('Sign-in failed: ' + e.message, 'error');
@@ -439,10 +437,10 @@ async function getToken(scopes) {
   const accts = msalApp.getAllAccounts();
   if (!accts.length) throw new Error('Not signed in');
   try {
-    const r = await msalApp.acquireTokenSilent({ scopes: scopes || ['User.Read'], account: accts[0] });
+    const r = await msalApp.acquireTokenSilent({ scopes: scopes || ['openid','profile'], account: accts[0] });
     return r.accessToken;
   } catch (e) {
-    const r = await msalApp.acquireTokenRedirect({ scopes: scopes || ['User.Read'], account: accts[0] });
+    const r = await msalApp.acquireTokenRedirect({ scopes: scopes || ['openid','profile'], account: accts[0] });
     return r.accessToken;
   }
 }
@@ -461,7 +459,8 @@ async function checkAuth() {
 function onSignedIn() {
   document.getElementById('gate-view').style.display = 'none';
   document.getElementById('app-view').style.display = '';
-  document.getElementById('nav-user').textContent = currentUser.name || currentUser.username;
+  const displayName = currentUser.name || (currentUser.idTokenClaims && currentUser.idTokenClaims.name) || currentUser.username || 'User';
+  document.getElementById('nav-user').textContent = displayName;
   document.getElementById('auth-btn').textContent = 'Sign Out';
   loadAllData();
 }
@@ -790,7 +789,10 @@ function renderRoster() {
 }
 
 async function syncRosterFromSharePoint() {
-  toast('Syncing roster from SharePoint...', 'info');
+  // SharePoint sync requires org tenant (legiofc.com) auth — not available via External ID
+  // For now, use roster.html (staff-only) to manage roster, or seed via API
+  toast('Roster sync requires staff access via roster.html — use the API to add players directly', 'info');
+  return;
   try {
     const token = await getToken(['Sites.Read.All']);
     const h = { Authorization: 'Bearer ' + token };
