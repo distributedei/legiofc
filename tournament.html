@@ -1456,11 +1456,13 @@ function renderOverviewContent() {
   const showAll = allChecked && allChecked.checked;
   const teamFilter = showAll ? 'all' : (checkedTeams.length ? checkedTeams : ['all']);
 
-  // Get filtered data based on team selection
+  // Get filtered data based on team selection — scoped to tournament-assigned teams
+  const allTeamKeys = Object.keys(teamPlayers);
+  const tournTeams = (tournament && tournament.teams && tournament.teams.length) ? tournament.teams : allTeamKeys;
   let filteredPlayers = [];
   const isAllTeams = teamFilter === 'all' || (Array.isArray(teamFilter) && teamFilter.includes('all'));
   if (isAllTeams) {
-    Object.values(teamPlayers).forEach(p => filteredPlayers = filteredPlayers.concat(p));
+    allTeamKeys.filter(t => tournTeams.includes(t)).forEach(t => { filteredPlayers = filteredPlayers.concat(teamPlayers[t]); });
   } else {
     const selected = Array.isArray(teamFilter) ? teamFilter : [teamFilter];
     selected.forEach(t => { if (teamPlayers[t]) filteredPlayers = filteredPlayers.concat(teamPlayers[t]); });
@@ -1491,7 +1493,7 @@ function renderOverviewContent() {
 
   if (isStaff) {
     document.getElementById('overview-stats').innerHTML =
-      statBox(filteredPlayers.length, 'Players', isAllTeams ? Object.keys(teamPlayers).length + ' teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter)) +
+      statBox(filteredPlayers.length, 'Players', isAllTeams ? tournTeams.filter(t => teamPlayers[t]).length + ' teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter)) +
       statBox(filteredGames.filter(g=>g.type!=='Message').length, 'Events', 'scheduled') +
       statBox(filteredHousing.length, 'Properties', totalBeds + ' beds') +
       statBox(bedPct + '%', 'Beds Assigned', assignedBeds + '/' + totalBeds);
@@ -1504,10 +1506,13 @@ function renderOverviewContent() {
       statBox(fmtDate(t.startDate), 'Arrival', t.venue || '');
   }
 
-  // Teams breakdown (staff only)
+  // Teams breakdown (staff only) — filtered to tournament-assigned teams
   if (isStaff && isAllTeams) {
     let teamsHtml = '';
-    Object.entries(teamPlayers).forEach(([team, players]) => {
+    const allTeamKeys = Object.keys(teamPlayers);
+    const tournTeams = (tournament && tournament.teams && tournament.teams.length) ? tournament.teams : allTeamKeys;
+    const visibleTeams = Object.entries(teamPlayers).filter(([team]) => tournTeams.includes(team));
+    visibleTeams.forEach(([team, players]) => {
       const teamHousing = housingData.filter(h => {
         const mapped = Object.entries(TEAM_MAP).find(([k, v]) => v === team.toLowerCase());
         return mapped && (h.team || '').toLowerCase() === mapped[0];
@@ -1546,22 +1551,14 @@ function renderOverviewContent() {
   }
   document.getElementById('overview-next-game').innerHTML = gameHtml;
 
-  // Arrivals (staff only)
+  // Travel summary + roster link (staff only)
   if (isStaff) {
-    let arrHtml = `<div style="font-family:Cinzel,serif;font-size:9px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Player Arrivals — ${esc(isAllTeams ? 'All Teams' : (Array.isArray(teamFilter) ? teamFilter.join(', ') : teamFilter))}</div>`;
-
-    // Build arrival info from player data
-    const arrivals = filteredPlayers.map(p => {
-      const location = [p.currentLocation, p.country].filter(Boolean).join(', ');
-      const canTravel = p.canTravel || '';
-      return { name: p.name, email: p.email || '', location, canTravel, position: p.position || '' };
-    }).sort((a, b) => (a.name||'').localeCompare(b.name||''));
-
+    const arrivals = filteredPlayers.map(p => ({ canTravel: p.canTravel || '' }));
     const needTravel = arrivals.filter(a => a.canTravel.toLowerCase().startsWith('yes'));
     const noTravel = arrivals.filter(a => !a.canTravel.toLowerCase().startsWith('yes') && a.canTravel.toLowerCase() !== 'no');
     const cantTravel = arrivals.filter(a => a.canTravel.toLowerCase() === 'no');
 
-    arrHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px">
+    let arrHtml = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
       <div style="background:rgba(22,61,84,0.5);border:1px solid var(--gold-border);padding:10px;text-align:center">
         <div style="font-family:Cinzel,serif;font-size:18px;color:var(--green);font-weight:700">${needTravel.length}</div>
         <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Can Travel</div>
@@ -1574,36 +1571,11 @@ function renderOverviewContent() {
         <div style="font-family:Cinzel,serif;font-size:18px;color:var(--red);font-weight:700">${cantTravel.length}</div>
         <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Cannot Travel</div>
       </div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <a onclick="switchTab('roster')" style="font-family:Cinzel,serif;font-size:11px;color:var(--gold);cursor:pointer;text-decoration:none;letter-spacing:1px">View Full Roster →</a>
     </div>`;
-
-    arrHtml += `<table class="ops-table" style="font-size:11px"><thead><tr><th>Name</th><th>Position</th><th>Traveling From</th><th>Airport</th><th>Arrival Date</th><th>Travel Status</th></tr></thead><tbody>`;
-    arrivals.forEach(a => {
-      const travelColor = a.canTravel.toLowerCase().startsWith('yes') ? 'var(--green)' : a.canTravel.toLowerCase() === 'no' ? 'var(--red)' : 'var(--text-dim)';
-      arrHtml += `<tr id="arr-${esc((a.email||a.name).replace(/[^a-z0-9]/gi,''))}">
-        <td style="font-weight:500">${esc(a.name)}</td>
-        <td style="color:var(--text-dim)">${esc(a.position)}</td>
-        <td style="color:var(--text-dim)">${esc(a.location || '—')}</td>
-        <td class="arr-airport" style="color:var(--text-faint)">—</td>
-        <td class="arr-date" style="color:var(--text-faint)">—</td>
-        <td style="color:${travelColor};font-weight:500">${esc(a.canTravel || '—')}</td>
-      </tr>`;
-    });
-    arrHtml += '</tbody></table>';
     document.getElementById('overview-arrivals').innerHTML = arrHtml;
-
-    // Async load arrival info from Cosmos users
-    arrivals.forEach(a => {
-      if (!a.email) return;
-      api(`users?email=${encodeURIComponent(a.email.toLowerCase())}`).then(user => {
-        const rowId = 'arr-' + (a.email||a.name).replace(/[^a-z0-9]/gi,'');
-        const row = document.getElementById(rowId);
-        if (!row) return;
-        const airportCell = row.querySelector('.arr-airport');
-        const dateCell = row.querySelector('.arr-date');
-        if (airportCell && user.arrivalAirport) airportCell.textContent = user.arrivalAirport;
-        if (dateCell && user.arrivalDate) dateCell.textContent = fmtDate(user.arrivalDate);
-      }).catch(() => {});
-    });
   }
 
   // Housing progress (staff only)
